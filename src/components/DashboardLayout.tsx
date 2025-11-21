@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   LayoutDashboard,
@@ -9,7 +9,7 @@ import {
   Search,
   DollarSign,
   BarChart3,
-  User,
+  User as UserIcon,
   Settings,
   LogOut,
   Menu,
@@ -34,6 +34,34 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const [userInfo, setUserInfo] = useState({
+    username: "",
+    email: "",
+  });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("http://localhost:8080/api/v1/auth/current", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setUserInfo({
+          username: data.username,
+          email: data.email,
+        });
+
+        // Lưu localStorage nếu muốn dùng ở nơi khác
+        localStorage.setItem("username", data.username);
+        localStorage.setItem("email", data.email);
+      })
+      .catch((err) => console.error("Get current user error:", err));
+  }, []);
 
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -64,9 +92,7 @@ export default function DashboardLayout({
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-600 rounded-lg flex items-center justify-center">
-                <div className="text-white text-sm tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
-                  PTIT
-                </div>
+                <div className="text-white text-sm font-black tracking-wide">PTIT</div>
               </div>
               <div className="hidden md:block">
                 <h1 className="bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
@@ -102,13 +128,21 @@ export default function DashboardLayout({
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+                {/* Avatar — chữ cái đầu */}
+                <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center font-bold text-white">
+                  {userInfo.username ? userInfo.username.charAt(0).toUpperCase() : "U"}
                 </div>
+
+                {/* Name + Email */}
                 <div className="hidden md:block text-left">
-                  <p className="text-sm text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500">admin@ptit.edu.vn</p>
+                  <p className="text-sm text-gray-900">
+                    {userInfo.username || "Đang tải..."}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {userInfo.email || ""}
+                  </p>
                 </div>
+
                 <ChevronDown className="w-4 h-4 text-gray-600" />
               </button>
 
@@ -126,9 +160,10 @@ export default function DashboardLayout({
                     }}
                     className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
                   >
-                    <User className="w-4 h-4 text-gray-600" />
+                    <UserIcon className="w-4 h-4 text-gray-600" />
                     <span className="text-gray-700">Hồ sơ cá nhân</span>
                   </button>
+
                   <button
                     onClick={() => {
                       onNavigate("settings");
@@ -139,7 +174,9 @@ export default function DashboardLayout({
                     <Settings className="w-4 h-4 text-gray-600" />
                     <span className="text-gray-700">Cài đặt</span>
                   </button>
+
                   <hr className="my-2" />
+
                   <button
                     onClick={onLogout}
                     className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"

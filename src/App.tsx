@@ -23,15 +23,18 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState("dashboard");
 
-  const handleNavigate = (view: View | string) => {
-    if (view === "landing" || view === "login" || view === "register" || view === "dashboard") {
-      setCurrentView(view);
-    } else {
-      // Navigate to different pages within dashboard
-      setCurrentPage(view);
+  const handleNavigate = (view: string) => {
+    if (!isLoggedIn) {
+      if (view === "landing" || view === "login" || view === "register") {
+        setCurrentView(view);
+        return;
+      }
     }
+  
+    // Điều hướng trong dashboard
+    setCurrentPage(view);
   };
-
+  
   const handleLogin = () => {
     setIsLoggedIn(true);
     setCurrentView("dashboard");
