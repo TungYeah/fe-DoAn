@@ -21,10 +21,11 @@ import {
 
 type DashboardLayoutProps = {
   currentPage: string;
-  onNavigate: (page: string) => void;
+  onNavigate: (v: string) => void;
   onLogout: () => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 };
+
 
 export default function DashboardLayout({
   currentPage,

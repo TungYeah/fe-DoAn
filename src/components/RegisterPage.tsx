@@ -62,7 +62,7 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
-      
+
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -141,15 +141,20 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
                 <label className="block text-gray-700 mb-2">Đơn vị / Khoa</label>
                 <div className="relative">
                   <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
+
+                  <select
                     value={formData.organization}
                     onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                    placeholder="Khoa Công nghệ Thông tin"
-                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl"
-                  />
+                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl bg-white"
+                    required
+                  >
+                    <option value="">-- Chọn khoa --</option>
+                    <option value="Khoa Công Nghệ Thông Tin">Khoa Công Nghệ Thông Tin</option>
+                    <option value="Khoa Điện Tử Viễn Thông">Khoa Điện Tử Viễn Thông</option>
+                  </select>
                 </div>
               </div>
+
 
               {/* Password */}
               <div>

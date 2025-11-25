@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React from "react";
+import { useState, useEffect } from "react";
 import LandingPage from "./components/LandingPage";
 import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
@@ -19,22 +20,40 @@ import ChatPage from "./components/ChatPage";
 type View = "landing" | "login" | "register" | "dashboard";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<View>("landing");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentPage, setCurrentPage] = useState("dashboard");
+  // Load trạng thái từ localStorage
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("isLoggedIn") === "true";
+  });
+
+  const [currentView, setCurrentView] = useState<View>(() => {
+    return (localStorage.getItem("currentView") as View) || "landing";
+  });
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    return localStorage.getItem("currentPage") || "dashboard";
+  });
+
+  // Mỗi khi state thay đổi → lưu vào localStorage
+  useEffect(() => {
+    localStorage.setItem("isLoggedIn", String(isLoggedIn));
+    localStorage.setItem("currentView", currentView);
+    localStorage.setItem("currentPage", currentPage);
+  }, [isLoggedIn, currentView, currentPage]);
 
   const handleNavigate = (view: string) => {
+    // Nếu chưa login → chỉ được vào landing/login/register
     if (!isLoggedIn) {
       if (view === "landing" || view === "login" || view === "register") {
         setCurrentView(view);
         return;
       }
+      return;
     }
-  
-    // Điều hướng trong dashboard
+
+    // Nếu đã login → điều hướng dashboard
     setCurrentPage(view);
   };
-  
+
   const handleLogin = () => {
     setIsLoggedIn(true);
     setCurrentView("dashboard");
@@ -51,9 +70,9 @@ export default function App() {
     setIsLoggedIn(false);
     setCurrentView("landing");
     setCurrentPage("dashboard");
+    localStorage.clear(); // Xóa token + trạng thái
   };
 
-  // Render page content based on currentPage
   const renderPageContent = () => {
     switch (currentPage) {
       case "dashboard":
@@ -89,9 +108,18 @@ export default function App() {
     <div className="size-full">
       {!isLoggedIn ? (
         <>
-          {currentView === "landing" && <LandingPage onNavigate={handleNavigate} />}
-          {currentView === "login" && <LoginPage onNavigate={handleNavigate} onLogin={handleLogin} />}
-          {currentView === "register" && <RegisterPage onNavigate={handleNavigate} onRegister={handleRegister} />}
+          {currentView === "landing" && (
+            <LandingPage onNavigate={handleNavigate} />
+          )}
+          {currentView === "login" && (
+            <LoginPage onNavigate={handleNavigate} onLogin={handleLogin} />
+          )}
+          {currentView === "register" && (
+            <RegisterPage
+              onNavigate={handleNavigate}
+              onRegister={handleRegister}
+            />
+          )}
         </>
       ) : (
         <DashboardLayout
