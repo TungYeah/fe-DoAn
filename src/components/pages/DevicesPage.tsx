@@ -60,6 +60,8 @@ export default function DevicesPage() {
   // =================== STATE =====================
   const [activeTab, setActiveTab] = useState<"overview" | "details">("overview");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [copied, setCopied] = useState("");
+  const [copiedRow, setCopiedRow] = useState<string | null>(null);
 
   const [devices, setDevices] = useState<any[]>([]);
   const [deviceTypes, setDeviceTypes] = useState<any[]>([]);
@@ -167,12 +169,12 @@ export default function DevicesPage() {
     setSelectedWard(w);
   };
   
-  // ============ ADD DEVICE ============
+  // ============ THÊM THIẾT BỊ ============
   const handleAddDevice = async () => {
     try {
       setFormError("");
       if (!newDevice.name || !newDevice.device_id || !newDevice.device_type_id) {
-        setFormError("⚠️ Vui lòng nhập đủ thông tin bắt buộc.");
+        setFormError(" Vui lòng nhập đủ thông tin bắt buộc.");
         return;
       }
       
@@ -192,7 +194,7 @@ export default function DevicesPage() {
         ward: wardName || null,
       });
       
-      alert("✅ Thêm thiết bị thành công!");
+      alert(" Thêm thiết bị thành công! ✅");
       setIsAddOpen(false);
       setNewDevice({
         name: "",
@@ -210,7 +212,7 @@ export default function DevicesPage() {
     }
   };
   
-  // ============ FILTER ============
+  // ============ LỌC ============
   const filteredDevices = devices.filter((d) => {
     const name = (d.name || "").toLowerCase();
     const type = (d.device_type_name || "").toLowerCase();
@@ -293,7 +295,6 @@ export default function DevicesPage() {
               />
             </div>
             
-            {/* FILTER BUTTON */}
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-44 h-12 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-500" />
@@ -308,7 +309,6 @@ export default function DevicesPage() {
             </Select>
           </div>
           
-          {/* GRID CARD */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDevices.map((device, idx) => (
               <motion.div
@@ -319,7 +319,6 @@ export default function DevicesPage() {
                 whileHover={{ y: -5 }}
                 className="bg-white p-6 rounded-2xl border shadow-sm hover:shadow-lg transition-all"
               >
-                {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <div
@@ -351,7 +350,6 @@ export default function DevicesPage() {
                   </div>
                 </div>
                 
-                {/* Location */}
                 <div className="flex items-center gap-2 text-gray-600 mb-1">
                   <MapPin className="w-4 h-4" />
                   <span className="text-sm">
@@ -359,18 +357,15 @@ export default function DevicesPage() {
                   </span>
                 </div>
                 
-                {/* Last seen */}
                 <p className="text-xs text-gray-500 mb-3">
                   Cập nhật: {device.last_seen || "N/A"}
                 </p>
                 
-                {/* Footer */}
                 <div className="flex justify-between pt-4 border-t">
                   <p className="text-xs text-gray-500">
                     ID: {device.device_id}
                   </p>
                   <div className="flex gap-2">
-                    {/* Xem chi tiết */}
                     <button
                       className="p-2 hover:bg-blue-50 rounded-lg text-blue-600"
                       onClick={() => {
@@ -382,7 +377,6 @@ export default function DevicesPage() {
                       <Activity className="w-4 h-4" />
                     </button>
                     
-                    {/* Copy API upload */}
                     <button
                       className="p-2 hover:bg-green-50 rounded-lg text-green-600"
                       onClick={() => {
@@ -396,7 +390,6 @@ export default function DevicesPage() {
                       <Copy className="w-4 h-4" />
                     </button>
                     
-                    {/* Reset API key */}
                     <button
                       className="p-2 hover:bg-purple-50 rounded-lg text-purple-600"
                       onClick={async () => {
@@ -412,19 +405,17 @@ export default function DevicesPage() {
                     >
                       <RefreshCcw className="w-4 h-4" />
                     </button>
-                    
-                    {/* Delete */}
-                    {/* Delete */}
-<button
-  className="p-2 hover:bg-red-50 rounded-lg text-red-600"
-  onClick={() => {
-    setSelectedDevice(device);
-    setIsDeleteModalOpen(true);
-  }}
-  title="Xóa thiết bị"
->
-  <Trash2 className="w-4 h-4" />
-</button>
+                                        
+                    <button
+                      className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                      onClick={() => {
+                        setSelectedDevice(device);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      title="Xóa thiết bị"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
 
                   </div>
                 </div>
@@ -549,24 +540,37 @@ export default function DevicesPage() {
                     </TableCell>
                     
                     <TableCell className="px-6">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          readOnly
-                          value={d.api_key || "Chưa có"}
-                          className="w-44 text-xs bg-gray-50 rounded-lg"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-lg"
-                          onClick={() =>
-                            navigator.clipboard.writeText(d.api_key || "")
-                          }
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {/* Thông báo “Đã copy API Key” */}
+                    {copiedRow === String(d.device_id ?? d.id ?? "") && (
+                      <span className="absolute -top-6 right-0 bg-white px-4 py-2 text-[20px]
+                                      text-green-700 border border-green-300 rounded-md shadow-sm
+                                      font-bold">
+                        Đã copy!
+                      </span>
+                    )}
+
+                <div className="flex items-center gap-2 relative">
+                      <Input
+                    readOnly
+                    value={d.api_key || "Chưa có"}
+                    className="w-44 text-xs bg-gray-50 rounded-lg"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(d.api_key || "");
+                      const rowKey = String(d.device_id ?? d.id ?? "");
+                      setCopiedRow(rowKey);
+                      setTimeout(() => setCopiedRow(null), 1500);
+                    }}
+                    className="p-2 rounded-lg border hover:bg-gray-100 text-gray-700 transition"
+                    title="Copy API Key"
+                    type="button"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+
+                </div>
+              </TableCell>
                     
                     <TableCell className="px-6 space-x-2 text-left">
                       <Button
@@ -596,17 +600,16 @@ export default function DevicesPage() {
                       </Button>
                       
                       <Button
-  size="sm"
-  variant="outline"
-  className="rounded-full text-red-600 border-red-300 hover:bg-red-50"
-  onClick={() => {
-    setSelectedDevice(d);
-    setIsDeleteModalOpen(true);
-  }}
->
-  Xóa
-</Button>
-
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedDevice(d);
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        Xóa
+                      </Button>
                     </TableCell>
                   </motion.tr>
                 ))}
@@ -616,7 +619,7 @@ export default function DevicesPage() {
         </div>
       )}
       
-{/* ================= POPUP ADD DEVICE  ================= */}
+{/* ================= POPUP THÊM THIẾT BỊ  ================= */}
 <Modal
   isOpen={isAddOpen}
   onClose={() => {
@@ -658,12 +661,10 @@ export default function DevicesPage() {
   }
 >
   <div className="space-y-5">
-
-    {/* ==== THÔNG TIN CƠ BẢN ==== */}
     <div>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-5 mb-3">
         <div className="w-1 h-4 bg-red-600 rounded-full"></div>
-        <h3 className="text-sm font-medium text-gray-700 uppercase tracking-wide">THÔNG TIN CƠ BẢN</h3>
+          <b class="pl-3 border-l-4 border-red-600"> &nbsp; THÔNG TIN CƠ BẢN</b>
       </div>
 
       <div className="space-y-3">
@@ -726,11 +727,10 @@ export default function DevicesPage() {
       </div>
     </div>
 
-    {/* ==== ĐỊA CHỈ LẮP ĐẶT ==== */}
     <div>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-5 mb-3">
         <div className="w-1 h-4 bg-red-600 rounded-full"></div>
-        <h3 className="text-sm font-medium text-gray-700 uppercase tracking-wide">ĐỊA CHỈ LẮP ĐẶT</h3>
+          <b class="pl-3 border-l-4 border-red-600"> &nbsp; ĐỊA CHỈ CHI TIẾT</b>
       </div>
 
       <div className="space-y-3">
@@ -742,7 +742,7 @@ export default function DevicesPage() {
             <select
               value={selectedProvince?.code || ""}
               onChange={(e) => handleProvinceChange(e.target.value)}
-              className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
             >
               <option value="">Chọn tỉnh</option>
               {provinces.map((p) => (
@@ -760,7 +760,8 @@ export default function DevicesPage() {
               disabled={!selectedProvince}
               value={selectedDistrict?.code || ""}
               onChange={(e) => handleDistrictChange(e.target.value)}
-              className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg outline-none disabled:opacity-50 disabled:cursor-not-allowed focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
+
             >
               <option value="">Chọn quận</option>
               {districts.map((d) => (
@@ -778,7 +779,8 @@ export default function DevicesPage() {
               disabled={!selectedDistrict}
               value={selectedWard?.code || ""}
               onChange={(e) => handleWardChange(e.target.value)}
-              className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg outline-none disabled:opacity-50 disabled:cursor-not-allowed focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
+
             >
               <option value="">Chọn xã</option>
               {wards.map((w) => (
@@ -789,8 +791,6 @@ export default function DevicesPage() {
             </select>
           </div>
         </div>
-
-        {/* Địa chỉ đầy đủ */}
         {(selectedProvince || selectedDistrict || selectedWard) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -798,14 +798,11 @@ export default function DevicesPage() {
             className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2"
           >
             <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-blue-600 font-medium mb-0.5">Địa chỉ đầy đủ</p>
-              <p className="text-xs text-blue-700 break-words leading-relaxed">
-                {[selectedWard?.name, selectedDistrict?.name, selectedProvince?.name]
+              <p className="text-xs text-blue-600 font-medium mb-0.5">Địa chỉ:&nbsp; 
+                {[selectedWard?.name, selectedDistrict?.name, selectedProvince?.name] 
                   .filter(Boolean)
                   .join(", ")}
               </p>
-            </div>
           </motion.div>
         )}
 
@@ -841,7 +838,7 @@ export default function DevicesPage() {
 
 
       
-{/* ================= POPUP VIEW DEVICE ================= */}
+{/* ================= POPUP XEM THIẾT BỊ ================= */}
 <Modal
   isOpen={isViewOpen}
   onClose={() => setIsViewOpen(false)}
@@ -879,14 +876,35 @@ export default function DevicesPage() {
       </div>
 
       {/* API Key */}
-      <div className="p-4 bg-gray-50 rounded-xl border space-y-2">
-        <p className="text-xs text-gray-500">API Key</p>
-        <input
-          readOnly
-          value={selectedDevice.api_key || "Chưa có"}
-          className="w-full bg-white border px-3 py-2 rounded-lg font-mono text-sm"
-        />
-      </div>
+{/* API Key */}
+<div className="p-4 bg-gray-50 rounded-xl border space-y-2">
+  <p className="text-xs text-gray-500">API Key</p>
+
+  <div className="flex items-center gap-2">
+    <input
+      readOnly
+      value={selectedDevice.api_key || "Chưa có"}
+      className="flex-1 bg-white border px-3 py-2 rounded-lg font-mono text-sm"
+    />
+
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(selectedDevice.api_key || "");
+        setCopied("api");
+        setTimeout(() => setCopied(""), 1500);
+      }}
+      className="p-2 rounded-lg border hover:bg-gray-100 text-gray-700"
+      title="Copy API Key"
+    >
+      <Copy className="w-4 h-4" />
+    </button>
+  </div>
+
+  {copied === "api" && (
+    <p className="text-xs text-green-600"> Đã copy API Key</p>
+  )}
+</div>
+
 
       {/* Upload URL */}
       <div className="p-4 bg-gray-50 rounded-xl border space-y-2">
@@ -898,10 +916,9 @@ export default function DevicesPage() {
         />
       </div>
 
-      {/* Vị trí */}
       {selectedDevice.location && (
         <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-          <p className="text-xs text-green-700">Vị trí lắp đặt</p>
+          <p className="text-xs text-green-700">Địa chỉ chi tiết</p>
           <p className="text-sm text-green-900">{selectedDevice.location}</p>
         </div>
       )}
@@ -918,64 +935,72 @@ export default function DevicesPage() {
   )}
 </Modal>
 
-{/* ================= DELETE DEVICE ================= */}
+{/* ================= XÓA THIẾT BỊ  ================= */}
 <Modal
   isOpen={isDeleteModalOpen}
   onClose={() => setIsDeleteModalOpen(false)}
   title="Xóa thiết bị"
-  size="sm"
+  customWidth="max-w-[380px]"  
+  icon={<Trash2 className="w-5 h-5 text-white" />}
 >
-  <div className="space-y-4 text-center">
+  <div className="space-y-6">
 
-    <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center">
+    {/* Icon */}
+    <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center shadow-sm">
       <Trash2 className="w-8 h-8 text-red-600" />
     </div>
 
-    <p className="text-gray-700">
-      Bạn có chắc muốn xóa thiết bị:
-    </p>
+    {/* Text */}
+    <div className="text-center space-y-2 px-4">
+      <p className="text-gray-700 text-[15px]">
+        Bạn có chắc chắn muốn xóa thiết bị:
+      </p>
 
-    <p className="font-semibold text-gray-900">
-      {selectedDevice?.name}
-    </p>
+      <p className="font-semibold text-gray-900 text-lg">
+        {selectedDevice?.name}
+      </p>
 
-    <p className="text-sm text-gray-500">
-      Hành động này không thể hoàn tác.
-    </p>
+      <p className="text-sm text-gray-500">
+        Hành động này <b className="text-red-600">không thể hoàn tác</b>.
+      </p>
+    </div>
 
-    <div className="flex justify-end gap-3 mt-4">
+    {/* Buttons */}
+    <div className="flex justify-end gap-3 pt-2 px-4">
       <button
         onClick={() => setIsDeleteModalOpen(false)}
-        className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition"
+        className="px-5 py-2 rounded-xl border border-gray-300 text-gray-700 
+                   hover:bg-gray-100 transition-all shadow-sm"
       >
         Hủy
       </button>
 
-<button
-  onClick={async () => {
-    try {
-      await axios.delete(
-        `http://localhost:5000/api/devices/${selectedDevice.device_id}`
-      );
+      <button
+        onClick={async () => {
+          try {
+            await axios.delete(
+              `http://localhost:5000/api/devices/${selectedDevice.device_id}`
+            );
 
-      alert(`Đã xóa thiết bị: ${selectedDevice.name}`);
-
-      setIsDeleteModalOpen(false);
-      setSelectedDevice(null);
-      fetchDevices();
-    } catch (err) {
-      console.error(err);
-      alert("❌ Xóa thất bại, vui lòng thử lại!");
-    }
-  }}
-  className="px-5 py-2 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition"
->
-  Xóa
-</button>
-
+            alert(`Đã xóa thiết bị: ${selectedDevice.name}`);
+            setIsDeleteModalOpen(false);
+            setSelectedDevice(null);
+            fetchDevices();
+          } catch (err) {
+            console.error(err);
+            alert("❌ Xóa thất bại, vui lòng thử lại!");
+          }
+        }}
+        className="px-5 py-2 bg-gradient-to-r from-red-700 to-red-600 
+                   text-white rounded-xl shadow-md hover:shadow-xl 
+                   transition-all"
+      >
+        Xóa
+      </button>
     </div>
   </div>
 </Modal>
+
 
 
     </div>

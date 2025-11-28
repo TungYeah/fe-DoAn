@@ -86,7 +86,7 @@ export function Modal({
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border-2 border-red-100 dark:border-red-900/30">
                 {/* Header */}
-                <div className="relative bg-gradient-to-r from-red-700 to-red-600 px-6 py-5">
+                <div className="relative bg-gradient-to-r from-red-700 to-red-600 px-6 py-3">
                   <div className="flex items-center gap-4">
                     {icon && (
                       <motion.div
@@ -103,7 +103,7 @@ export function Modal({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-white"
+                        className="text-white text-lg mt-0.5 font-black"
                       >
                         {title}
                       </motion.h2>
@@ -112,7 +112,7 @@ export function Modal({
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.15 }}
-                          className="text-sm text-white/90 mt-1"
+                          className="text-white text-sm mt-0.5 font-semibold"
                         >
                           {subtitle}
                         </motion.p>
@@ -139,7 +139,7 @@ export function Modal({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="px-6 py-6 max-h-[calc(100vh-250px)] overflow-y-auto"
+                  className="px-6 py-4 max-h-[calc(100vh-250px)] overflow-y-auto"
                 >
                   {children}
                 </motion.div>
