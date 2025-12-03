@@ -13,6 +13,7 @@ export default function ProfilePage() {
     unitDescription: "",
     roles: [],
     createdAt: "",
+    avatar: "",
   });
 
   useEffect(() => {
@@ -37,7 +38,8 @@ export default function ProfilePage() {
           unit: data.unit,
           unitDescription: data.unitDescription,
           roles: data.roles,
-          createdAt: new Date(data.createdAt).toLocaleDateString("vi-VN"), 
+          createdAt: new Date(data.createdAt).toLocaleDateString("vi-VN"),
+          avatar: data.avatar, // ⬅ lấy avatar từ backend
         });
 
       } catch (error) {
@@ -81,6 +83,8 @@ export default function ProfilePage() {
             <div className="w-32 h-32 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white text-4xl">
               {formData.fullName.charAt(0).toUpperCase()}
             </div>
+
+            {/* Camera icon khi edit */}
             {isEditing && (
               <button className="absolute bottom-0 right-0 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-700 transition-colors">
                 <Camera className="w-5 h-5" />
@@ -119,9 +123,10 @@ export default function ProfilePage() {
           <h3 className="text-xl text-gray-900 mb-6">Thông tin cá nhân</h3>
 
           <div className="space-y-6">
-            {/* id */}
+
+            {/* ID */}
             <div>
-              <label className="block text-gray-700 mb-2">ID người dùng: </label>
+              <label className="block text-gray-700 mb-2">ID người dùng</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input

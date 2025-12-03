@@ -26,7 +26,6 @@ type DashboardLayoutProps = {
   children?: React.ReactNode;
 };
 
-
 export default function DashboardLayout({
   currentPage,
   onNavigate,
@@ -39,6 +38,7 @@ export default function DashboardLayout({
   const [userInfo, setUserInfo] = useState({
     fullName: "",
     email: "",
+    avatar: "",
   });
 
   useEffect(() => {
@@ -46,23 +46,29 @@ export default function DashboardLayout({
     if (!token) return;
 
     fetch("http://localhost:8080/api/v1/auth/current", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => {
+      .then((u) => {
         setUserInfo({
-          fullName: data.fullName,
-          email: data.email,
+          fullName: u.fullName || "",
+          email: u.email || "",
+          avatar: u.avatar || "", // path dạng "/uploads/avatars/img.png"
         });
-
-        // Lưu localStorage nếu muốn dùng ở nơi khác
-        localStorage.setItem("fullName", data.fullName);
-        localStorage.setItem("email", data.email);
-      })
-      .catch((err) => console.error("Get current user error:", err));
+      });
   }, []);
+
+  const displayName =
+    userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
+
+  const avatarUI = userInfo.avatar ? (
+    <img
+      src={`http://localhost:8080${userInfo.avatar}`}
+      className="w-8 h-8 rounded-full object-cover"
+    />
+  ) : (
+    userInfo.fullName?.charAt(0) ?? "U"
+  );
 
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -79,24 +85,24 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Header */}
+      {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
         <div className="h-full px-4 flex items-center justify-between">
           {/* Left */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg"
             >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {sidebarOpen ? <X /> : <Menu />}
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-600 rounded-lg flex items-center justify-center">
-                <div className="text-white text-sm font-black tracking-wide">PTIT</div>
+              <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white font-black">
+                PTIT
               </div>
               <div className="hidden md:block">
-                <h1 className="bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+                <h1 className="text-transparent bg-gradient-to-r from-red-700 to-red-600 bg-clip-text">
                   PTIT IoT Platform
                 </h1>
               </div>
@@ -105,43 +111,27 @@ export default function DashboardLayout({
 
           {/* Right */}
           <div className="flex items-center gap-4">
-            {/* Chat Icon */}
-            <button
-              onClick={() => onNavigate("chat")}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={() => onNavigate("chat")}>
               <MessageCircle className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-green-600 rounded-full" />
             </button>
 
-            {/* Notifications */}
-            <button
-              onClick={() => onNavigate("notifications")}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={() => onNavigate("notifications")}>
               <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full" />
             </button>
 
-            {/* User Menu */}
+            {/* User */}
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg"
               >
-                {/* Avatar — chữ cái đầu */}
-                <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center font-bold text-white">
-                  {userInfo.fullName ? userInfo.fullName.charAt(0).toUpperCase() : "U"}
+                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center">
+                  {avatarUI}
                 </div>
 
-                {/* Name + Email */}
                 <div className="hidden md:block text-left">
-                  <p className="text-sm text-gray-900">
-                    {userInfo.fullName || "Đang tải..."}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {userInfo.email || ""}
-                  </p>
+                  <p className="text-sm">{displayName}</p>
+                  <p className="text-xs text-gray-600">{userInfo.email}</p>
                 </div>
 
                 <ChevronDown className="w-4 h-4 text-gray-600" />
@@ -152,17 +142,17 @@ export default function DashboardLayout({
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2"
+                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border p-2"
                 >
                   <button
                     onClick={() => {
                       onNavigate("profile");
                       setUserMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex gap-3"
                   >
-                    <UserIcon className="w-4 h-4 text-gray-600" />
-                    <span className="text-gray-700">Hồ sơ cá nhân</span>
+                    <UserIcon className="w-4 h-4" />
+                    Hồ sơ cá nhân
                   </button>
 
                   <button
@@ -170,20 +160,20 @@ export default function DashboardLayout({
                       onNavigate("settings");
                       setUserMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex gap-3"
                   >
-                    <Settings className="w-4 h-4 text-gray-600" />
-                    <span className="text-gray-700">Cài đặt</span>
+                    <Settings className="w-4 h-4" />
+                    Cài đặt
                   </button>
 
                   <hr className="my-2" />
 
                   <button
                     onClick={onLogout}
-                    className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-3 text-red-600"
+                    className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex gap-3"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Đăng xuất</span>
+                    Đăng xuất
                   </button>
                 </motion.div>
               )}
@@ -194,39 +184,33 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
+        className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${
           sidebarOpen ? "w-64" : "w-0"
         } overflow-hidden`}
       >
         <nav className="p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
-
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive
-                    ? "bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg"
-                    : "text-gray-700 hover:bg-red-50 hover:text-red-600"
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
+                  currentPage === item.id
+                    ? "bg-red-600 text-white shadow"
+                    : "hover:bg-gray-100"
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="whitespace-nowrap">{item.label}</span>
+                {item.label}
               </button>
             );
           })}
         </nav>
       </aside>
 
-      {/* Main Content */}
-      <main
-        className={`pt-16 transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : "ml-0"
-        }`}
-      >
+      {/* Content */}
+      <main className={`pt-16 ${sidebarOpen ? "ml-64" : "ml-0"}`}>
         <div className="p-6">{children}</div>
       </main>
     </div>

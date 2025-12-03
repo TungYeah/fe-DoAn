@@ -1,8 +1,17 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+
 import LandingPage from "./components/LandingPage";
 import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
+import ActivationResultPage from "./components/pages/ActivationResultPage";
+
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./components/pages/DashboardPage";
 import UsersPage from "./components/pages/UsersPage";
@@ -17,119 +26,95 @@ import SettingsPage from "./components/pages/SettingsPage";
 import NotificationsPage from "./components/pages/NotificationsPage";
 import ChatPage from "./components/ChatPage";
 
-type View = "landing" | "login" | "register" | "dashboard";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 
 export default function App() {
-  // Load trạng thái từ localStorage
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem("isLoggedIn") === "true";
-  });
-
-  const [currentView, setCurrentView] = useState<View>(() => {
-    return (localStorage.getItem("currentView") as View) || "landing";
-  });
-
-  const [currentPage, setCurrentPage] = useState(() => {
-    return localStorage.getItem("currentPage") || "dashboard";
-  });
-
-  // Mỗi khi state thay đổi → lưu vào localStorage
-  useEffect(() => {
-    localStorage.setItem("isLoggedIn", String(isLoggedIn));
-    localStorage.setItem("currentView", currentView);
-    localStorage.setItem("currentPage", currentPage);
-  }, [isLoggedIn, currentView, currentPage]);
-
-  const handleNavigate = (view: string) => {
-    // Nếu chưa login → chỉ được vào landing/login/register
-    if (!isLoggedIn) {
-      if (view === "landing" || view === "login" || view === "register") {
-        setCurrentView(view);
-        return;
-      }
-      return;
-    }
-
-    // Nếu đã login → điều hướng dashboard
-    setCurrentPage(view);
-  };
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentView("dashboard");
-    setCurrentPage("dashboard");
-  };
-
-  const handleRegister = () => {
-    setIsLoggedIn(true);
-    setCurrentView("dashboard");
-    setCurrentPage("dashboard");
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentView("landing");
-    setCurrentPage("dashboard");
-    localStorage.clear(); // Xóa token + trạng thái
-  };
-
-  const renderPageContent = () => {
-    switch (currentPage) {
-      case "dashboard":
-        return <DashboardPage />;
-      case "users":
-        return <UsersPage />;
-      case "devices":
-        return <DevicesPage />;
-      case "import-device":
-        return <ImportDevicePage />;
-      case "import-data":
-        return <ImportDataPage />;
-      case "query":
-        return <QueryPage />;
-      case "revenue":
-        return <RevenuePage />;
-      case "charts":
-        return <ChartsPage />;
-      case "profile":
-        return <ProfilePage />;
-      case "settings":
-        return <SettingsPage />;
-      case "notifications":
-        return <NotificationsPage />;
-      case "chat":
-        return <ChatPage />;
-      default:
-        return <DashboardPage />;
-    }
-  };
-
   return (
-    <div className="size-full">
-      {!isLoggedIn ? (
-        <>
-          {currentView === "landing" && (
-            <LandingPage onNavigate={handleNavigate} />
-          )}
-          {currentView === "login" && (
-            <LoginPage onNavigate={handleNavigate} onLogin={handleLogin} />
-          )}
-          {currentView === "register" && (
-            <RegisterPage
-              onNavigate={handleNavigate}
-              onRegister={handleRegister}
-            />
-          )}
-        </>
-      ) : (
-        <DashboardLayout
-          currentPage={currentPage}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        >
-          {renderPageContent()}
-        </DashboardLayout>
-      )}
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPageWrapper />} />
+        <Route path="/login" element={<LoginPageWrapper />} />
+        <Route path="/register" element={<RegisterPageWrapper />} />
+        <Route path="/activation-result" element={<ActivationResultPage />} />
+
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <DashboardRoutes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+/* WRAPPERS */
+
+function LandingPageWrapper() {
+  const navigate = useNavigate();
+  return <LandingPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
+function LoginPageWrapper() {
+  const navigate = useNavigate();
+  return (
+    <LoginPage
+      onNavigate={(v) => navigate("/" + v)}
+      onLogin={() => navigate("/dashboard")}
+    />
+  );
+}
+
+function RegisterPageWrapper() {
+  const navigate = useNavigate();
+  return (
+    <RegisterPage
+      onNavigate={(v) => navigate("/" + v)}
+      onRegister={() => navigate("/activation-result")}
+    />
+  );
+}
+
+/* DASHBOARD ROUTES */
+
+function DashboardRoutes() {
+  const navigate = useNavigate();
+  const current = location.pathname.replace("/dashboard/", "") || "dashboard";
+  return (
+    <DashboardLayout
+      currentPage={current}
+      onNavigate={(page) => navigate(`/dashboard/${page}`)}
+      onLogout={() => {
+        localStorage.clear();
+        navigate("/login");
+      }}
+    >
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="devices" element={<DevicesPage />} />
+        <Route path="import-device" element={<ImportDevicePage />} />
+        <Route path="import-data" element={<ImportDataPage />} />
+        <Route path="query" element={<QueryPage />} />
+        <Route path="revenue" element={<RevenuePage />} />
+        <Route path="charts" element={<ChartsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="chat" element={<ChatPage />} />
+        <Route path="*" element={<Navigate to="/dashboard/dashboard" replace />} />
+      </Routes>
+    </DashboardLayout>
   );
 }
