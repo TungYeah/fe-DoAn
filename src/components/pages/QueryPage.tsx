@@ -399,18 +399,19 @@ console.log(">>> USER ID:", currentUser?.id);
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+<motion.div
+  initial={{ opacity: 0, y: -15 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="flex items-center justify-between"
+>         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Truy vấn dữ liệu</h1>
-          <p className="text-xs text-gray-400">
-  User ID hiện tại: <b>{String(currentUser?.id || "Không có")}</b>
-</p>
 
           <p className="text-gray-600">
             Tìm kiếm và lọc dữ liệu từ thiết bị IoT, xuất CSV và xem lịch sử tải xuống.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* ================= BỘ LỌC TRUY VẤN ================= */}
       <motion.div

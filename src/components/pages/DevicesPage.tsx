@@ -233,8 +233,12 @@ export default function DevicesPage() {
   return (
     <div className="space-y-8">
       {/* TITLE */}
-      <div className="flex items-center justify-between">
-        <div>
+<motion.div
+  initial={{ opacity: 0, y: -15 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="flex items-center justify-between"
+>        <div>
           <h1 className="text-3xl text-gray-900 mb-2">Quản lý thiết bị IoT</h1>
           <p className="text-gray-600">Theo dõi và quản lý tất cả thiết bị</p>
         </div>
@@ -250,7 +254,7 @@ export default function DevicesPage() {
             Thêm thiết bị
           </motion.button>
         </div>
-      </div>
+      </motion.div>
       
       {/* TAB SWITCHER */}
       <div className="w-full flex">

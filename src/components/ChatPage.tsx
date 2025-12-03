@@ -1,246 +1,227 @@
 import React, { useState } from "react";
-import { motion } from "motion/react";
-import { Send, Search, MoreVertical, Phone, Video, Paperclip, Smile, User, Circle } from "lucide-react";
+import { ThumbsUp } from "lucide-react";
 
-type Message = {
+type Comment = {
   id: number;
-  senderId: number;
+  userId: number;
+  userName: string;
+  userAvatar: string;
   text: string;
   time: string;
-  isMine: boolean;
+  likes: number;
+  liked: boolean;
+  parentId: number | null;
 };
 
-type Contact = {
-  id: number;
-  name: string;
-  avatar: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  online: boolean;
-};
-
-const contacts: Contact[] = [
-  { id: 1, name: "Nguyễn Văn An", avatar: "A", lastMessage: "Thiết bị đã hoạt động lại", time: "5 phút", unread: 2, online: true },
-  { id: 2, name: "Trần Thị Bình", avatar: "B", lastMessage: "Cảm ơn bạn đã hỗ trợ!", time: "10 phút", unread: 0, online: true },
-  { id: 3, name: "Lê Minh Cường", avatar: "C", lastMessage: "Tôi cần help về API", time: "1 giờ", unread: 1, online: false },
-  { id: 4, name: "Phạm Thu Hà", avatar: "H", lastMessage: "Ok, tôi sẽ kiểm tra", time: "2 giờ", unread: 0, online: true },
-  { id: 5, name: "Hoàng Văn Đức", avatar: "D", lastMessage: "Đã import xong dữ liệu", time: "1 ngày", unread: 0, online: false },
-];
-
-const initialMessages: Message[] = [
-  { id: 1, senderId: 1, text: "Chào bạn, tôi có vấn đề với cảm biến nhiệt độ", time: "10:30", isMine: false },
-  { id: 2, senderId: 0, text: "Chào bạn! Bạn gặp vấn đề gì vậy?", time: "10:31", isMine: true },
-  { id: 3, senderId: 1, text: "Cảm biến không gửi dữ liệu lên server", time: "10:32", isMine: false },
-  { id: 4, senderId: 0, text: "Để tôi kiểm tra. Bạn đợi chút nhé", time: "10:33", isMine: true },
-  { id: 5, senderId: 0, text: "Tôi đã reset lại kết nối. Bạn thử kiểm tra xem", time: "10:35", isMine: true },
-  { id: 6, senderId: 1, text: "Thiết bị đã hoạt động lại. Cảm ơn bạn!", time: "10:36", isMine: false },
+const initialComments: Comment[] = [
+  { id: 1, userId: 1, userName: "Nguyễn Văn An", userAvatar: "A", text: "Mọi người ơi hệ thống IoT chạy ổn chưa?", time: "09:15", likes: 5, liked: false, parentId: null },
+  { id: 2, userId: 2, userName: "Trần Thị Bình", userAvatar: "B", text: "@Nguyễn Văn An Tôi test thấy OK rồi!", time: "09:20", likes: 2, liked: false, parentId: 1 },
+  { id: 3, userId: 3, userName: "Yến", userAvatar: "Y", text: "@Nguyễn Văn An Bạn oke", time: "14:35", likes: 1, liked: false, parentId: 1 },
+  { id: 4, userId: 4, userName: "Phúc", userAvatar: "P", text: "@Nguyễn Văn An T đang kiểm tra lại lần nữa", time: "14:40", likes: 0, liked: false, parentId: 1 },
+  { id: 5, userId: 5, userName: "Lê Minh Cường", userAvatar: "C", text: "API sensor có ai nhận dữ liệu bất thường không?", time: "10:01", likes: 0, liked: false, parentId: null },
+  { id: 6, userId: 6, userName: "Khoa", userAvatar: "K", text: "@Lê Minh Cường Server bên mình vẫn ổn", time: "10:05", likes: 1, liked: false, parentId: 5 },
 ];
 
 export default function ChatPage() {
-  const [selectedContact, setSelectedContact] = useState(contacts[0]);
-  const [messages, setMessages] = useState(initialMessages);
-  const [newMessage, setNewMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [comments, setComments] = useState<Comment[]>(initialComments);
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [expanded, setExpanded] = useState<number[]>([]); // id các comment cha đang được mở rộng
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const message: Message = {
-        id: messages.length + 1,
-        senderId: 0,
-        text: newMessage,
-        time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-        isMine: true,
-      };
-      setMessages([...messages, message]);
-      setNewMessage("");
+  const parentComments = comments.filter((c) => c.parentId === null);
+  const repliesOf = (id: number) => comments.filter((c) => c.parentId === id);
+
+  const toggleExpand = (id: number) => {
+    if (expanded.includes(id)) {
+      setExpanded(expanded.filter((x) => x !== id));
+    } else {
+      setExpanded([...expanded, id]);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+  const handleAddReply = (parentId: number) => {
+    if (!replyText.trim()) return;
+
+    const parentComment = comments.find((c) => c.id === parentId);
+
+    const reply: Comment = {
+      id: Date.now(),
+      userId: 999,
+      userName: "Admin User",
+      userAvatar: "A",
+      text: `@${parentComment?.userName} ${replyText}`,
+      time: "Vừa xong",
+      likes: 0,
+      liked: false,
+      parentId,
+    };
+
+    setComments([...comments, reply]);
+    setReplyTo(null);
+    setReplyText("");
+    if (!expanded.includes(parentId)) setExpanded([...expanded, parentId]);
   };
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleLike = (id: number) =>
+    setComments(
+      comments.map((c) =>
+        c.id === id
+          ? { ...c, liked: !c.liked, likes: c.liked ? c.likes - 1 : c.likes + 1 }
+          : c
+      )
+    );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl text-gray-900 mb-2">Chat</h1>
-        <p className="text-gray-600">Nhắn tin với người dùng và đồng nghiệp</p>
+    <div className="bg-white rounded-2xl p-8 border border-gray-200 max-w-4xl mx-auto">
+
+      <h2 className="text-2xl font-semibold mb-2">Bình luận</h2>
+      <p className="text-gray-500 mb-6">Thảo luận – hỏi đáp – chia sẻ với mọi người</p>
+
+      {/* LIST COMMENT CHA */}
+      <div className="space-y-6">
+        {parentComments.map((pc) => {
+          const replies = repliesOf(pc.id);
+          const isExpanded = expanded.includes(pc.id);
+
+          return (
+            <div key={pc.id}>
+
+              {/* Comment cha */}
+              <CommentItem
+                comment={pc}
+                isReply={false}
+                onReply={() => setReplyTo(pc.id)}
+                onLike={() => toggleLike(pc.id)}
+              />
+
+              {/* Comment con */}
+              <div className="ml-14 mt-3 space-y-3">
+                {(isExpanded ? replies : replies.slice(0, 1)).map((r) => (
+                  <CommentItem
+                    key={r.id}
+                    comment={r}
+                    isReply={true}
+                    onReply={() => setReplyTo(r.id)}
+                    onLike={() => toggleLike(r.id)}
+                  />
+                ))}
+
+                {/* Xem thêm / Thu gọn */}
+                {replies.length > 1 && (
+                  <button
+                    onClick={() => toggleExpand(pc.id)}
+                    className="text-blue-600 text-sm hover:underline"
+                  >
+                    {isExpanded
+                      ? "Thu gọn phản hồi"
+                      : `Xem thêm ${replies.length - 1} phản hồi`}
+                  </button>
+                )}
+
+                {/* Reply box */}
+                {replyTo === pc.id && (
+                  <ReplyBox
+                    replyText={replyText}
+                    setReplyText={setReplyText}
+                    onCancel={() => setReplyTo(null)}
+                    onSend={() => handleAddReply(pc.id)}
+                  />
+                )}
+
+                {/* Reply cho reply */}
+                {replies.map((r) =>
+                  replyTo === r.id ? (
+                    <ReplyBox
+                      key={"replybox-" + r.id}
+                      replyText={replyText}
+                      setReplyText={setReplyText}
+                      onCancel={() => setReplyTo(null)}
+                      onSend={() => handleAddReply(r.id)}
+                    />
+                  ) : null
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CommentItem({
+  comment,
+  isReply,
+  onReply,
+  onLike,
+}: {
+  comment: Comment;
+  isReply: boolean;
+  onReply: () => void;
+  onLike: () => void;
+}) {
+  return (
+    <div className={`flex gap-3 ${isReply ? "ml-2" : ""}`}>
+      <div
+        className={`rounded-full flex items-center justify-center font-bold text-white ${isReply ? "w-8 h-8 bg-gray-500" : "w-10 h-10 bg-red-600"
+          }`}
+      >
+        {comment.userAvatar}
       </div>
 
-      {/* Chat Container */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden" style={{ height: "calc(100vh - 250px)" }}>
-        <div className="grid grid-cols-12 h-full">
-          {/* Contacts Sidebar */}
-          <div className="col-span-12 md:col-span-4 border-r border-gray-200 flex flex-col">
-            {/* Search */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Contacts List */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredContacts.map((contact) => (
-                <motion.button
-                  key={contact.id}
-                  whileHover={{ backgroundColor: "#fef2f2" }}
-                  onClick={() => setSelectedContact(contact)}
-                  className={`w-full p-4 border-b border-gray-200 text-left transition-colors ${
-                    selectedContact.id === contact.id ? "bg-red-50" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white">
-                        {contact.avatar}
-                      </div>
-                      {contact.online && (
-                        <Circle className="absolute bottom-0 right-0 w-3 h-3 fill-green-500 text-green-500 border-2 border-white rounded-full" />
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-gray-900 truncate">{contact.name}</h4>
-                        <span className="text-xs text-gray-500">{contact.time}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600 truncate">{contact.lastMessage}</p>
-                        {contact.unread > 0 && (
-                          <span className="ml-2 px-2 py-0.5 bg-red-600 text-white text-xs rounded-full">
-                            {contact.unread}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat Area */}
-          <div className="col-span-12 md:col-span-8 flex flex-col">
-            {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white">
-                    {selectedContact.avatar}
-                  </div>
-                  {selectedContact.online && (
-                    <Circle className="absolute bottom-0 right-0 w-2.5 h-2.5 fill-green-500 text-green-500 border-2 border-white rounded-full" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-gray-900">{selectedContact.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {selectedContact.online ? "Đang hoạt động" : "Offline"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Phone className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Video className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${message.isMine ? "justify-end" : "justify-start"}`}
-                >
-                  <div className={`flex items-end gap-2 max-w-[70%] ${message.isMine ? "flex-row-reverse" : ""}`}>
-                    {!message.isMine && (
-                      <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">
-                        {selectedContact.avatar}
-                      </div>
-                    )}
-                    <div>
-                      <div
-                        className={`px-4 py-2 rounded-2xl ${
-                          message.isMine
-                            ? "bg-gradient-to-r from-red-700 to-red-600 text-white"
-                            : "bg-gray-100 text-gray-900"
-                        }`}
-                      >
-                        <p>{message.text}</p>
-                      </div>
-                      <p className={`text-xs text-gray-500 mt-1 ${message.isMine ? "text-right" : "text-left"}`}>
-                        {message.time}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Message Input */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-end gap-3">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Paperclip className="w-5 h-5 text-gray-600" />
-                </button>
-                <div className="flex-1 relative">
-                  <textarea
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Nhập tin nhắn..."
-                    rows={1}
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors resize-none"
-                    style={{ minHeight: "48px", maxHeight: "120px" }}
-                  />
-                  <button className="absolute right-3 bottom-3 p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Smile className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-5 h-5" />
-                  Gửi
-                </motion.button>
-              </div>
-            </div>
-          </div>
+      <div className="flex-1">
+        <div className="bg-gray-100 px-4 py-2 rounded-xl inline-block">
+          <p className="font-semibold">{comment.userName}</p>
+          <p>{comment.text}</p>
         </div>
+
+        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1 ml-2">
+          <span>{comment.time}</span>
+
+          <button onClick={onReply} className="hover:underline">
+            Trả lời
+          </button>
+
+          <button onClick={onLike} className={`flex items-center gap-1`}>
+            <ThumbsUp
+              size={14}
+              className={comment.liked ? "text-blue-600" : "text-gray-600"}
+            />
+            {comment.likes > 0 && <span>{comment.likes}</span>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReplyBox({
+  replyText,
+  setReplyText,
+  onCancel,
+  onSend,
+}: {
+  replyText: string;
+  setReplyText: (value: string) => void;
+  onCancel: () => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="ml-4 mt-2">
+      <textarea
+        rows={1}
+        className="w-full border rounded-xl px-3 py-2"
+        placeholder="Viết phản hồi..."
+        value={replyText}
+        onChange={(e) => setReplyText(e.target.value)}
+      />
+      <div className="flex gap-2 mt-1">
+        <button onClick={onSend} className="px-4 py-1 bg-blue-600 text-white rounded-lg">
+          Gửi
+        </button>
+        <button onClick={onCancel} className="px-4 py-1 bg-gray-200 rounded-lg">
+          Hủy
+        </button>
       </div>
     </div>
   );
