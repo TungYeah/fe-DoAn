@@ -34,7 +34,7 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: formData.name,
+          fullName: formData.fullName,
           email: formData.email,
           password: formData.password,
           unit: formData.organization

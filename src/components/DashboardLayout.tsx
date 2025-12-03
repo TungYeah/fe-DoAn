@@ -37,7 +37,7 @@ export default function DashboardLayout({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const [userInfo, setUserInfo] = useState({
-    username: "",
+    fullName: "",
     email: "",
   });
 
@@ -53,12 +53,12 @@ export default function DashboardLayout({
       .then((res) => res.json())
       .then((data) => {
         setUserInfo({
-          username: data.username,
+          fullName: data.fullName,
           email: data.email,
         });
 
         // Lưu localStorage nếu muốn dùng ở nơi khác
-        localStorage.setItem("username", data.username);
+        localStorage.setItem("fullName", data.fullName);
         localStorage.setItem("email", data.email);
       })
       .catch((err) => console.error("Get current user error:", err));
@@ -131,13 +131,13 @@ export default function DashboardLayout({
               >
                 {/* Avatar — chữ cái đầu */}
                 <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center font-bold text-white">
-                  {userInfo.username ? userInfo.username.charAt(0).toUpperCase() : "U"}
+                  {userInfo.fullName ? userInfo.fullName.charAt(0).toUpperCase() : "U"}
                 </div>
 
                 {/* Name + Email */}
                 <div className="hidden md:block text-left">
                   <p className="text-sm text-gray-900">
-                    {userInfo.username || "Đang tải..."}
+                    {userInfo.fullName || "Đang tải..."}
                   </p>
                   <p className="text-xs text-gray-500">
                     {userInfo.email || ""}

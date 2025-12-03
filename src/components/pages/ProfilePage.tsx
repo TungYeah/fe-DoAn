@@ -7,7 +7,7 @@ export default function ProfilePage() {
 
   const [formData, setFormData] = useState({
     id:"",
-    username: "",
+    fullName: "",
     email: "",
     unit: "",
     unitDescription: "",
@@ -32,7 +32,7 @@ export default function ProfilePage() {
 
         setFormData({
           id: data.id,
-          username: data.username,
+          fullName: data.fullName,
           email: data.email,
           unit: data.unit,
           unitDescription: data.unitDescription,
@@ -79,7 +79,7 @@ export default function ProfilePage() {
         >
           <div className="relative inline-block mb-6">
             <div className="w-32 h-32 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white text-4xl">
-              {formData.username.charAt(0).toUpperCase()}
+              {formData.fullName.charAt(0).toUpperCase()}
             </div>
             {isEditing && (
               <button className="absolute bottom-0 right-0 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-700 transition-colors">
@@ -88,7 +88,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <h2 className="text-2xl text-gray-900 mb-2">{formData.username}</h2>
+          <h2 className="text-2xl text-gray-900 mb-2">{formData.fullName}</h2>
           <p className="text-gray-600 mb-4">{formData.email}</p>
 
           <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-6">
@@ -132,14 +132,14 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            {/* Username */}
+            {/* fullName */}
             <div>
               <label className="block text-gray-700 mb-2">Tên tài khoản</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  value={formData.username}
+                  value={formData.fullName}
                   disabled
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl disabled:bg-gray-50"
                 />

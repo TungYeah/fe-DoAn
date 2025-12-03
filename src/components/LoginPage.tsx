@@ -38,7 +38,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       });
 
       const user = await userRes.json();
-      localStorage.setItem("username", user.username);
+      localStorage.setItem("fullName", user.fullName);
       localStorage.setItem("email", user.email);
 
       setLoginError("");

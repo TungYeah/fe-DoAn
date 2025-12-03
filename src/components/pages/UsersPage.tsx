@@ -1,25 +1,159 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Search, Plus, Edit, Trash2, Filter, MoreVertical, UserCheck, UserX, Download } from "lucide-react";
 
-const usersData = [
-  { id: 1, name: "Nguyễn Văn An", email: "an.nguyen@ptit.edu.vn", role: "Admin", status: "active", devices: 12, joinDate: "15/01/2024" },
-  { id: 2, name: "Trần Thị Bình", email: "binh.tran@ptit.edu.vn", role: "User", status: "active", devices: 8, joinDate: "20/01/2024" },
-  { id: 3, name: "Lê Minh Cường", email: "cuong.le@ptit.edu.vn", role: "User", status: "inactive", devices: 5, joinDate: "25/01/2024" },
-  { id: 4, name: "Phạm Thu Hà", email: "ha.pham@ptit.edu.vn", role: "Manager", status: "active", devices: 15, joinDate: "01/02/2024" },
-  { id: 5, name: "Hoàng Văn Đức", email: "duc.hoang@ptit.edu.vn", role: "User", status: "active", devices: 6, joinDate: "05/02/2024" },
-];
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Filter,
+  MoreVertical,
+  UserCheck,
+  UserX,
+  Download,
+} from "lucide-react";
+
+type UserItem = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: "active" | "inactive";
+  devices: number;
+  joinDate: string;
+};
+
+
+type UserStats = {
+  totalUsers: number;
+  activeUsers: number;
+  onlineUsers: number;
+  newUsersToday: number;
+};
+
+const API_BASE_URL = "http://localhost:8080"; // chỉnh nếu BE dùng port khác
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<UserItem[]>([]);
+const [loadingUsers, setLoadingUsers] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
 
-  const filteredUsers = usersData.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === "all" || user.role.toLowerCase() === selectedRole.toLowerCase();
-    return matchesSearch && matchesRole;
-  });
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return; // chưa login thì thôi
+
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/admin/users?page=0&size=10`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error("Fetch /api/v1/admin/users failed:", res.status);
+          throw new Error("Failed to fetch users");
+        }
+
+        const data = await res.json();
+        console.log("Users page:", data);
+
+        const mapped: UserItem[] = (data.content || []).map((u: any) => ({
+          id: u.id,
+          name: u.fullName ?? u.username ?? "No name",
+          email: u.email,
+          role:
+            (u.roles && u.roles[0]) ||
+            u.mainRole ||
+            "User",
+          status: u.locked || u.disabled ? "inactive" : "active",
+          devices: u.devicesCount ?? 0,
+          joinDate: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString("vi-VN")
+            : "",
+        }));
+
+        setUsers(mapped);
+      } catch (err) {
+        console.error("Error loading users", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []); // ⬅ không còn [token] nữa
+
+
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoadingStats(true);
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/admin/users/statistics`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error(
+            "Fetch /api/v1/admin/users/statistics failed:",
+            res.status
+          );
+          throw new Error("Failed to fetch stats");
+        }
+
+        const data: UserStats = await res.json();
+        console.log("User statistics:", data);
+        setStats(data);
+      } catch (error) {
+        console.error("Error loading stats", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []); // gọi 1 lần khi load trang
+
+
+  const totalUsers = stats?.totalUsers ?? 0;
+  const activeUsers = stats?.activeUsers ?? 0;
+  // tạm tính inactive = tổng - active
+  const inactiveUsers = stats ? stats.totalUsers - stats.activeUsers : 0;
+  const newUsersToday = stats?.newUsersToday ?? 0;
+
+const filteredUsers = users.filter((user) => {
+  const matchesSearch =
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesRole =
+    selectedRole === "all" ||
+    user.role.toLowerCase() === selectedRole.toLowerCase();
+
+  return matchesSearch && matchesRole;
+});
+
 
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     alert(`Đang xuất danh sách user dạng ${format.toUpperCase()}...`);
@@ -31,7 +165,9 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Quản lý User</h1>
-          <p className="text-gray-600">Quản lý người dùng và phân quyền trong hệ thống</p>
+          <p className="text-gray-600">
+            Quản lý người dùng và phân quyền trong hệ thống
+          </p>
         </div>
         <div className="flex gap-3">
           <motion.button
@@ -58,19 +194,27 @@ export default function UsersPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Tổng User</p>
-          <p className="text-2xl text-gray-900">1,429</p>
+          <p className="text-2xl text-gray-900">
+            {loadingStats ? "…" : totalUsers.toLocaleString("vi-VN")}
+          </p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Đang hoạt động</p>
-          <p className="text-2xl text-green-600">1,247</p>
+          <p className="text-2xl text-green-600">
+            {loadingStats ? "…" : activeUsers.toLocaleString("vi-VN")}
+          </p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Không hoạt động</p>
-          <p className="text-2xl text-red-600">182</p>
+          <p className="text-2xl text-red-600">
+            {loadingStats ? "…" : inactiveUsers.toLocaleString("vi-VN")}
+          </p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Mới tháng này</p>
-          <p className="text-2xl text-blue-600">87</p>
+          <p className="text-sm text-gray-600 mb-1">Người dùng mới hôm nay</p>
+          <p className="text-2xl text-blue-600">
+            {loadingStats ? "…" : newUsersToday.toLocaleString("vi-VN")}
+          </p>
         </div>
       </div>
 
@@ -98,9 +242,9 @@ export default function UsersPage() {
               className="pl-12 pr-8 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors appearance-none bg-white"
             >
               <option value="all">Tất cả vai trò</option>
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="user">User</option>
+              <option value="role_admin">Admin</option>
+              <option value="role_manager">Manager</option>
+              <option value="role_user">User</option>
             </select>
           </div>
         </div>
@@ -112,12 +256,24 @@ export default function UsersPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">Người dùng</th>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">Vai trò</th>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">Trạng thái</th>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">Thiết bị</th>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">Ngày tham gia</th>
-                <th className="px-6 py-4 text-right text-sm text-gray-600">Thao tác</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                  Người dùng
+                </th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                  Vai trò
+                </th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                  Trạng thái
+                </th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                  Thiết bị
+                </th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                  Ngày tham gia
+                </th>
+                <th className="px-6 py-4 text-right text-sm text-gray-600">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -131,7 +287,9 @@ export default function UsersPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm">{user.name.charAt(0)}</span>
+                        <span className="text-white text-sm">
+                          {user.name.charAt(0)}
+                        </span>
                       </div>
                       <div>
                         <p className="text-gray-900">{user.name}</p>
@@ -140,11 +298,15 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs ${
-                      user.role === "Admin" ? "bg-purple-100 text-purple-700" :
-                      user.role === "Manager" ? "bg-blue-100 text-blue-700" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs ${
+                        user.role === "ROLE_ADMIN"
+                          ? "bg-purple-100 text-purple-700"
+                          : user.role === "ROLE_MANAGER"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
@@ -153,18 +315,24 @@ export default function UsersPage() {
                       {user.status === "active" ? (
                         <>
                           <UserCheck className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-green-600">Hoạt động</span>
+                          <span className="text-sm text-green-600">
+                            Hoạt động
+                          </span>
                         </>
                       ) : (
                         <>
                           <UserX className="w-4 h-4 text-red-600" />
-                          <span className="text-sm text-red-600">Không hoạt động</span>
+                          <span className="text-sm text-red-600">
+                            Không hoạt động
+                          </span>
                         </>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-gray-900">{user.devices} thiết bị</span>
+                    <span className="text-gray-900">
+                      {user.devices} thiết bị
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-gray-600">{user.joinDate}</span>
@@ -191,15 +359,27 @@ export default function UsersPage() {
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            Hiển thị <span className="text-gray-900">1-{filteredUsers.length}</span> trong tổng số <span className="text-gray-900">1,429</span> user
+            Hiển thị{" "}
+            <span className="text-gray-900">1-{filteredUsers.length}</span> trong
+            tổng số{" "}
+            <span className="text-gray-900">
+              {loadingStats ? "…" : totalUsers.toLocaleString("vi-VN")}
+            </span>{" "}
+            user
           </p>
           <div className="flex gap-2">
             <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
               Trước
             </button>
-            <button className="px-4 py-2 bg-red-600 text-white rounded-lg">1</button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">2</button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">3</button>
+            <button className="px-4 py-2 bg-red-600 text-white rounded-lg">
+              1
+            </button>
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              2
+            </button>
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              3
+            </button>
             <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
               Sau
             </button>
