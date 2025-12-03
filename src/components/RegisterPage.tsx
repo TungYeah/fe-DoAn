@@ -7,7 +7,7 @@ type RegisterProps = {
   onRegister: () => void;
 };
 
-export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) {
+export default function RegisterPage({ onNavigate }: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -20,10 +20,12 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
 
   const [registerError, setRegisterError] = useState("");
 
+  // =====================
+  // SUBMIT REGISTER
+  // =====================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate password match
     if (formData.password !== formData.confirmPassword) {
       setRegisterError("Mật khẩu và xác nhận mật khẩu không khớp!");
       return;
@@ -34,25 +36,25 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: formData.name,
+          fullName: formData.name,
           email: formData.email,
           password: formData.password,
-          unit: formData.organization
+          unit: formData.organization, // ENUM CNTT / DTVT
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        setRegisterError("Đăng ký thất bại! Email có thể đã tồn tại.");
+        setRegisterError(data.message || "Đăng ký thất bại!");
         return;
       }
 
-      const data = await response.json();
-
-      // Save token to localStorage
-      localStorage.setItem("token", data.token);
+      // Không lưu token – backend không trả token khi đăng ký
+      alert(data.message || "Đăng ký thành công. Vui lòng kiểm tra email!");
 
       setRegisterError("");
-      onRegister();
+      onNavigate("login"); // quay lại màn login
 
     } catch (error) {
       console.error(error);
@@ -78,25 +80,24 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
       </div>
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-
-        {/* Left */}
+        
+        {/* Left side giữ nguyên nếu muốn */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
           className="hidden lg:block"
         >
-          {/* ... giữ nguyên phần trái ... */}
         </motion.div>
 
-        {/* Right - Register Form */}
+        {/* Right side */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
-
+            
             <div className="mb-8">
               <h3 className="text-2xl text-gray-900 mb-2">Đăng ký tài khoản</h3>
               <p className="text-gray-600">Điền thông tin để tạo tài khoản</p>
@@ -104,7 +105,7 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
 
             <form onSubmit={handleSubmit} className="space-y-5">
 
-              {/* Name */}
+              {/* Full name */}
               <div>
                 <label className="block text-gray-700 mb-2">Họ và tên</label>
                 <div className="relative">
@@ -149,12 +150,11 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
                     required
                   >
                     <option value="">-- Chọn khoa --</option>
-                    <option value="Khoa Công Nghệ Thông Tin">Khoa Công Nghệ Thông Tin</option>
-                    <option value="Khoa Điện Tử Viễn Thông">Khoa Điện Tử Viễn Thông</option>
+                    <option value="CNTT">Khoa Công Nghệ Thông Tin</option>
+                    <option value="DTVT">Khoa Điện Tử Viễn Thông</option>
                   </select>
                 </div>
               </div>
-
 
               {/* Password */}
               <div>
@@ -179,7 +179,7 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
                 </div>
               </div>
 
-              {/* Confirm Password */}
+              {/* Confirm password */}
               <div>
                 <label className="block text-gray-700 mb-2">Xác nhận mật khẩu</label>
                 <div className="relative">
@@ -195,14 +195,14 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
                 </div>
               </div>
 
-              {/* Error message */}
+              {/* Error */}
               {registerError && (
                 <div className="bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
                   {registerError}
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -213,7 +213,7 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
               </motion.button>
             </form>
 
-            {/* Login Link */}
+            {/* Login link */}
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Đã có tài khoản?
@@ -228,7 +228,6 @@ export default function RegisterPage({ onNavigate, onRegister }: RegisterProps) 
                 ← Quay lại trang chủ
               </button>
             </div>
-
           </div>
         </motion.div>
       </div>
