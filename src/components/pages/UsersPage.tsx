@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import { Modal } from "../ui/modal";
+import { AnimatePresence } from "framer-motion";
 
 import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  Filter,
-  MoreVertical,
-  UserCheck,
-  UserX,
-  Download,
+  Search,  Plus,  Edit,  Trash2,  Filter,  MoreVertical,  UserCheck,  UserX,  Activity,  Download,  Eye,  Mail,  Phone,  Shield,  Calendar,  Cpu,  Ban,  CheckCircle,
+  Save,  Key
 } from "lucide-react";
 
 type UserItem = {
@@ -18,10 +13,13 @@ type UserItem = {
   name: string;
   email: string;
   role: string;
+  unit: string;
   status: "active" | "inactive";
   devices: number;
   joinDate: string;
+  lastActive: string;
 };
+
 
 
 type UserStats = {
@@ -37,11 +35,49 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
 const [loadingUsers, setLoadingUsers] = useState(false);
 
+const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
+const [isViewModalOpen, setIsViewModalOpen] = useState(false);                    
+const [isEditModalOpen, setIsEditModalOpen] = useState(false);                                            /// sửa thong tin (có thể bỏ)
+const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);                              /// xóa tv
+const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);                    /// reset pas (them sau)
+const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);                                    /// phân quyền ( thêm sau)
+const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);                      /// block 
+const [showMoreActions, setShowMoreActions] = useState<string | null>(null);                  // thêm hành dộng ( them sau)
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
 
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const handleViewDetails = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsViewModalOpen(true);
+};
+
+const handleDelete = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsDeleteModalOpen(true);
+};
+
+const handleResetPassword = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsResetPasswordModalOpen(true);
+};
+
+const handleChangeRole = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsChangeRoleModalOpen(true);
+};
+
+const handleToggleStatus = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsToggleStatusModalOpen(true);
+};
+
+const handleEdit = (user: UserItem) => {
+  setSelectedUser(user);
+  setIsEditModalOpen(true);
+};
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -73,16 +109,18 @@ const [loadingUsers, setLoadingUsers] = useState(false);
           id: u.id,
           name: u.fullName ?? u.username ?? "No name",
           email: u.email,
-          role:
-            (u.roles && u.roles[0]) ||
-            u.mainRole ||
-            "User",
+          role: u.roles?.[0] ?? u.mainRole ?? "User",
+          unit: u.unit ?? "Không rõ",
           status: u.locked || u.disabled ? "inactive" : "active",
           devices: u.devicesCount ?? 0,
           joinDate: u.createdAt
-            ? new Date(u.createdAt).toLocaleDateString("vi-VN")
+            ? new Date(u.createdAt).toLocaleString("vi-VN")
             : "",
+          lastActive: u.last_active
+  ? new Date(u.last_active).toLocaleString("vi-VN")
+  : "Chưa ghi nhận",
         }));
+
 
         setUsers(mapped);
       } catch (err) {
@@ -289,18 +327,25 @@ const filteredUsers = users.filter((user) => {
                 <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Người dùng
                 </th>
+                                <th className="px-6 py-4 text-left text-sm text-gray-600">ID</th>
+
                 <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Vai trò
                 </th>
+                <th className="px-6 py-4 text-left text-sm text-gray-600">Khoa</th>
+
                 <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Trạng thái
                 </th>
                 <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Thiết bị
                 </th>
-                <th className="px-6 py-4 text-left text-sm text-gray-600">
+                                <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Ngày tham gia
                 </th>
+<th className="px-6 py-4 text-left text-sm text-gray-600">Hoạt động gần nhất</th>
+
+
                 <th className="px-6 py-4 text-right text-sm text-gray-600">
                   Thao tác
                 </th>
@@ -333,6 +378,8 @@ const filteredUsers = users.filter((user) => {
                       </div>
                     </div>
                   </td>
+                                    <td className="px-6 py-4 text-gray-700 font-mono">{user.id}</td>
+
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs ${
@@ -346,6 +393,9 @@ const filteredUsers = users.filter((user) => {
                       {user.role}
                     </span>
                   </td>
+                                         <td className="px-6 py-4 text-gray-700">
+                {user.unit}
+              </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {user.status === "active" ? (
@@ -370,30 +420,110 @@ const filteredUsers = users.filter((user) => {
                       {user.devices} thiết bị
                     </span>
                   </td>
+ 
+              <td className="px-6 py-4 text-gray-600">
+  {user.lastActive}
+</td>
+
+
                   <td className="px-6 py-4">
                     <span className="text-gray-600">{user.joinDate}</span>
                   </td>
-                  <td className="px-6 py-4">
+                 <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-<motion.button
-  whileHover={{ scale: 1.15 }}
-  whileTap={{ scale: 0.9 }}
-  className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
->
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleViewDetails(user)}
+                        className="p-2 hover:bg-green-50 rounded-lg text-green-600 transition-colors"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </motion.button>
+                      
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleEdit(user)}
+                        className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
+                        title="Chỉnh sửa"
+                      >
                         <Edit className="w-4 h-4" />
                       </motion.button>
-<motion.button
-  whileHover={{ scale: 1.15 }}
-  whileTap={{ scale: 0.9 }}
-  className="p-2 hover:bg-blue-50 rounded-lg text-red-600 transition-colors"
->                        <Trash2 className="w-4 h-4" />
+                      
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleDelete(user)}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </motion.button>
-<motion.button
-  whileHover={{ scale: 1.15 }}
-  whileTap={{ scale: 0.9 }}
-  className="p-2 hover:bg-blue-50 rounded-lg text-gray-600 transition-colors"
->                        <MoreVertical className="w-4 h-4" />
-                      </motion.button>
+                      
+                      {/* More Actions Dropdown */}
+                      <div className="relative">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setShowMoreActions(showMoreActions === user.id ? null : user.id)}
+                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
+                          title="Thêm"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </motion.button>
+                        
+                        <AnimatePresence>
+                          {showMoreActions === user.id && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
+                            >
+                              <div className="py-2">
+                                <button
+                                  onClick={() => handleResetPassword(user)}
+                                  className="w-full px-4 py-2.5 text-left hover:bg-purple-50 transition-colors flex items-center gap-3 text-sm text-gray-700"
+                                >
+                                  <Key className="w-4 h-4 text-purple-600" />
+                                  Reset mật khẩu
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleChangeRole(user)}
+                                  className="w-full px-4 py-2.5 text-left hover:bg-blue-50 transition-colors flex items-center gap-3 text-sm text-gray-700"
+                                >
+                                  <Shield className="w-4 h-4 text-blue-600" />
+                                  Thay đổi vai trò
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleToggleStatus(user)}
+                                  className={`w-full px-4 py-2.5 text-left transition-colors flex items-center gap-3 text-sm ${
+                                    user.status === "active" 
+                                      ? "hover:bg-red-50 text-gray-700"
+                                      : "hover:bg-green-50 text-gray-700"
+                                  }`}
+                                >
+                                  {user.status === "active" ? (
+                                    <>
+                                      <Ban className="w-4 h-4 text-red-600" />
+                                      Vô hiệu hóa
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 text-green-600" />
+                                      Kích hoạt
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </td>
                 </motion.tr>
@@ -432,6 +562,484 @@ const filteredUsers = users.filter((user) => {
           </div>
         </div>
       </div>
+
+      {/* ==================== MODALS ==================== */}
+
+      {/* VIEW DETAILS MODAL */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Thông tin chi tiết người dùng"
+        subtitle="Xem thông tin đầy đủ về tài khoản"
+        icon={<Eye className="w-5 h-5 text-white" />}
+        size="md"
+      >
+        {selectedUser && (
+          <div className="space-y-5">
+            {/* User Header */}
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-200">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
+                <span className="text-white text-2xl">{selectedUser.name.charAt(0)}</span>
+              </div>
+              <div>
+                <h3 className="text-lg text-gray-900">{selectedUser.name}</h3>
+                <p className="text-sm text-gray-600">{selectedUser.email}</p>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Email</p>
+                </div>
+                <p className="text-sm text-gray-900">{selectedUser.email}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Phone className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Điện thoại</p>
+                </div>
+                <p className="text-sm text-gray-900">{selectedUser.phone}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Vai trò</p>
+                </div>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs ${
+                  selectedUser.role === "Admin" ? "bg-purple-100 text-purple-700" :
+                  selectedUser.role === "Manager" ? "bg-blue-100 text-blue-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {selectedUser.role}
+                </span>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Ngày tham gia</p>
+                </div>
+                <p className="text-sm text-gray-900">{selectedUser.joinDate}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cpu className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Thiết bị</p>
+                </div>
+                <p className="text-sm text-gray-900">{selectedUser.devices} thiết bị</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity className="w-4 h-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">Hoạt động gần nhất</p>
+                </div>
+                <p className="text-sm text-gray-900">{selectedUser.lastActive}</p>
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className={`p-4 rounded-lg border ${
+              selectedUser.status === "active"
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
+            }`}>
+              <div className="flex items-center gap-2">
+                {selectedUser.status === "active" ? (
+                  <>
+                    <UserCheck className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-green-700">Tài khoản đang hoạt động</span>
+                  </>
+                ) : (
+                  <>
+                    <UserX className="w-5 h-5 text-red-600" />
+                    <span className="text-sm text-red-700">Tài khoản không hoạt động</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  handleEdit(selectedUser);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Chỉnh sửa
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Chỉnh sửa thông tin người dùng"
+        subtitle="Cập nhật thông tin tài khoản"
+        icon={<Edit className="w-5 h-5 text-white" />}
+        size="md"
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => {
+                alert("Đã lưu thay đổi!");
+                setIsEditModalOpen(false);
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Lưu thay đổi
+            </button>
+          </div>
+        }
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1.5 font-medium">
+                  Họ và tên
+                </label>
+                <input
+                  type="text"
+                  defaultValue={selectedUser.name}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1.5 font-medium">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  defaultValue={selectedUser.email}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1.5 font-medium">
+                  Điện thoại
+                </label>
+                <input
+                  type="tel"
+                  defaultValue={selectedUser.phone ?? "Không có dữ liệu"}
+
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1.5 font-medium">
+                  Khoa/Phòng ban
+                </label>
+                <input
+                  type="text"
+                  defaultValue={selectedUser.department}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* DELETE MODAL */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Xóa người dùng"
+        size="sm"
+      >
+        {selectedUser && (
+          <div className="space-y-4 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+
+            <div>
+              <p className="text-gray-700 mb-2">
+                Bạn có chắc muốn xóa người dùng:
+              </p>
+              <p className="text-gray-900 font-semibold">{selectedUser.name}</p>
+              <p className="text-sm text-gray-500">{selectedUser.email}</p>
+            </div>
+
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                ⚠️ Hành động này sẽ xóa toàn bộ dữ liệu và <strong>{selectedUser.devices} thiết bị</strong> của người dùng. Không thể hoàn tác!
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-2 pt-2">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  alert(`Đã xóa user: ${selectedUser.name}`);
+                  setIsDeleteModalOpen(false);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* RESET PASSWORD MODAL */}
+      <Modal
+        isOpen={isResetPasswordModalOpen}
+        onClose={() => setIsResetPasswordModalOpen(false)}
+        title="Reset mật khẩu"
+        subtitle="Tạo mật khẩu mới cho người dùng"
+        icon={<Key className="w-5 h-5 text-white" />}
+        size="sm"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">{selectedUser.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-900">{selectedUser.name}</p>
+                  <p className="text-xs text-gray-600">{selectedUser.email}</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-600 mb-1.5 font-medium">
+                Mật khẩu mới
+              </label>
+              <input
+                type="text"
+                placeholder="Mật khẩu tự động: PTIT@2024xyz"
+                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-purple-500 focus:ring-1 focus:ring-purple-100 outline-none transition-all font-mono"
+                readOnly
+              />
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800">
+                💡 Mật khẩu mới sẽ được gửi qua email: <strong>{selectedUser.email}</strong>
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setIsResetPasswordModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  alert(`Đã reset mật khẩu cho: ${selectedUser.name}`);
+                  setIsResetPasswordModalOpen(false);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2"
+              >
+                <Key className="w-4 h-4" />
+                Reset mật khẩu
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* CHANGE ROLE MODAL */}
+      <Modal
+        isOpen={isChangeRoleModalOpen}
+        onClose={() => setIsChangeRoleModalOpen(false)}
+        title="Thay đổi vai trò"
+        subtitle="Cập nhật quyền hạn người dùng"
+        icon={<Shield className="w-5 h-5 text-white" />}
+        size="sm"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">{selectedUser.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-900">{selectedUser.name}</p>
+                  <p className="text-xs text-gray-600">Vai trò hiện tại: <strong>{selectedUser.role}</strong></p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-600 mb-2 font-medium">
+                Chọn vai trò mới
+              </label>
+              <div className="space-y-2">
+                {["Admin", "Manager", "User"].map((role) => (
+                  <label
+                    key={role}
+                    className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      selectedUser.role === role
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      defaultChecked={selectedUser.role === role}
+                      className="w-4 h-4 text-red-600"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">{role}</p>
+                      <p className="text-xs text-gray-500">
+                        {role === "Admin" && "Toàn quyền quản trị hệ thống"}
+                        {role === "Manager" && "Quản lý thiết bị và người dùng"}
+                        {role === "User" && "Sử dụng thiết bị cơ bản"}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setIsChangeRoleModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  alert(`Đã thay đổi vai trò cho: ${selectedUser.name}`);
+                  setIsChangeRoleModalOpen(false);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                Cập nhật vai trò
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* TOGGLE STATUS MODAL */}
+      <Modal
+        isOpen={isToggleStatusModalOpen}
+        onClose={() => setIsToggleStatusModalOpen(false)}
+        title={selectedUser?.status === "active" ? "Vô hiệu hóa tài khoản" : "Kích hoạt tài khoản"}
+        size="sm"
+      >
+        {selectedUser && (
+          <div className="space-y-4 text-center">
+            <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
+              selectedUser.status === "active" ? "bg-red-100" : "bg-green-100"
+            }`}>
+              {selectedUser.status === "active" ? (
+                <Ban className="w-8 h-8 text-red-600" />
+              ) : (
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              )}
+            </div>
+
+            <div>
+              <p className="text-gray-700 mb-2">
+                {selectedUser.status === "active" 
+                  ? "Bạn có chắc muốn vô hiệu hóa tài khoản:"
+                  : "Bạn có chắc muốn kích hoạt lại tài khoản:"
+                }
+              </p>
+              <p className="text-gray-900 font-semibold">{selectedUser.name}</p>
+            </div>
+
+            <div className={`p-3 rounded-lg border ${
+              selectedUser.status === "active"
+                ? "bg-yellow-50 border-yellow-200"
+                : "bg-blue-50 border-blue-200"
+            }`}>
+              <p className="text-xs ${selectedUser.status === 'active' ? 'text-yellow-800' : 'text-blue-800'}">
+                {selectedUser.status === "active"
+                  ? "⚠️ Người dùng sẽ không thể đăng nhập và truy cập hệ thống"
+                  : "✅ Người dùng sẽ có thể đăng nhập và sử dụng hệ thống trở lại"
+                }
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-2 pt-2">
+              <button
+                onClick={() => setIsToggleStatusModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  alert(
+                    selectedUser.status === "active"
+                      ? `Đã vô hiệu hóa: ${selectedUser.name}`
+                      : `Đã kích hoạt: ${selectedUser.name}`
+                  );
+                  setIsToggleStatusModalOpen(false);
+                }}
+                className={`px-4 py-2 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2 ${
+                  selectedUser.status === "active"
+                    ? "bg-gradient-to-r from-red-700 to-red-600"
+                    : "bg-gradient-to-r from-green-600 to-green-700"
+                }`}
+              >
+                {selectedUser.status === "active" ? (
+                  <>
+                    <Ban className="w-4 h-4" />
+                    Vô hiệu hóa
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Kích hoạt
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+
     </div>
   );
 }
