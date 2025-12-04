@@ -83,6 +83,8 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
+            alert("Cập nhật thành công!");
+
       setToastMessage("Cập nhật thành công!");
       setTimeout(() => window.location.reload(), 800);
     } else {
@@ -116,8 +118,11 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
+      alert("Đổi mật khẩu thành công!");
       setToastMessage("Đổi mật khẩu thành công!");
       setPasswordData({ current: "", new: "", confirm: "" });
+      setTimeout(() => window.location.reload(), 800);
+
     } else {
       const err = await res.json();
       alert("Lỗi: " + err.message);
@@ -151,6 +156,7 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
+      alert("Ảnh đại diện đã thay đổi!");
       setToastMessage("Ảnh đại diện đã thay đổi!");
       setTimeout(() => window.location.reload(), 800);
     }

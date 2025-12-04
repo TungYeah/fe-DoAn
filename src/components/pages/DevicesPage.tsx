@@ -233,8 +233,12 @@ export default function DevicesPage() {
   return (
     <div className="space-y-8">
       {/* TITLE */}
-      <div className="flex items-center justify-between">
-        <div>
+<motion.div
+  initial={{ opacity: 0, y: -15 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="flex items-center justify-between"
+>        <div>
           <h1 className="text-3xl text-gray-900 mb-2">Quản lý thiết bị IoT</h1>
           <p className="text-gray-600">Theo dõi và quản lý tất cả thiết bị</p>
         </div>
@@ -250,10 +254,14 @@ export default function DevicesPage() {
             Thêm thiết bị
           </motion.button>
         </div>
-      </div>
+      </motion.div>
       
       {/* TAB SWITCHER */}
-      <div className="w-full flex">
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.3, delay: 0.1 }}
+  className=" transition-all w-full flex">
 
       <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit">
         <button
@@ -278,13 +286,18 @@ export default function DevicesPage() {
           <b>Danh sách chi tiết</b>
         </button>
       </div>
-       </div>
+       </motion.div>
+
       {/* ================= TAB 1 — OVERVIEW ================= */}
       {activeTab === "overview" && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border p-4 shadow-sm flex items-center gap-4">
             {/* SEARCH BOX */}
-            <div className="relative flex-1">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -293,7 +306,7 @@ export default function DevicesPage() {
                 placeholder="Tìm kiếm theo tên hoặc loại thiết bị..."
                 className="w-full h-12 pl-12 pr-4 rounded-xl border border-gray-300 text-[15px] bg-gray-50 focus:bg-white focus:border-gray-400 outline-none transition-all"
               />
-            </div>
+            </motion.div>
             
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-44 h-12 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2">

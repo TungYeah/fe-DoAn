@@ -36,7 +36,7 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fullName: formData.fullName,
+          fullName: formData.name,
           email: formData.email,
           password: formData.password,
           unit: formData.organization, // ENUM CNTT / DTVT

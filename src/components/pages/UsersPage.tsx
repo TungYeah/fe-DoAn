@@ -162,7 +162,12 @@ const filteredUsers = users.filter((user) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+<motion.div
+  initial={{ opacity: 0, y: -15 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="flex items-center justify-between"
+>
         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Quản lý User</h1>
           <p className="text-gray-600">
@@ -188,38 +193,63 @@ const filteredUsers = users.filter((user) => {
             Thêm User
           </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.3, delay: 0.1 }}
+  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+>
           <p className="text-sm text-gray-600 mb-1">Tổng User</p>
           <p className="text-2xl text-gray-900">
             {loadingStats ? "…" : totalUsers.toLocaleString("vi-VN")}
           </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
+        </motion.div>
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.3, delay: 0.1 }}
+  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+>
           <p className="text-sm text-gray-600 mb-1">Đang hoạt động</p>
           <p className="text-2xl text-green-600">
             {loadingStats ? "…" : activeUsers.toLocaleString("vi-VN")}
           </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
+        </motion.div>
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.3, delay: 0.1 }}
+  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+>
           <p className="text-sm text-gray-600 mb-1">Không hoạt động</p>
           <p className="text-2xl text-red-600">
             {loadingStats ? "…" : inactiveUsers.toLocaleString("vi-VN")}
           </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
+        </motion.div>
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.3, delay: 0.1 }}
+  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+>
           <p className="text-sm text-gray-600 mb-1">Người dùng mới hôm nay</p>
           <p className="text-2xl text-blue-600">
             {loadingStats ? "…" : newUsersToday.toLocaleString("vi-VN")}
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+<motion.div
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.35 }}
+  className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm"
+>
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -248,7 +278,7 @@ const filteredUsers = users.filter((user) => {
             </select>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Users Table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -277,20 +307,26 @@ const filteredUsers = users.filter((user) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+{filteredUsers.map((user, idx) => (
                 <motion.tr
-                  key={user.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 transition-colors"
-                >
+  key={user.id}
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.25, delay: Math.min(0.03 * idx, 0.3) }}
+  className="hover:bg-gray-50 transition-all cursor-pointer"
+>
+
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
+<motion.div
+  whileHover={{ scale: 1.1 }}
+  transition={{ type: "spring", stiffness: 300 }}
+  className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center shadow"
+>
                         <span className="text-white text-sm">
                           {user.name.charAt(0)}
                         </span>
-                      </div>
+                      </motion.div>
                       <div>
                         <p className="text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
@@ -339,15 +375,25 @@ const filteredUsers = users.filter((user) => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors">
+<motion.button
+  whileHover={{ scale: 1.15 }}
+  whileTap={{ scale: 0.9 }}
+  className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
+>
                         <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                      </motion.button>
+<motion.button
+  whileHover={{ scale: 1.15 }}
+  whileTap={{ scale: 0.9 }}
+  className="p-2 hover:bg-blue-50 rounded-lg text-red-600 transition-colors"
+>                        <Trash2 className="w-4 h-4" />
+                      </motion.button>
+<motion.button
+  whileHover={{ scale: 1.15 }}
+  whileTap={{ scale: 0.9 }}
+  className="p-2 hover:bg-blue-50 rounded-lg text-gray-600 transition-colors"
+>                        <MoreVertical className="w-4 h-4" />
+                      </motion.button>
                     </div>
                   </td>
                 </motion.tr>

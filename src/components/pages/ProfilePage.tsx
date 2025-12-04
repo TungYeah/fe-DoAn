@@ -54,22 +54,16 @@ export default function ProfilePage() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+<motion.div
+  initial={{ opacity: 0, y: -15 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+  className="flex items-center justify-between"
+>         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Hồ sơ cá nhân</h1>
           <p className="text-gray-600">Quản lý thông tin và cài đặt tài khoản</p>
         </div>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsEditing(!isEditing)}
-          className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-        >
-          {isEditing ? <Save className="w-5 h-5" /> : <Edit className="w-5 h-5" />}
-          {isEditing ? "Lưu thay đổi" : "Chỉnh sửa"}
-        </motion.button>
-      </div>
+      </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">
 
