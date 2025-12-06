@@ -168,7 +168,7 @@ app.post('/api/login', (req, res) => {
 
 
 
-// =====thêm thiết bị=====================// 11111
+// =====thêm thiết bị=====================//  DeviceController
 app.post('/api/add-device', (req, res) => {
   const { name, description, device_type_id, user_id, province, district, ward } = req.body;
   let { device_id } = req.body;
