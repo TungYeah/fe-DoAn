@@ -40,11 +40,17 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between"
+      >
       <div>
         <h1 className="text-3xl text-gray-900 mb-2">Tổng quan</h1>
         <p className="text-gray-600">Chào mừng trở lại! Đây là tổng quan hệ thống của bạn.</p>
       </div>
-
+    </motion.div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsData.map((stat, index) => {

@@ -451,15 +451,24 @@ const filteredUsers = users.filter((user) => {
                         <Edit className="w-4 h-4" />
                       </motion.button>
                       
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(user)}
-                        className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleToggleStatus(user)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            user.status === "active"
+                              ? "hover:bg-red-50 text-red-600"
+                              : "hover:bg-green-50 text-green-600"
+                          }`}
+                          title={user.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
+                        >
+                          {user.status === "active" ? (
+                            <Ban className="w-4 h-4" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
+                        </motion.button>
+
                       
                       {/* More Actions Dropdown */}
                       <div className="relative">
@@ -498,27 +507,7 @@ const filteredUsers = users.filter((user) => {
                                   <Shield className="w-4 h-4 text-blue-600" />
                                   Thay đổi vai trò
                                 </button>
-                                
-                                <button
-                                  onClick={() => handleToggleStatus(user)}
-                                  className={`w-full px-4 py-2.5 text-left transition-colors flex items-center gap-3 text-sm ${
-                                    user.status === "active" 
-                                      ? "hover:bg-red-50 text-gray-700"
-                                      : "hover:bg-green-50 text-gray-700"
-                                  }`}
-                                >
-                                  {user.status === "active" ? (
-                                    <>
-                                      <Ban className="w-4 h-4 text-red-600" />
-                                      Vô hiệu hóa
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="w-4 h-4 text-green-600" />
-                                      Kích hoạt
-                                    </>
-                                  )}
-                                </button>
+                              
                               </div>
                             </motion.div>
                           )}
@@ -600,9 +589,9 @@ const filteredUsers = users.filter((user) => {
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Phone className="w-4 h-4 text-gray-500" />
-                  <p className="text-xs text-gray-500">Điện thoại</p>
+                  <p className="text-xs text-gray-500">ID người dùng</p>
                 </div>
-                <p className="text-sm text-gray-900">{selectedUser.phone}</p>
+                <p className="text-sm text-gray-900">{selectedUser.id}</p>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -740,19 +729,6 @@ const filteredUsers = users.filter((user) => {
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1.5 font-medium">
-                  Điện thoại
-                </label>
-                <input
-                  type="tel"
-                  defaultValue={selectedUser.phone ?? "Không có dữ liệu"}
-
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition-all"
-                />
-              </div>
-
               <div>
                 <label className="block text-xs text-gray-600 mb-1.5 font-medium">
                   Khoa/Phòng ban
@@ -768,7 +744,7 @@ const filteredUsers = users.filter((user) => {
         )}
       </Modal>
 
-      {/* DELETE MODAL */}
+      {/* DELETE MODAL
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -815,7 +791,7 @@ const filteredUsers = users.filter((user) => {
             </div>
           </div>
         )}
-      </Modal>
+      </Modal> */}
 
       {/* RESET PASSWORD MODAL */}
       <Modal

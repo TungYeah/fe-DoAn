@@ -166,6 +166,9 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+
+
+// =====thêm thiết bị=====================//
 app.post('/api/add-device', (req, res) => {
   const { name, description, device_type_id, user_id, province, district, ward } = req.body;
   let { device_id } = req.body;
@@ -223,7 +226,7 @@ app.post('/api/add-device', (req, res) => {
 
 
 
-// ================== API: RESET API KEY ==================
+// ================== API: RESET API KEY ================== bỏ
 app.post('/api/devices/:id/reset-key', (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ message: 'Thiếu ID thiết bị.' });
@@ -615,7 +618,7 @@ app.delete("/api/export_filters/:id", (req, res) => {
 });
 
 
-// ================== API: TỔNG HỢP==================
+// ================== API: TỔNG HỢP================== bỏ
 
 app.get('/api/merge', async (req, res) => {
   const { device_id, sensor, start, end } = req.query;

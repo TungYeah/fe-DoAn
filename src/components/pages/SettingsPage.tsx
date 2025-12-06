@@ -460,7 +460,7 @@ export default function SettingsPage() {
 
               <button className="w-full px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2">
                 <Trash2 className="w-5 h-5" />
-                Xóa tài khoản
+                Khóa tài khoản
               </button>
             </div>
           </motion.div>
