@@ -5,7 +5,7 @@ import { AnimatePresence } from "framer-motion";
 
 import {
   Search,  Plus,  Edit,  Trash2,  Filter,  MoreVertical,  UserCheck,  UserX,  Activity,  Download,  Eye,  Mail,  Phone,  Shield,  Calendar,  Cpu,  Ban,  CheckCircle,
-  Save,  Key
+  Save,  Key,  ChevronLeft, ChevronRight
 } from "lucide-react";
 
 type UserItem = {
@@ -64,7 +64,6 @@ const [changingRole, setChangingRole] = useState(false);             // loading 
 const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);                      /// block 
 const [togglingStatus, setTogglingStatus] = useState(false);   
 
-const [showMoreActions, setShowMoreActions] = useState<string | null>(null);                  // thêm hành dộng ( them sau)
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -76,10 +75,6 @@ const [showMoreActions, setShowMoreActions] = useState<string | null>(null);    
   setIsViewModalOpen(true);
 };
 
-const handleDelete = (user: UserItem) => {
-  setSelectedUser(user);
-  setIsDeleteModalOpen(true);
-};
 
 const handleResetPassword = (user: UserItem) => {
   setSelectedUser(user);
@@ -525,7 +520,7 @@ const filteredUsers = users.filter((user) => {
   transition={{ duration: 0.3, delay: 0.1 }}
   className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
 >
-          <p className="text-sm text-gray-600 mb-1">Không hoạt động</p>
+          <p className="text-sm text-gray-600 mb-1">Chưa kích hoạt</p>
           <p className="text-2xl text-red-600">
             {loadingStats ? "…" : inactiveUsers.toLocaleString("vi-VN")}
           </p>
@@ -711,6 +706,15 @@ const filteredUsers = users.filter((user) => {
                         <Edit className="w-4 h-4" />
                       </motion.button>
                       
+                                            <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleChangeRole(user)}
+                        className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
+                        title="Thay đổi vai trò"
+                      >
+                        <Shield className="w-4 h-4" />
+                      </motion.button>
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -729,50 +733,10 @@ const filteredUsers = users.filter((user) => {
                           )}
                         </motion.button>
 
-                      
-                      {/* More Actions Dropdown */}
-                      <div className="relative">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => setShowMoreActions(showMoreActions === user.id ? null : user.id)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                          title="Thêm"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </motion.button>
-                        
-                        <AnimatePresence>
-                          {showMoreActions === user.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
-                            >
-                              <div className="py-2">
-                                <button
-                                  onClick={() => handleResetPassword(user)}
-                                  className="w-full px-4 py-2.5 text-left hover:bg-purple-50 transition-colors flex items-center gap-3 text-sm text-gray-700"
-                                >
-                                  <Key className="w-4 h-4 text-purple-600" />
-                                  Reset mật khẩu
-                                </button>
-                                
-                                <button
-                                  onClick={() => handleChangeRole(user)}
-                                  className="w-full px-4 py-2.5 text-left hover:bg-blue-50 transition-colors flex items-center gap-3 text-sm text-gray-700"
-                                >
-                                  <Shield className="w-4 h-4 text-blue-600" />
-                                  Thay đổi vai trò
-                                </button>
-                              
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+
+
+
+
                     </div>
                   </td>
                 </motion.tr>
@@ -1118,7 +1082,7 @@ const filteredUsers = users.filter((user) => {
   title="Thay đổi vai trò"
   subtitle="Cập nhật quyền hạn người dùng"
   icon={<Shield className="w-5 h-5 text-white" />}
-  size="sm"
+  size="xs"
 >
   {selectedUser && (
     <div className="space-y-4">

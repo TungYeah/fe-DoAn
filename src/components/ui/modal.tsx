@@ -9,7 +9,7 @@ interface ModalProps {
   subtitle?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "full";  
   showCloseButton?: boolean;
   closeOnBackdrop?: boolean;
   footer?: React.ReactNode;
@@ -49,6 +49,7 @@ export function Modal({
   }, [isOpen, onClose]);
 
   const sizeClasses = {
+    xs: "max-w-sm",  
     sm: "max-w-md",
     md: "max-w-2xl",
     lg: "max-w-4xl",
@@ -82,7 +83,7 @@ export function Modal({
                 stiffness: 300,
                 damping: 30
               }}
-              className={`w-full ${sizeClasses[size]} pointer-events-auto`}
+              className={`w-900 ${sizeClasses[size]} pointer-events-auto`}
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border-2 border-red-100 dark:border-red-900/30">
                 {/* Header */}
