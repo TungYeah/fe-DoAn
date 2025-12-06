@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Lock, Mail, Eye, EyeOff, Wifi } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
 type LoginProps = {
   onNavigate: (view: string) => void;
@@ -11,10 +11,17 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState(""); // ✔ đặt đúng chỗ
+
+  const [loginError, setLoginError] = useState("");
+  const [locked, setLocked] = useState(false);
+  const [reactivateMessage, setReactivateMessage] = useState("");
+  const [loadingRestore, setLoadingRestore] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError("");
+    setLocked(false);
+    setReactivateMessage("");
 
     try {
       const response = await fetch("http://localhost:8080/api/v1/auth/authenticate", {
@@ -24,24 +31,34 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       });
 
       if (!response.ok) {
+        const err = await response.json();
+
+        // 🔥 Check lỗi khóa tài khoản qua ERROR CODE
+        if (err.code === 1005 || err.message?.includes("vô hiệu hóa")) {
+          setLocked(true);
+          setLoginError("❌ Tài khoản của bạn đã bị vô hiệu hóa!");
+          return;
+        }
+
         setLoginError("Email hoặc mật khẩu không đúng!");
         return;
       }
 
+      // SUCCESS
       const data = await response.json();
-      localStorage.setItem("token", data.token);
+      const token = data.token;
+
+      localStorage.setItem("token", token);
 
       const userRes = await fetch("http://localhost:8080/api/v1/auth/current", {
-        headers: {
-          Authorization: `Bearer ${data.token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const user = await userRes.json();
+
       localStorage.setItem("fullName", user.fullName);
       localStorage.setItem("email", user.email);
 
-      setLoginError("");
       onLogin();
     } catch (err) {
       console.error(err);
@@ -49,6 +66,28 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     }
   };
 
+  // ==========================
+  // 🔥 API gửi yêu cầu mở khóa
+  // ==========================
+  const handleRequestReactivation = async () => {
+    setLoadingRestore(true);
+    setReactivateMessage("");
+
+    try {
+      const res = await fetch("http://localhost:8080/api/v1/auth/request-reactivation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const msg = await res.text();
+      setReactivateMessage(msg);
+    } catch (err) {
+      setReactivateMessage("Không thể gửi yêu cầu. Vui lòng thử lại!");
+    }
+
+    setLoadingRestore(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
@@ -69,7 +108,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
 
-        {/* Left */}
+        {/* LEFT */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -90,13 +129,10 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
             </div>
 
             <h2 className="text-4xl text-gray-900 mt-8">Chào mừng trở lại!</h2>
-            <p className="text-xl text-gray-600">
-              Đăng nhập để quản lý thiết bị IoT và xem phân tích dữ liệu của bạn
-            </p>
           </div>
         </motion.div>
 
-        {/* Right - Login form */}
+        {/* RIGHT */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -104,71 +140,106 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           className="relative"
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
+
+            {/* Title */}
             <div className="mb-8">
               <h3 className="text-2xl text-gray-900 mb-2">Đăng nhập</h3>
               <p className="text-gray-600">Nhập thông tin để tiếp tục</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 🚫 UI trạng thái bị khóa */}
+            {locked && (
+              <div className="border border-red-300 bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+                <div>
+                  <p className="font-semibold">Tài khoản của bạn đã bị khóa</p>
+                  <p className="text-sm">
+                    Bạn có thể yêu cầu mở khóa tài khoản qua email đăng ký.
+                  </p>
 
-              {/* Email */}
-              <div>
-                <label className="block text-gray-700 mb-2">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@example.com"
-                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-gray-700 mb-2">Mật khẩu</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
-                    required
-                  />
+                  {/* Nút gửi yêu cầu */}
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={handleRequestReactivation}
+                    disabled={loadingRestore}
+                    className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 
+                      ${loadingRestore ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    {showPassword ? <EyeOff /> : <Eye />}
+                    {loadingRestore ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
                   </button>
+
+                  {/* Thông báo */}
+                  {reactivateMessage && (
+                    <p className="mt-3 text-sm text-green-600">
+                      {reactivateMessage}
+                    </p>
+                  )}
                 </div>
               </div>
+            )}
 
-              {/* Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
-              >
-                Đăng nhập
-              </motion.button>
+            {/* Form login */}
+            {!locked && (
+              <form onSubmit={handleSubmit} className="space-y-6">
 
-              {/* ❗ Error below the button */}
-              {loginError && (
-                <div className="mt-3 bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
-                  {loginError}
+                {/* EMAIL */}
+                <div>
+                  <label className="block text-gray-700 mb-2">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                      required
+                    />
+                  </div>
                 </div>
-              )}
 
-            </form>
+                {/* PASSWORD */}
+                <div>
+                  <label className="block text-gray-700 mb-2">Mật khẩu</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </button>
+                  </div>
+                </div>
 
+                {/* LOGIN BUTTON */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
+                >
+                  Đăng nhập
+                </motion.button>
+
+                {/* ERROR */}
+                {loginError && (
+                  <div className="mt-3 bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
+                    {loginError}
+                  </div>
+                )}
+              </form>
+            )}
+
+            {/* Navigation */}
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Chưa có tài khoản?

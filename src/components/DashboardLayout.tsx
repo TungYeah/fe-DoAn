@@ -26,6 +26,27 @@ type DashboardLayoutProps = {
   children?: React.ReactNode;
 };
 
+// ===========================
+// Avatar giống ProfilePage
+// ===========================
+const getAvatarUI = (avatar?: string | null) => {
+  const src =
+    avatar && avatar.trim() !== ""
+      ? `http://localhost:8080${avatar}`
+      : "/847969.png"; // ảnh mặc định trong public/
+
+  return (
+    <img
+      src={src}
+      className="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-300"
+      alt="avatar"
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "/847969.png";
+      }}
+    />
+  );
+};
+
 export default function DashboardLayout({
   currentPage,
   onNavigate,
@@ -40,40 +61,35 @@ export default function DashboardLayout({
     email: "",
     avatar: "",
   });
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return; // chưa login thì thôi
 
-  fetch("http://localhost:8080/api/v1/auth/current", {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => res.json())
-    .then((u) => {
-      // cập nhật state
-      setUserInfo({
-        fullName: u.fullName || "",
-        email: u.email || "",
-        avatar: u.avatar || "", // path dạng "/uploads/avatars/img.png"
-      });
+  // ========================
+  // Fetch current user
+  // ========================
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return; // chưa login thì thôi
 
-      // lưu localStorage nếu muốn dùng chỗ khác
-      localStorage.setItem("fullName", u.fullName || "");
-      localStorage.setItem("email", u.email || "");
+    fetch("http://localhost:8080/api/v1/auth/current", {
+      headers: { Authorization: `Bearer ${token}` },
     })
-    .catch((err) => console.error("Get current user error:", err));
-}, []);
+      .then((res) => res.json())
+      .then((u) => {
+        // cập nhật state
+        setUserInfo({
+          fullName: u.fullName || "",
+          email: u.email || "",
+          avatar: u.avatar || "", // path dạng "/uploads/avatars/img.png"
+        });
+
+        // nếu muốn xài chỗ khác thì lưu localStorage
+        localStorage.setItem("fullName", u.fullName || "");
+        localStorage.setItem("email", u.email || "");
+      })
+      .catch((err) => console.error("Get current user error:", err));
+  }, []);
 
   const displayName =
     userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
-
-  const avatarUI = userInfo.avatar ? (
-    <img
-      src={`http://localhost:8080${userInfo.avatar}`}
-      className="w-8 h-8 rounded-full object-cover"
-    />
-  ) : (
-    userInfo.fullName?.charAt(0) ?? "U"
-  );
 
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -93,7 +109,7 @@ useEffect(() => {
       {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
         <div className="h-full px-4 flex items-center justify-between">
-          {/* Left */}
+          {/* LEFT */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -106,33 +122,32 @@ useEffect(() => {
               <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white font-black">
                 PTIT
               </div>
-              <div className="hidden md:block">
-                <h1 className="text-transparent bg-gradient-to-r from-red-700 to-red-600 bg-clip-text">
-                  PTIT IoT Platform
-                </h1>
-              </div>
+              <h1 className="hidden md:block text-transparent bg-gradient-to-r from-red-700 to-red-600 bg-clip-text">
+                PTIT IoT Platform
+              </h1>
             </div>
           </div>
 
-          {/* Right */}
+          {/* RIGHT */}
           <div className="flex items-center gap-4">
-            <button onClick={() => onNavigate("chat")}>
-              <MessageCircle className="w-5 h-5 text-gray-600" />
-            </button>
+            <MessageCircle
+              className="w-5 h-5 text-gray-600 cursor-pointer"
+              onClick={() => onNavigate("chat")}
+            />
 
-            <button onClick={() => onNavigate("notifications")}>
-              <Bell className="w-5 h-5 text-gray-600" />
-            </button>
+            <Bell
+              className="w-5 h-5 text-gray-600 cursor-pointer"
+              onClick={() => onNavigate("notifications")}
+            />
 
-            {/* User */}
             <div className="relative">
+              {/* USER BUTTON */}
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg"
               >
-                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center">
-                  {avatarUI}
-                </div>
+                {/* Avatar */}
+                {getAvatarUI(userInfo.avatar)}
 
                 <div className="hidden md:block text-left">
                   <p className="text-sm">{displayName}</p>
@@ -142,7 +157,7 @@ useEffect(() => {
                 <ChevronDown className="w-4 h-4 text-gray-600" />
               </button>
 
-              {/* Dropdown */}
+              {/* Dropdown Menu */}
               {userMenuOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -187,7 +202,7 @@ useEffect(() => {
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${
           sidebarOpen ? "w-64" : "w-0"
@@ -214,7 +229,7 @@ useEffect(() => {
         </nav>
       </aside>
 
-      {/* Content */}
+      {/* CONTENT */}
       <main className={`pt-16 ${sidebarOpen ? "ml-64" : "ml-0"}`}>
         <div className="p-6">{children}</div>
       </main>
