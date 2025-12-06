@@ -11,7 +11,7 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     organization: "",
     password: "",
@@ -29,7 +29,7 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
     if (formData.password !== formData.confirmPassword) {
       setRegisterError("Mật khẩu và xác nhận mật khẩu không khớp!");
       return;
-    }
+    } 
 
     try {
       const response = await fetch("http://localhost:8080/api/v1/auth/register", {
@@ -112,8 +112,8 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="Nguyễn Văn A"
                     className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl"
                     required
