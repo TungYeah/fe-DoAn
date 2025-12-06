@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ThumbsUp } from "lucide-react";
+import { ThumbsUp, Reply } from "lucide-react";
 
 type Comment = {
   id: number;
@@ -14,42 +14,87 @@ type Comment = {
 };
 
 const initialComments: Comment[] = [
-  { id: 1, userId: 1, userName: "Nguyễn Văn An", userAvatar: "A", text: "Mọi người ơi hệ thống IoT chạy ổn chưa?", time: "09:15", likes: 5, liked: false, parentId: null },
-  { id: 2, userId: 2, userName: "Trần Thị Bình", userAvatar: "B", text: "@Nguyễn Văn An Tôi test thấy OK rồi!", time: "09:20", likes: 2, liked: false, parentId: 1 },
-  { id: 3, userId: 3, userName: "Yến", userAvatar: "Y", text: "@Nguyễn Văn An Bạn oke", time: "14:35", likes: 1, liked: false, parentId: 1 },
-  { id: 4, userId: 4, userName: "Phúc", userAvatar: "P", text: "@Nguyễn Văn An T đang kiểm tra lại lần nữa", time: "14:40", likes: 0, liked: false, parentId: 1 },
-  { id: 5, userId: 5, userName: "Lê Minh Cường", userAvatar: "C", text: "API sensor có ai nhận dữ liệu bất thường không?", time: "10:01", likes: 0, liked: false, parentId: null },
-  { id: 6, userId: 6, userName: "Khoa", userAvatar: "K", text: "@Lê Minh Cường Server bên mình vẫn ổn", time: "10:05", likes: 1, liked: false, parentId: 5 },
+  {
+    id: 1,
+    userId: 1,
+    userName: "Cấp 3",
+    userAvatar: "Q",
+    text: "Đã đọc 100 chap novel free thì tôi sẽ đánh giá nó là mì ăn liền...",
+    time: "1 Tháng Trước",
+    likes: 0,
+    liked: false,
+    parentId: null,
+  },
+  {
+    id: 2,
+    userId: 2,
+    userName: "Kuro",
+    userAvatar: "K",
+    text: "Đọc xong mười mấy chap mới ra rồi đấy...",
+    time: "1 Tháng Trước",
+    likes: 0,
+    liked: false,
+    parentId: 1,
+  },
+  {
+    id: 3,
+    userId: 3,
+    userName: "Cấp 3",
+    userAvatar: "Q",
+    text: "Khác mỗi cái chức nghiệp thôi chứ...",
+    time: "1 Tháng Trước",
+    likes: 0,
+    liked: false,
+    parentId: 1,
+  },
 ];
 
 export default function ChatPage() {
   const [comments, setComments] = useState<Comment[]>(initialComments);
-  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [mainComment, setMainComment] = useState("");
   const [replyText, setReplyText] = useState("");
-  const [expanded, setExpanded] = useState<number[]>([]); // id các comment cha đang được mở rộng
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<number[]>([]);
 
   const parentComments = comments.filter((c) => c.parentId === null);
   const repliesOf = (id: number) => comments.filter((c) => c.parentId === id);
 
   const toggleExpand = (id: number) => {
-    if (expanded.includes(id)) {
-      setExpanded(expanded.filter((x) => x !== id));
-    } else {
-      setExpanded([...expanded, id]);
-    }
+    expanded.includes(id)
+      ? setExpanded(expanded.filter((x) => x !== id))
+      : setExpanded([...expanded, id]);
+  };
+
+  const addMainComment = () => {
+    if (!mainComment.trim()) return;
+
+    const newComment: Comment = {
+      id: Date.now(),
+      userId: 999,
+      userName: "Bạn đọc",
+      userAvatar: "B",
+      text: mainComment,
+      time: "Vừa xong",
+      likes: 0,
+      liked: false,
+      parentId: null,
+    };
+
+    setComments([newComment, ...comments]);
+    setMainComment("");
   };
 
   const handleAddReply = (parentId: number) => {
     if (!replyText.trim()) return;
 
-    const parentComment = comments.find((c) => c.id === parentId);
+    const parent = comments.find((c) => c.id === parentId);
 
     const reply: Comment = {
       id: Date.now(),
       userId: 999,
-      userName: "Admin User",
-      userAvatar: "A",
-      text: `@${parentComment?.userName} ${replyText}`,
+      userName: "Bạn đọc",
+      userAvatar: "B",
+      text: `@${parent?.userName} ${replyText}`,
       time: "Vừa xong",
       likes: 0,
       liked: false,
@@ -57,8 +102,8 @@ export default function ChatPage() {
     };
 
     setComments([...comments, reply]);
-    setReplyTo(null);
     setReplyText("");
+    setReplyTo(null);
     if (!expanded.includes(parentId)) setExpanded([...expanded, parentId]);
   };
 
@@ -72,12 +117,26 @@ export default function ChatPage() {
     );
 
   return (
-    <div className="bg-white rounded-2xl p-8 border border-gray-200 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg">
 
-      <h2 className="text-2xl font-semibold mb-2">Bình luận</h2>
-      <p className="text-gray-500 mb-6">Thảo luận – hỏi đáp – chia sẻ với mọi người</p>
+      {/* COMMENT INPUT */}
+      <textarea
+        value={mainComment}
+        onChange={(e) => setMainComment(e.target.value)}
+        placeholder="Hãy bình luận có văn hóa để tránh bị khóa tài khoản…"
+        className="w-full border rounded-lg p-3 mb-4 shadow-sm focus:ring focus:ring-red-200"
+        rows={2}
+      />
 
-      {/* LIST COMMENT CHA */}
+      <button
+        onClick={addMainComment}
+        className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+      >
+        Gửi bình luận
+      </button>
+
+      <h3 className="text-xl font-semibold mt-6 mb-4">Bình luận</h3>
+
       <div className="space-y-6">
         {parentComments.map((pc) => {
           const replies = repliesOf(pc.id);
@@ -85,8 +144,6 @@ export default function ChatPage() {
 
           return (
             <div key={pc.id}>
-
-              {/* Comment cha */}
               <CommentItem
                 comment={pc}
                 isReply={false}
@@ -94,9 +151,9 @@ export default function ChatPage() {
                 onLike={() => toggleLike(pc.id)}
               />
 
-              {/* Comment con */}
-              <div className="ml-14 mt-3 space-y-3">
-                {(isExpanded ? replies : replies.slice(0, 1)).map((r) => (
+              {/* REPLIES */}
+              <div className="ml-12 mt-2 space-y-3">
+                {isExpanded && replies.map((r) => (
                   <CommentItem
                     key={r.id}
                     comment={r}
@@ -106,19 +163,18 @@ export default function ChatPage() {
                   />
                 ))}
 
-                {/* Xem thêm / Thu gọn */}
-                {replies.length > 1 && (
+                {replies.length > 0 && (
                   <button
                     onClick={() => toggleExpand(pc.id)}
-                    className="text-blue-600 text-sm hover:underline"
+                    className="text-blue-600 text-sm hover:underline ml-3"
                   >
                     {isExpanded
                       ? "Thu gọn phản hồi"
-                      : `Xem thêm ${replies.length - 1} phản hồi`}
+                      : `Xem ${replies.length} phản hồi`}
                   </button>
                 )}
 
-                {/* Reply box */}
+                {/* Reply Box */}
                 {replyTo === pc.id && (
                   <ReplyBox
                     replyText={replyText}
@@ -128,7 +184,6 @@ export default function ChatPage() {
                   />
                 )}
 
-                {/* Reply cho reply */}
                 {replies.map((r) =>
                   replyTo === r.id ? (
                     <ReplyBox
@@ -149,6 +204,8 @@ export default function ChatPage() {
   );
 }
 
+/* ---------------------- COMMENT ITEM ---------------------- */
+
 function CommentItem({
   comment,
   isReply,
@@ -162,27 +219,27 @@ function CommentItem({
 }) {
   return (
     <div className={`flex gap-3 ${isReply ? "ml-2" : ""}`}>
-      <div
-        className={`rounded-full flex items-center justify-center font-bold text-white ${isReply ? "w-8 h-8 bg-gray-500" : "w-10 h-10 bg-red-600"
-          }`}
-      >
+      {/* Avatar */}
+      <div className="w-10 h-10 rounded-full bg-orange-200 text-orange-800 font-bold flex items-center justify-center shadow-sm">
         {comment.userAvatar}
       </div>
 
+      {/* Content */}
       <div className="flex-1">
-        <div className="bg-gray-100 px-4 py-2 rounded-xl inline-block">
-          <p className="font-semibold">{comment.userName}</p>
-          <p>{comment.text}</p>
+        <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm">
+          <p className="font-semibold text-orange-700">{comment.userName}</p>
+          <p className="leading-relaxed">{comment.text}</p>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1 ml-2">
+        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1 ml-1">
           <span>{comment.time}</span>
 
-          <button onClick={onReply} className="hover:underline">
+          <button onClick={onReply} className="hover:underline flex items-center gap-1">
+            <Reply size={14} />
             Trả lời
           </button>
 
-          <button onClick={onLike} className={`flex items-center gap-1`}>
+          <button onClick={onLike} className="flex items-center gap-1">
             <ThumbsUp
               size={14}
               className={comment.liked ? "text-blue-600" : "text-gray-600"}
@@ -194,6 +251,8 @@ function CommentItem({
     </div>
   );
 }
+
+/* ---------------------- REPLY BOX ---------------------- */
 
 function ReplyBox({
   replyText,
@@ -207,15 +266,15 @@ function ReplyBox({
   onSend: () => void;
 }) {
   return (
-    <div className="ml-4 mt-2">
+    <div className="ml-4 mt-3">
       <textarea
         rows={1}
-        className="w-full border rounded-xl px-3 py-2"
-        placeholder="Viết phản hồi..."
+        className="w-full border rounded-xl px-3 py-2 shadow-sm"
+        placeholder="Viết phản hồi…"
         value={replyText}
         onChange={(e) => setReplyText(e.target.value)}
       />
-      <div className="flex gap-2 mt-1">
+      <div className="flex gap-2 mt-2">
         <button onClick={onSend} className="px-4 py-1 bg-blue-600 text-white rounded-lg">
           Gửi
         </button>

@@ -11,10 +11,11 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
 
+  const [loginError, setLoginError] = useState("");
   const [locked, setLocked] = useState(false);
   const [reactivateMessage, setReactivateMessage] = useState("");
+  const [loadingRestore, setLoadingRestore] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,29 +30,26 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      // ❌ LOGIN FAILED
       if (!response.ok) {
         const err = await response.json();
 
-        // 🔥 IF ACCOUNT IS DEACTIVATED
-        if (err.message?.includes("vô hiệu hóa")) {
+        // 🔥 Check lỗi khóa tài khoản qua ERROR CODE
+        if (err.code === 1005 || err.message?.includes("vô hiệu hóa")) {
           setLocked(true);
           setLoginError("❌ Tài khoản của bạn đã bị vô hiệu hóa!");
           return;
         }
 
-        // Sai mật khẩu
         setLoginError("Email hoặc mật khẩu không đúng!");
         return;
       }
 
-      // ✅ LOGIN SUCCESS
+      // SUCCESS
       const data = await response.json();
       const token = data.token;
 
       localStorage.setItem("token", token);
 
-      // Lấy thông tin user sau login
       const userRes = await fetch("http://localhost:8080/api/v1/auth/current", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -69,9 +67,12 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   };
 
   // ==========================
-  // 🔥 API GỬI YÊU CẦU KHÔI PHỤC
+  // 🔥 API gửi yêu cầu mở khóa
   // ==========================
   const handleRequestReactivation = async () => {
+    setLoadingRestore(true);
+    setReactivateMessage("");
+
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/request-reactivation", {
         method: "POST",
@@ -84,6 +85,8 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     } catch (err) {
       setReactivateMessage("Không thể gửi yêu cầu. Vui lòng thử lại!");
     }
+
+    setLoadingRestore(false);
   };
 
   return (
@@ -144,7 +147,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
               <p className="text-gray-600">Nhập thông tin để tiếp tục</p>
             </div>
 
-            {/* 🚫 Tài khoản bị khóa UI */}
+            {/* 🚫 UI trạng thái bị khóa */}
             {locked && (
               <div className="border border-red-300 bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex gap-3">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -154,15 +157,17 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                     Bạn có thể yêu cầu mở khóa tài khoản qua email đăng ký.
                   </p>
 
-                  {/* nút khôi phục */}
+                  {/* Nút gửi yêu cầu */}
                   <button
                     onClick={handleRequestReactivation}
-                    className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    disabled={loadingRestore}
+                    className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 
+                      ${loadingRestore ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    Gửi yêu cầu khôi phục
+                    {loadingRestore ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
                   </button>
 
-                  {/* thông báo sau khi gửi */}
+                  {/* Thông báo */}
                   {reactivateMessage && (
                     <p className="mt-3 text-sm text-green-600">
                       {reactivateMessage}
@@ -172,7 +177,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
               </div>
             )}
 
-            {/* Login form */}
+            {/* Form login */}
             {!locked && (
               <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -225,13 +230,12 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                   Đăng nhập
                 </motion.button>
 
-                {/* ERROR MESSAGE */}
+                {/* ERROR */}
                 {loginError && (
                   <div className="mt-3 bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
                     {loginError}
                   </div>
                 )}
-
               </form>
             )}
 

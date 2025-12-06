@@ -19,7 +19,6 @@ import ModalDeleteAccount from "../ui/ModalDeleteAccount";
 export default function SettingsPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [notifications, setNotifications] = useState({
@@ -140,7 +139,7 @@ export default function SettingsPage() {
   };
 
   // =========================== UPLOAD AVATAR
-  const handleAvatarUpload = async (e) => {
+  const handleAvatarUpload = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -182,9 +181,9 @@ export default function SettingsPage() {
     }
   };
 
-  // =========================== DELETE ACCOUNT
-  const handleDeleteAccount = async () => {
-    if (!deletePassword.trim()) {
+  // =========================== DELETE ACCOUNT (ĐÃ FIX BUG)
+  const handleDeleteAccount = async (password: string) => {
+    if (!password.trim()) {
       alert("Vui lòng nhập mật khẩu!");
       return;
     }
@@ -198,7 +197,7 @@ export default function SettingsPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ password: deletePassword }),
+      body: JSON.stringify({ password }),
     });
 
     setDeleteLoading(false);
@@ -207,6 +206,7 @@ export default function SettingsPage() {
       setToastMessage("Tài khoản đã bị vô hiệu hóa!");
 
       localStorage.removeItem("token");
+
       setTimeout(() => {
         window.location.href = "/login";
       }, 1500);
@@ -467,9 +467,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
                   <p className="text-gray-900">Thông báo Email</p>
-                  <p className="text-sm text-gray-600">
-                    Nhận thông báo qua email
-                  </p>
+                  <p className="text-sm text-gray-600">Nhận thông báo qua email</p>
                 </div>
                 <button
                   onClick={() =>
@@ -479,15 +477,11 @@ export default function SettingsPage() {
                     })
                   }
                   className={`relative w-14 h-8 rounded-full transition-colors 
-                    ${notifications.email ? "bg-red-600" : "bg-gray-300"
-                    }`}
+                    ${notifications.email ? "bg-red-600" : "bg-gray-300"}`}
                 >
                   <div
                     className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
-                      ${notifications.email
-                        ? "translate-x-7"
-                        : "translate-x-1"
-                      }`}
+                      ${notifications.email ? "translate-x-7" : "translate-x-1"}`}
                   />
                 </button>
               </div>
@@ -508,15 +502,11 @@ export default function SettingsPage() {
                     })
                   }
                   className={`relative w-14 h-8 rounded-full transition-colors 
-                    ${notifications.push ? "bg-red-600" : "bg-gray-300"
-                    }`}
+                    ${notifications.push ? "bg-red-600" : "bg-gray-300"}`}
                 >
                   <div
                     className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
-                      ${notifications.push
-                        ? "translate-x-7"
-                        : "translate-x-1"
-                      }`}
+                      ${notifications.push ? "translate-x-7" : "translate-x-1"}`}
                   />
                 </button>
               </div>
@@ -544,7 +534,7 @@ export default function SettingsPage() {
                 Xóa tất cả dữ liệu
               </button>
 
-              {/* Button mở popup xóa */}
+              {/* ✔ Button mở popup xóa tài khoản */}
               <button
                 onClick={() => setDeletePopupOpen(true)}
                 className="w-full px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2"
@@ -557,19 +547,14 @@ export default function SettingsPage() {
         </div>
       </div>
 
-
+      {/* ======================= MODAL POPUP ======================= */}
       <ModalDeleteAccount
         isOpen={deletePopupOpen}
         onClose={() => setDeletePopupOpen(false)}
-        onConfirm={(password) => {
-          setDeletePassword(password);
-          handleDeleteAccount();
-        }}
+        onConfirm={(password) => handleDeleteAccount(password)} // FIX BUG HERE
       />
 
-
-
-      {/* Toast */}
+      {/* ======================= TOAST ======================= */}
       {toastMessage && (
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
       )}
