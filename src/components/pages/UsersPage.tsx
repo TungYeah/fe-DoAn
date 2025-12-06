@@ -38,7 +38,6 @@ const [loadingUsers, setLoadingUsers] = useState(false);
 const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
 const [isViewModalOpen, setIsViewModalOpen] = useState(false);                    
 const [isEditModalOpen, setIsEditModalOpen] = useState(false);                                            /// sửa thong tin (có thể bỏ)
-const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);                              /// xóa tv
 const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);                    /// reset pas (them sau)
 const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);                                    /// phân quyền ( thêm sau)
 const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);                      /// block 
@@ -311,7 +310,6 @@ const filteredUsers = users.filter((user) => {
             >
               <option value="all">Tất cả vai trò</option>
               <option value="role_admin">Admin</option>
-              <option value="role_manager">Manager</option>
               <option value="role_user">User</option>
             </select>
           </div>
@@ -343,7 +341,9 @@ const filteredUsers = users.filter((user) => {
                                 <th className="px-6 py-4 text-left text-sm text-gray-600">
                   Ngày tham gia
                 </th>
-<th className="px-6 py-4 text-left text-sm text-gray-600">Hoạt động gần nhất</th>
+                  <th className="px-6 py-4 text-left text-sm text-gray-600">
+                    Ngày kích hoạt
+                    </th>
 
 
                 <th className="px-6 py-4 text-right text-sm text-gray-600">
@@ -385,8 +385,6 @@ const filteredUsers = users.filter((user) => {
                       className={`px-3 py-1 rounded-full text-xs ${
                         user.role === "ROLE_ADMIN"
                           ? "bg-purple-100 text-purple-700"
-                          : user.role === "ROLE_MANAGER"
-                          ? "bg-blue-100 text-blue-700"
                           : "bg-gray-100 text-gray-700"
                       }`}
                     >
@@ -421,14 +419,13 @@ const filteredUsers = users.filter((user) => {
                     </span>
                   </td>
  
-              <td className="px-6 py-4 text-gray-600">
-  {user.lastActive}
-</td>
-
-
                   <td className="px-6 py-4">
                     <span className="text-gray-600">{user.joinDate}</span>
                   </td>
+                                <td className="px-6 py-4 text-gray-600">
+  {user.lastActive}
+</td>
+
                  <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <motion.button
@@ -601,7 +598,6 @@ const filteredUsers = users.filter((user) => {
                 </div>
                 <span className={`inline-block px-3 py-1 rounded-full text-xs ${
                   selectedUser.role === "Admin" ? "bg-purple-100 text-purple-700" :
-                  selectedUser.role === "Manager" ? "bg-blue-100 text-blue-700" :
                   "bg-gray-100 text-gray-700"
                 }`}>
                   {selectedUser.role}
@@ -884,7 +880,7 @@ const filteredUsers = users.filter((user) => {
                 Chọn vai trò mới
               </label>
               <div className="space-y-2">
-                {["Admin", "Manager", "User"].map((role) => (
+                {["Admin", "User"].map((role) => (
                   <label
                     key={role}
                     className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${

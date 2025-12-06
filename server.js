@@ -168,7 +168,7 @@ app.post('/api/login', (req, res) => {
 
 
 
-// =====thêm thiết bị=====================//
+// =====thêm thiết bị=====================// 11111
 app.post('/api/add-device', (req, res) => {
   const { name, description, device_type_id, user_id, province, district, ward } = req.body;
   let { device_id } = req.body;
@@ -249,7 +249,7 @@ app.post('/api/devices/:id/reset-key', (req, res) => {
   });
 });
 
-// ==================  API: LẤY DANH SÁCH THIẾT BỊ ==================
+// ==================  API: LẤY DANH SÁCH THIẾT BỊ ==================  22222222
 app.get('/api/devices', (req, res) => {
   const sql = `
     SELECT 
@@ -278,7 +278,7 @@ app.get('/api/devices', (req, res) => {
 });
 
 
-// ========================== API: UPLOAD DỮ LIỆU CHO THIẾT BỊ ==========================
+// ========================== API: UPLOAD DỮ LIỆU CHO THIẾT BỊ ========================== 2.2222
 app.post("/api/device/upload", async (req, res) => {
   try {
     const { api_key, device_id, timestamp, ...sensors } = req.body;
@@ -329,7 +329,7 @@ app.post("/api/device/upload", async (req, res) => {
     res.status(500).json({ message: "Upload failed" });
   }
 });
-/// ========================== API: LỌC DỮ LIỆU  ==========================
+/// ========================== API: LỌC DỮ LIỆU  ==========================3
 app.get("/api/filter", async (req, res) => {
   const { device_id, sensor, start, end, province, district, ward } = req.query;
 
@@ -384,7 +384,7 @@ async function readJSON(path) {
     return null;
   }
 }
-// ========================== API: TẠO DATASET SAU KHI LỌC DỮ LIỆU ==========================
+// ========================== API: TẠO DATASET SAU KHI LỌC DỮ LIỆU ========================== 4444
 app.get("/api/dataset", async (req, res) => {
   const { device_id, sensor, start, end, province, district, ward } = req.query;
 
@@ -449,7 +449,7 @@ function cleanFilter(filter) {
   return valid;
 }
 
-// Lưu filter mới
+// Lưu filter mới   5
 app.post('/api/export_filters', (req, res) => {
   const { user_id, filter_name, filter_json } = req.body;
 
@@ -470,7 +470,7 @@ app.post('/api/export_filters', (req, res) => {
   });
 });
 
-// Lấy danh sách filter của 1 user
+// Lấy danh sách filter của 1 user 6666
 app.get('/api/export_filters/:uid', (req, res) => {
   const uid = req.params.uid;
 
@@ -498,7 +498,7 @@ app.get('/api/export_filters/:uid', (req, res) => {
   });
 });
 
-// Xem lại dataset từ filter đã lưu
+// Xem lại dataset từ filter đã lưu   7777
 app.get('/api/export_filters/:id/dataset', async (req, res) => {
   const sql = `SELECT * FROM export_filters WHERE id = ?`;
 
@@ -540,7 +540,7 @@ app.get('/api/export_filters/:id/dataset', async (req, res) => {
   });
 });
 
-// Export lại CSV từ filter đã lưu
+// Export lại CSV từ filter đã lưu 8
 app.get('/api/export_filters/:id/export_csv', async (req, res) => {
   const sql = `SELECT * FROM export_filters WHERE id = ?`;
 
@@ -597,7 +597,7 @@ app.get('/api/export_filters/:id/export_csv', async (req, res) => {
   });
 });
 
-// xóa lịch sử
+// xóa lịch sử  9
 app.delete("/api/export_filters/:id", (req, res) => {
   const id = req.params.id;
 
@@ -694,7 +694,7 @@ app.get('/api/merge', async (req, res) => {
   }
 });
 
-// ================== 📦 API: LẤY DANH SÁCH LOẠI THIẾT BỊ ==================
+// ================== 📦 API: LẤY DANH SÁCH LOẠI THIẾT BỊ ==================  10
 app.get('/api/device-types', (req, res) => {
   const sql = `SELECT id, name, description FROM device_types ORDER BY id ASC`;
   db.query(sql, (err, results) => {
@@ -706,7 +706,7 @@ app.get('/api/device-types', (req, res) => {
   });
 });
 
-// ================== 🗑️ API: XÓA THIẾT BỊ ==================
+// ================== 🗑️ API: XÓA THIẾT BỊ ================== 11
 app.delete('/api/devices/:device_id', (req, res) => {
   const { device_id } = req.params;
 
