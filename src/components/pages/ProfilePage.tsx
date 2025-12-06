@@ -1,21 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { User, Mail, Building, Calendar, Edit, Save, Camera } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+// =====================
+// Avatar Helpers
+// =====================
+const getAvatarUI = (avatar?: string | null) => {
+  const src =
+    avatar && avatar.trim() !== ""
+      ? `http://localhost:8080${avatar}`
+      : "/847969.png"; // Ảnh mặc định trong public/
+
+  return (
+    <img
+      src={src}
+      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
+      alt="avatar"
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "/847969.png";
+      }}
+    />
+  );
+};
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
-    id:"",
+    id: "",
     fullName: "",
     email: "",
     unit: "",
     unitDescription: "",
-    roles: [],
+    roles: [] as string[],
     createdAt: "",
     avatar: "",
   });
 
+  // ===================== FETCH CURRENT USER =====================
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -39,9 +63,8 @@ export default function ProfilePage() {
           unitDescription: data.unitDescription,
           roles: data.roles,
           createdAt: new Date(data.createdAt).toLocaleDateString("vi-VN"),
-          avatar: data.avatar, // ⬅ lấy avatar từ backend
+          avatar: data.avatar,
         });
-
       } catch (error) {
         console.error("Error fetching current user:", error);
       }
@@ -50,35 +73,40 @@ export default function ProfilePage() {
     fetchCurrentUser();
   }, []);
 
+  // ===================== UI =====================
   return (
     <div className="space-y-6">
-
       {/* Header */}
-<motion.div
-  initial={{ opacity: 0, y: -15 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4 }}
-  className="flex items-center justify-between"
->         <div>
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between"
+      >        <div>
           <h1 className="text-3xl text-gray-900 mb-2">Hồ sơ cá nhân</h1>
           <p className="text-gray-600">Quản lý thông tin và cài đặt tài khoản</p>
         </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("/dashboard/settings")}
+          className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+        >
+           <Edit className="w-5 h-5" />Chỉnh sửa        </motion.button>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Profile Card */}
+        {/* PROFILE CARD */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="bg-white rounded-2xl p-8 border border-gray-200 text-center"
         >
           <div className="relative inline-block mb-6">
-            <div className="w-32 h-32 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center text-white text-4xl">
-              {formData.fullName.charAt(0).toUpperCase()}
-            </div>
+            {/* Avatar */}
+            {getAvatarUI(formData.avatar)}
 
-            {/* Camera icon khi edit */}
             {isEditing && (
               <button className="absolute bottom-0 right-0 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-700 transition-colors">
                 <Camera className="w-5 h-5" />
@@ -99,6 +127,7 @@ export default function ProfilePage() {
               <span className="text-gray-600">Đơn vị</span>
               <span className="text-gray-900">{formData.unitDescription}</span>
             </div>
+
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Vai trò</span>
               <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
@@ -108,7 +137,7 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* Information */}
+        {/* INFORMATION */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -117,7 +146,6 @@ export default function ProfilePage() {
           <h3 className="text-xl text-gray-900 mb-6">Thông tin cá nhân</h3>
 
           <div className="space-y-6">
-
             {/* ID */}
             <div>
               <label className="block text-gray-700 mb-2">ID người dùng</label>
@@ -131,7 +159,8 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            {/* fullName */}
+
+            {/* Full Name */}
             <div>
               <label className="block text-gray-700 mb-2">Tên tài khoản</label>
               <div className="relative">
@@ -172,7 +201,6 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-
           </div>
         </motion.div>
       </div>

@@ -26,6 +26,27 @@ type DashboardLayoutProps = {
   children?: React.ReactNode;
 };
 
+// ===========================
+// Avatar giống ProfilePage
+// ===========================
+const getAvatarUI = (avatar?: string | null) => {
+  const src =
+    avatar && avatar.trim() !== ""
+      ? `http://localhost:8080${avatar}`
+      : "/847969.png"; // ảnh mặc định trong public/
+
+  return (
+    <img
+      src={src}
+      className="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-300"
+      alt="avatar"
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "/847969.png";
+      }}
+    />
+  );
+};
+
 export default function DashboardLayout({
   currentPage,
   onNavigate,
@@ -41,6 +62,9 @@ export default function DashboardLayout({
     avatar: "",
   });
 
+  // ========================
+  // Fetch current user
+  // ========================
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -53,22 +77,13 @@ export default function DashboardLayout({
         setUserInfo({
           fullName: u.fullName || "",
           email: u.email || "",
-          avatar: u.avatar || "", // path dạng "/uploads/avatars/img.png"
+          avatar: u.avatar || "",
         });
       });
   }, []);
 
   const displayName =
     userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
-
-  const avatarUI = userInfo.avatar ? (
-    <img
-      src={`http://localhost:8080${userInfo.avatar}`}
-      className="w-8 h-8 rounded-full object-cover"
-    />
-  ) : (
-    userInfo.fullName?.charAt(0) ?? "U"
-  );
 
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -85,10 +100,12 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
+
       {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
         <div className="h-full px-4 flex items-center justify-between">
-          {/* Left */}
+
+          {/* LEFT */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -101,34 +118,33 @@ export default function DashboardLayout({
               <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white font-black">
                 PTIT
               </div>
-              <div className="hidden md:block">
-                <h1 className="text-transparent bg-gradient-to-r from-red-700 to-red-600 bg-clip-text">
-                  PTIT IoT Platform
-                </h1>
-              </div>
+              <h1 className="hidden md:block text-transparent bg-gradient-to-r from-red-700 to-red-600 bg-clip-text">
+                PTIT IoT Platform
+              </h1>
             </div>
           </div>
 
-          {/* Right */}
+          {/* RIGHT */}
           <div className="flex items-center gap-4">
-            <button onClick={() => onNavigate("chat")}>
-              <MessageCircle className="w-5 h-5 text-gray-600" />
-            </button>
 
-            <button onClick={() => onNavigate("notifications")}>
-              <Bell className="w-5 h-5 text-gray-600" />
-            </button>
+            <MessageCircle className="w-5 h-5 text-gray-600 cursor-pointer"
+              onClick={() => onNavigate("chat")}
+            />
 
-            {/* User */}
+            <Bell className="w-5 h-5 text-gray-600 cursor-pointer"
+              onClick={() => onNavigate("notifications")}
+            />
+
             <div className="relative">
+              {/* USER BUTTON */}
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg"
               >
-                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center">
-                  {avatarUI}
-                </div>
+                {/* Avatar */}
+                {getAvatarUI(userInfo.avatar)}
 
+                {/* Name + Email */}
                 <div className="hidden md:block text-left">
                   <p className="text-sm">{displayName}</p>
                   <p className="text-xs text-gray-600">{userInfo.email}</p>
@@ -137,7 +153,7 @@ export default function DashboardLayout({
                 <ChevronDown className="w-4 h-4 text-gray-600" />
               </button>
 
-              {/* Dropdown */}
+              {/* Dropdown Menu */}
               {userMenuOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -182,7 +198,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${
           sidebarOpen ? "w-64" : "w-0"
@@ -209,10 +225,11 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Content */}
+      {/* CONTENT */}
       <main className={`pt-16 ${sidebarOpen ? "ml-64" : "ml-0"}`}>
         <div className="p-6">{children}</div>
       </main>
+
     </div>
   );
 }
