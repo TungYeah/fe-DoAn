@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Lock, Mail, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 type LoginProps = {
   onNavigate: (view: string) => void;
@@ -17,6 +18,108 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   const [reactivateMessage, setReactivateMessage] = useState("");
   const [loadingRestore, setLoadingRestore] = useState(false);
 
+  // ======================
+  // 🔥 SWITCH FORM MODE
+  // login / forgot / reset
+  // ======================
+  const [isForgot, setIsForgot] = useState(false);
+  const [isResetPassword, setIsResetPassword] = useState(false);
+
+  // FORGOT PASSWORD
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  // RESET PASSWORD
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [newPass, setNewPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
+
+  // ======================
+  // 🔥 CHECK TOKEN ON URL
+  // ======================
+  const [params] = useSearchParams();
+
+  useEffect(() => {
+    const t = params.get("token");
+    if (t) {
+      setResetToken(t);
+      setIsResetPassword(true);  // mở form đặt mật khẩu
+      setIsForgot(false);
+    }
+  }, [params]);
+
+
+  // ======================
+  // 🔥 SUBMIT FORGOT PASSWORD
+  // ======================
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotMessage("");
+    setForgotError("");
+
+    try {
+      setForgotLoading(true);
+
+      const res = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        setForgotError(err.message || "Email không tồn tại!");
+      } else {
+        const msg = await res.text();
+        setForgotMessage(msg);
+      }
+    } catch (err) {
+      setForgotError("Không thể kết nối đến server!");
+    }
+
+    setForgotLoading(false);
+  };
+
+
+  // ======================
+  // 🔥 SUBMIT RESET PASSWORD
+  // ======================
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMsg("");
+
+    if (newPass !== confirmPass) {
+      setResetMsg("Mật khẩu xác nhận không khớp!");
+      return;
+    }
+
+    const res = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: resetToken,
+        newPassword: newPass,
+        confirmationPassword: confirmPass,
+      }),
+    });
+
+    const txt = await res.text();
+    setResetMsg(txt);
+
+    if (res.ok) {
+      setTimeout(() => {
+        setIsResetPassword(false);
+      }, 2000);
+    }
+  };
+
+
+  // ======================
+  // 🔥 LOGIN HANDLER
+  // ======================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -30,21 +133,24 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const err = await response.json();
+      const err = !response.ok ? await response.json() : null;
 
-        // 🔥 Check lỗi khóa tài khoản qua ERROR CODE
+      if (err) {
         if (err.code === 1005 || err.message?.includes("vô hiệu hóa")) {
           setLocked(true);
-          setLoginError("❌ Tài khoản của bạn đã bị vô hiệu hóa!");
+          setLoginError(err.message || "Tài khoản của bạn đã bị vô hiệu hóa!");
           return;
         }
 
-        setLoginError("Email hoặc mật khẩu không đúng!");
+        if (err.code === 1006 || err.message?.includes("chưa kích hoạt")) {
+          setLoginError(err.message || "Tài khoản chưa kích hoạt. Vui lòng kiểm tra email!");
+          return;
+        }
+
+        setLoginError(err.message || "Email hoặc mật khẩu không đúng!");
         return;
       }
 
-      // SUCCESS
       const data = await response.json();
       const token = data.token;
 
@@ -60,15 +166,15 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       localStorage.setItem("email", user.email);
 
       onLogin();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
       setLoginError("Không thể kết nối tới server!");
     }
   };
 
-  // ==========================
-  // 🔥 API gửi yêu cầu mở khóa
-  // ==========================
+
+  // ======================
+  // 🔥 REQUEST REACTIVATION
+  // ======================
   const handleRequestReactivation = async () => {
     setLoadingRestore(true);
     setReactivateMessage("");
@@ -89,10 +195,14 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setLoadingRestore(false);
   };
 
+
+  // ======================
+  // 🔥 UI COMPONENT
+  // ======================
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
 
-      {/* Background */}
+      {/* BG EFFECT */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
@@ -108,7 +218,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
 
-        {/* LEFT */}
+        {/* LEFT SIDE */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -132,128 +242,255 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           </div>
         </motion.div>
 
-        {/* RIGHT */}
+        {/* RIGHT SIDE (FORM WRAPPER) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative"
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
 
-            {/* Title */}
-            <div className="mb-8">
-              <h3 className="text-2xl text-gray-900 mb-2">Đăng nhập</h3>
-              <p className="text-gray-600">Nhập thông tin để tiếp tục</p>
-            </div>
+            {/* ============================== */}
+            {/* 🔥 FORM RESET PASSWORD */}
+            {/* ============================== */}
+            {isResetPassword ? (
+              <>
+                <h3 className="text-2xl text-gray-900 mb-2">Đặt lại mật khẩu</h3>
+                <p className="text-gray-600 mb-6">
+                  Nhập mật khẩu mới cho tài khoản của bạn.
+                </p>
 
-            {/* 🚫 UI trạng thái bị khóa */}
-            {locked && (
-              <div className="border border-red-300 bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex gap-3">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-                <div>
-                  <p className="font-semibold">Tài khoản của bạn đã bị khóa</p>
-                  <p className="text-sm">
-                    Bạn có thể yêu cầu mở khóa tài khoản qua email đăng ký.
-                  </p>
+                <form onSubmit={handleResetSubmit} className="space-y-6">
 
-                  {/* Nút gửi yêu cầu */}
+                  {/* NEW PASSWORD */}
+                  <div>
+                    <label className="block text-gray-700 mb-2">Mật khẩu mới</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="password"
+                        value={newPass}
+                        onChange={(e) => setNewPass(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* CONFIRM PASSWORD */}
+                  <div>
+                    <label className="block text-gray-700 mb-2">Nhập lại mật khẩu</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="password"
+                        value={confirmPass}
+                        onChange={(e) => setConfirmPass(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <button
-                    onClick={handleRequestReactivation}
-                    disabled={loadingRestore}
-                    className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 
-                      ${loadingRestore ? "opacity-50 cursor-not-allowed" : ""}`}
+                    type="submit"
+                    className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
                   >
-                    {loadingRestore ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
+                    Xác nhận
                   </button>
 
-                  {/* Thông báo */}
-                  {reactivateMessage && (
-                    <p className="mt-3 text-sm text-green-600">
-                      {reactivateMessage}
-                    </p>
+                  {resetMsg && (
+                    <p className="text-center mt-3 text-green-600">{resetMsg}</p>
                   )}
+                </form>
+
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setIsResetPassword(false)}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    ← Quay lại đăng nhập
+                  </button>
                 </div>
-              </div>
+              </>
+            ) : null}
+
+
+            {/* ============================== */}
+            {/* 🔥 FORM QUÊN MẬT KHẨU */}
+            {/* ============================== */}
+            {!isResetPassword && isForgot && (
+              <>
+                <h3 className="text-2xl text-gray-900 mb-2">Quên mật khẩu</h3>
+                <p className="text-gray-600 mb-6">
+                  Nhập email để nhận liên kết đặt lại mật khẩu.
+                </p>
+
+                <form onSubmit={handleForgotSubmit} className="space-y-6">
+
+                  <div>
+                    <label className="block text-gray-700 mb-2">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="email@example.com"
+                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
+                    disabled={forgotLoading}
+                  >
+                    {forgotLoading ? "Đang gửi..." : "Gửi liên kết đặt lại mật khẩu"}
+                  </button>
+
+                  {forgotMessage && (
+                    <p className="text-green-600 text-sm">{forgotMessage}</p>
+                  )}
+                  {forgotError && (
+                    <p className="text-red-600 text-sm">{forgotError}</p>
+                  )}
+                </form>
+
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setIsForgot(false)}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    ← Quay lại đăng nhập
+                  </button>
+                </div>
+              </>
             )}
 
-            {/* Form login */}
-            {!locked && (
-              <form onSubmit={handleSubmit} className="space-y-6">
 
-                {/* EMAIL */}
-                <div>
-                  <label className="block text-gray-700 mb-2">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@example.com"
-                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
-                      required
-                    />
-                  </div>
-                </div>
+            {/* ============================== */}
+            {/* 🔥 FORM LOGIN */}
+            {/* ============================== */}
+            {!isForgot && !isResetPassword && (
+              <>
+                <h3 className="text-2xl text-gray-900 mb-2">Đăng nhập</h3>
+                <p className="text-gray-600 mb-8">Nhập thông tin để tiếp tục</p>
 
-                {/* PASSWORD */}
-                <div>
-                  <label className="block text-gray-700 mb-2">Mật khẩu</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff /> : <Eye />}
-                    </button>
-                  </div>
-                </div>
+                {locked && (
+                  <div className="border border-red-300 bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex gap-3">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                    <div>
+                      <p className="font-semibold">Tài khoản của bạn đã bị khóa</p>
+                      <p className="text-sm">Bạn có thể yêu cầu mở khóa qua email đăng ký.</p>
 
-                {/* LOGIN BUTTON */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
-                >
-                  Đăng nhập
-                </motion.button>
+                      <button
+                        onClick={handleRequestReactivation}
+                        disabled={loadingRestore}
+                        className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700
+                          ${loadingRestore ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        {loadingRestore ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
+                      </button>
 
-                {/* ERROR */}
-                {loginError && (
-                  <div className="mt-3 bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
-                    {loginError}
+                      {reactivateMessage && (
+                        <p className="mt-3 text-sm text-green-600">{reactivateMessage}</p>
+                      )}
+                    </div>
                   </div>
                 )}
-              </form>
+
+                {!locked && (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-gray-700 mb-2">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2">Mật khẩu</label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="w-full py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg"
+                    >
+                      Đăng nhập
+                    </motion.button>
+
+                    {loginError && (
+                      <div className="mt-3 bg-red-500 text-white text-sm py-2 px-4 rounded-lg shadow-md">
+                        {loginError}
+                      </div>
+                    )}
+                  </form>
+                )}
+
+                <div className="mt-6 text-center">
+                  <p className="text-gray-600">
+                    Chưa có tài khoản?
+                    <button
+                      onClick={() => onNavigate("register")}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      {" "}Đăng ký ngay
+                    </button>
+                  </p>
+                </div>
+
+                <div className="mt-3 text-center">
+                  <button
+                    onClick={() => setIsForgot(true)}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Quên mật khẩu?
+                  </button>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => onNavigate("landing")}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    ← Quay lại trang chủ
+                  </button>
+                </div>
+              </>
             )}
-
-            {/* Navigation */}
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                Chưa có tài khoản?
-                <button onClick={() => onNavigate("register")} className="text-red-600 hover:text-red-700">
-                  {" "}Đăng ký ngay
-                </button>
-              </p>
-            </div>
-
-            <div className="mt-4 text-center">
-              <button onClick={() => onNavigate("landing")} className="text-sm text-gray-500 hover:text-gray-700">
-                ← Quay lại trang chủ
-              </button>
-            </div>
 
           </div>
         </motion.div>

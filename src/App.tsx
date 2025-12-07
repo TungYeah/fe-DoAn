@@ -25,14 +25,14 @@ import ProfilePage from "./components/pages/ProfilePage";
 import SettingsPage from "./components/pages/SettingsPage";
 import NotificationsPage from "./components/pages/NotificationsPage";
 import ChatPage from "./components/ChatPage";
-
+import AIPage from "./components/pages/AIPage";
+import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
-
 
 export default function App() {
   return (
@@ -42,6 +42,7 @@ export default function App() {
         <Route path="/login" element={<LoginPageWrapper />} />
         <Route path="/register" element={<RegisterPageWrapper />} />
         <Route path="/activation-result" element={<ActivationResultPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route
           path="/dashboard/*"
@@ -113,6 +114,7 @@ function DashboardRoutes() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="chat" element={<ChatPage />} />
+        <Route path="ai" element={<AIPage />} />
         <Route path="*" element={<Navigate to="/dashboard/dashboard" replace />} />
       </Routes>
     </DashboardLayout>
