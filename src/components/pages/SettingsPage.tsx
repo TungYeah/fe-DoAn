@@ -188,40 +188,41 @@ export default function SettingsPage() {
     }
   };
 
-  // =========================== DELETE ACCOUNT
-  const handleDeleteAccount = async () => {
-    if (!deletePassword.trim()) {
-      alert("Vui lòng nhập mật khẩu!");
-      return;
-    }
+// =========================== KHÓA ACCOUNT 
+const handleDeleteAccount = async (password) => {
+  if (!password || !password.trim()) {
+    alert("Vui lòng nhập mật khẩu!");
+    return;
+  }
 
-    setDeleteLoading(true);
-    const token = localStorage.getItem("token");
+  setDeleteLoading(true);
+  const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:8080/api/v1/user/deactivate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ password: deletePassword }),
-    });
+  const res = await fetch("http://localhost:8080/api/v1/user/deactivate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ password }),
+  });
 
-    setDeleteLoading(false);
+  setDeleteLoading(false);
 
-    if (res.ok) {
-      alert("Tài khoản đã bị vô hiệu hóa!");
-      setToastMessage("Tài khoản đã bị vô hiệu hóa!");
+  if (res.ok) {
+    alert("Tài khoản đã bị vô hiệu hóa!");
+    setToastMessage("Tài khoản đã bị vô hiệu hóa!");
+    localStorage.removeItem("token");
 
-      localStorage.removeItem("token");
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 1500);
-    } else {
-      const err = await res.json();
-      alert("❌ " + err.message);
-    }
-  };
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1500);
+  } else {
+    const err = await res.json();
+    alert("❌ " + err.message);
+  }
+};
+
 
   // ============================================================== UI ==============================================================
 
@@ -546,18 +547,19 @@ export default function SettingsPage() {
             </p>
 
             <div className="space-y-3">
-              <button className="w-full px-6 py-3 bg-white border-2 border-red-300 text-red-600 rounded-xl hover:bg-red-50 flex items-center justify-center gap-2">
+                       {/* 
+ <button className="w-full px-6 py-3 bg-white border-2 border-red-300 text-red-600 rounded-xl hover:bg-red-50 flex items-center justify-center gap-2">
                 <Database className="w-5 h-5" />
                 Xóa tất cả dữ liệu
-              </button>
+              </button>  */}
 
               {/* Button mở popup xóa */}
               <button
                 onClick={() => setDeletePopupOpen(true)}
                 className="w-full px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2"
               >
-                <Trash2 className="w-5 h-5" />
-                Xóa tài khoản
+                <Lock className="w-5 h-5" />
+                Khóa tài khoản
               </button>
             </div>
           </motion.div>
@@ -565,14 +567,14 @@ export default function SettingsPage() {
       </div>
 
 
-      <ModalDeleteAccount
+            <ModalDeleteAccount
         isOpen={deletePopupOpen}
         onClose={() => setDeletePopupOpen(false)}
         onConfirm={(password) => {
-          setDeletePassword(password);
-          handleDeleteAccount();
+          handleDeleteAccount(password); 
         }}
       />
+
 
 
 

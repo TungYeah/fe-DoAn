@@ -254,8 +254,8 @@ export default function UsersPage() {
 
       alert(
         newStatus === "inactive"
-          ? `Đã vô hiệu hóa tài khoản: ${data.fullName || selectedUser.name}`
-          : `Đã kích hoạt tài khoản: ${data.fullName || selectedUser.name}`
+          ? `Đã chặn tài khoản: ${data.fullName || selectedUser.name}`
+          : `Đã bỏ chặn tài khoản: ${data.fullName || selectedUser.name}`
       );
 
       setIsToggleStatusModalOpen(false);
@@ -809,7 +809,7 @@ export default function UsersPage() {
                             : "hover:bg-green-50 text-green-600"
                         }`}
                         title={
-                          user.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"
+                          user.status === "active" ? "Chặn" : "Bỏ chặn"
                         }
                       >
                         {user.status === "active" ? (
@@ -1314,8 +1314,8 @@ export default function UsersPage() {
         onClose={() => setIsToggleStatusModalOpen(false)}
         title={
           selectedUser?.status === "active"
-            ? "Vô hiệu hóa tài khoản"
-            : "Kích hoạt tài khoản"
+            ? "Chặn tài khoản"
+            : "Bỏ chặn tài khoản"
         }
                   customWidth="max-w-[380px]"   
       >
@@ -1336,8 +1336,8 @@ export default function UsersPage() {
             <div>
               <p className="text-gray-700 mb-2">
                 {selectedUser.status === "active"
-                  ? "Bạn có chắc muốn vô hiệu hóa tài khoản:"
-                  : "Bạn có chắc muốn kích hoạt lại tài khoản:"}
+                  ? "Bạn có chắc muốn chặn tài khoản:"
+                  : "Bạn có chắc muốn bỏ chặn tài khoản:"}
               </p>
               <p className="text-gray-900 font-semibold">{selectedUser.name}</p>
             </div>
@@ -1375,12 +1375,12 @@ export default function UsersPage() {
                 {selectedUser.status === "active" ? (
                   <>
                     <Ban className="w-4 h-4" />
-                    {togglingStatus ? "Đang vô hiệu hóa..." : "Vô hiệu hóa"}
+                    {togglingStatus ? "Đang chặn..." : "Chặn"}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    {togglingStatus ? "Đang kích hoạt..." : "Kích hoạt"}
+                    {togglingStatus ? "Đang bỏ chặn..." : "Bỏ chặn"}
                   </>
                 )}
               </button>
