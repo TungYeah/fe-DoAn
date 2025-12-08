@@ -141,7 +141,15 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           setLoginError(err.message || "Tài khoản của bạn đã bị vô hiệu hóa!");
           return;
         }
-
+        if (
+          err.message?.toLowerCase().includes("bị admin khóa") ||
+          err.code === 2001 ||
+          err.message?.toLowerCase().includes("locked")
+        ) {
+          setLocked(true);
+          setLoginError("Tài khoản của bạn đã bị quản trị viên chặn và không thể đăng nhập.");
+          return;
+        }
         if (err.code === 1006 || err.message?.includes("chưa kích hoạt")) {
           setLoginError(err.message || "Tài khoản chưa kích hoạt. Vui lòng kiểm tra email!");
           return;

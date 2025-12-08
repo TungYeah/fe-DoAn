@@ -25,10 +25,10 @@ export default function ModalDeleteAccount({ isOpen, onClose, onConfirm }) {
         <div className="bg-gradient-to-r from-red-600 to-red-500 px-5 py-4 flex items-start justify-between text-white">
           <div className="flex items-start gap-3">
             <div className="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center">
-              <Trash2 className="w-5 h-5" />
+              <Lock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-base font-semibold">Xóa tài khoản</p>
+              <p className="text-base font-semibold">Khóa tài khoản</p>
               <p className="text-xs opacity-90">Hành động nguy hiểm</p>
             </div>
           </div>
