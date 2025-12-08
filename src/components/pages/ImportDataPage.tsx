@@ -229,7 +229,7 @@ export default function ImportDataPage() {
               <div className="flex-1">
                 <h3 className="text-blue-900 mb-2">Định dạng dữ liệu</h3>
                 <p className="text-sm text-blue-700 mb-4">
-                  File CSV/JSON phải chứa các trường: timestamp, device_id, value, unit
+                  File CSV/JSON phải chứa các trường: timestamp, device_code, value, unit
                 </p>
                 <div className="flex gap-3">
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">

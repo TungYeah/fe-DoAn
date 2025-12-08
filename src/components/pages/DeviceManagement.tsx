@@ -446,26 +446,6 @@ const handleAddDevice = async () => {
                         >
                           Xóa
                         </Button>
-
-                        {/* Reset Key */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            if (!window.confirm(`Reset API Key cho "${device.name}"?`)) return;
-                            try {
-                              const res = await axios.post(`http://localhost:5000/api/devices/${device.id}/reset-key`);
-                              alert(`✅ API Key mới:\n${res.data.newKey}`);
-                              fetchDevices();
-                            } catch (err) {
-                              console.error('Lỗi reset key:', err);
-                              alert('❌ Không thể reset API key.');
-                            }
-                          }}
-                          className="text-purple-600 border-purple-300 hover:bg-purple-50"
-                        >
-                          Reset Key
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -491,15 +471,15 @@ const handleAddDevice = async () => {
               <div><Label>Mô tả</Label><Textarea value={selectedDevice.description || ''} readOnly /></div>
 
               <div>
-                <Label>API Key</Label>
+                <Label>ID</Label>
                 <div className="flex items-center gap-2">
-                  <Input value={selectedDevice.api_key || 'Chưa có'} readOnly className="font-mono text-xs" />
+                  <Input value={selectedDevice.id || 'Chưa có'} readOnly className="font-mono text-xs" />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      navigator.clipboard.writeText(selectedDevice.api_key || '');
-                      alert('📋 API Key đã được copy!');
+                      navigator.clipboard.writeText(selectedDevice.id || '');
+                      alert('📋 ID đã được copy!');
                     }}
                   >
                     <Copy className="w-4 h-4" />

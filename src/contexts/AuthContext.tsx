@@ -1,141 +1,95 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import axios from 'axios';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
-export type UserRole = 'admin' | 'manager' | 'viewer';
-
-export interface User {
-  id: string;
-  username: string;
+type User = {
+  fullName: string;
   email: string;
-  name: string;
-  phone?: string;
-  role: UserRole;
-  avatar?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (
-    username: string,
-    password: string,
-    name: string,
-    email: string,
-    phone?: string
-  ) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
-
-// ======================================
-// ⚙️ Tạo Context
-// ======================================
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
-  // ======================================
-  // 🧩 API: Đăng ký
-  // ======================================
-  const register = async (
-    username: string,
-    password: string,
-    name: string,
-    email: string,
-    phone?: string
-  ) => {
-    try {
-      const res = await axios.post('http://localhost:5000/api/register', {
-        username,
-        password,
-        name,
-        email,
-        phone,
-      });
-
-      if (res.data.status !== 'success') {
-        throw new Error(res.data.message || 'Đăng ký thất bại.');
-      }
-    } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        const message =
-          err.response?.data?.message ||
-          `Lỗi máy chủ (${err.response?.status || 500})`;
-        throw new Error(message);
-      } else {
-        throw new Error('Lỗi không xác định khi kết nối máy chủ.');
-      }
-    }
-  };
-
-  // ======================================
-  // 🧩 API: Đăng nhập
-  // ======================================
-const login = async (username: string, password: string) => {
-  try {
-    const res = await axios.post('http://localhost:5000/api/login', {
-      username,
-      password,
-    });
-
-    if (res.data.status !== 'success') {
-      throw new Error(res.data.message || 'Đăng nhập thất bại.');
-    }
-
-    const loggedInUser: User = res.data.user;
-    setUser(loggedInUser);
-    localStorage.setItem('user', JSON.stringify(loggedInUser));
-  } catch (err: any) {
-    if (axios.isAxiosError(err)) {
-      const message =
-        err.response?.data?.message ||
-        `Lỗi máy chủ (${err.response?.status || 500})`;
-      throw new Error(message);
-    } else {
-      throw new Error('Lỗi không xác định khi kết nối máy chủ.');
-    }
-  }
+  // nếu sau này BE trả thêm role, id... thì thêm vào đây
 };
 
+type AuthContextType = {
+  user: User | null;
+  loading: boolean;
+  reloadUser: () => Promise<void>; // gọi lại /current
+  logout: () => void;
+};
 
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  // ======================================
-  // 🚪 Đăng xuất
-  // ======================================
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Hàm gọi API /current, dùng lại nhiều chỗ
+  const fetchCurrentUser = async (token: string) => {
+    try {
+      const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        setUser(null);
+        return;
+      }
+
+      const data = await res.json();
+      setUser({
+        fullName: data.fullName,
+        email: data.email,
+      });
+
+      // lưu thêm cho vui (nếu bạn đang dùng ở chỗ khác)
+      localStorage.setItem("fullName", data.fullName);
+      localStorage.setItem("email", data.email);
+    } catch (err) {
+      console.error("Lỗi gọi /current:", err);
+      setUser(null);
+    }
   };
 
-  // ======================================
-  // 🔄 Xuất Context Provider
-  // ======================================
+  // Hàm public cho các component khác gọi (ví dụ LoginPage)
+  const reloadUser = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    await fetchCurrentUser(token);
+  };
+
+  // Khi mở web lần đầu → kiểm tra luôn xem có token + user hay không
+  useEffect(() => {
+    (async () => {
+      await reloadUser();
+      setLoading(false);
+    })();
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("fullName");
+    localStorage.removeItem("email");
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        register,
-        logout,
-        isAuthenticated: !!user,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, reloadUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// ======================================
-// ✅ Hook useAuth
-// ======================================
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+// hook dùng trong các component
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth phải được dùng trong AuthProvider");
+  return ctx;
+};

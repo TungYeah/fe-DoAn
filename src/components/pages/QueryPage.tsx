@@ -60,9 +60,9 @@ function exportCSV(dataset: any, fileName?: string) {
     Object.values(dataset.devices).forEach((arr: any) => rows.push(...arr));
 
   if (rows.length === 0) return;
-  const header = "timestamp,device_id,sensor,value\n";
+  const header = "timestamp,unique_identifier,sensor,value\n";
   const csvRows = rows
-    .map((r: any) => `${r.timestamp},${r.device_id},${r.sensor},${r.value}`)
+    .map((r: any) => `${r.timestamp},${r.unique_identifier},${r.sensor},${r.value}`)
     .join("\n");
 
   const blob = new Blob([header + csvRows], {
@@ -83,7 +83,7 @@ export default function QueryPage() {
   console.log(">>> CURRENT USER:", user);
 console.log(">>> USER ID:", currentUser?.id);
 
-  const CURRENT_USER_ID = currentUser?.id;
+const CURRENT_USER_ID = user?.id || currentUser?.id;
 
   // ================== STATE BACKEND LOGIC ==================
   const [devices, setDevices] = useState<any[]>([]);
@@ -222,7 +222,7 @@ console.log(">>> USER ID:", currentUser?.id);
     try {
       const params = new URLSearchParams();
 
-      if (selectedDevice !== "all") params.append("device_id", selectedDevice);
+      if (selectedDevice !== "all") params.append("unique_identifier", selectedDevice);
       if (selectedMetric !== "all") params.append("sensor", selectedMetric);
 
       const startISO = dateFromVN ? VNLocalToISO(dateFromVN) : "all";
@@ -273,11 +273,16 @@ console.log(">>> USER ID:", currentUser?.id);
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user_id: CURRENT_USER_ID,
+        created_by: CURRENT_USER_ID,
         filter_name: fileName,
         filter_json: filter,
       }),
     });
+console.log(">>> SEND FILTER:", {
+  created_by: CURRENT_USER_ID,
+  filter_name: fileName,
+  filter_json: filter,
+});
 
     loadHistory();
   }
@@ -354,7 +359,7 @@ console.log(">>> USER ID:", currentUser?.id);
     exportCSV(dataset, finalName);
 
     const filter = {
-      device_id: selectedDevice || "all",
+      unique_identifier: selectedDevice || "all",
       sensor: selectedMetric || "all",
       start: startISO,
       end: endISO,
@@ -374,7 +379,7 @@ console.log(">>> USER ID:", currentUser?.id);
   const currentData = rows.slice(startIndex, startIndex + perPage);
 
   const totalRecords = dataset?.total || rows.length;
-  const uniqueDevices = new Set(rows.map((r) => r.device_id)).size;
+  const uniqueDevices = new Set(rows.map((r) => r.unique_identifier)).size;
 
   const activeFiltersCount = [
     selectedDevice !== "all",
@@ -442,8 +447,8 @@ console.log(">>> USER ID:", currentUser?.id);
               >
                 <option value="all">Tất cả thiết bị</option>
                 {devices.map((d: any) => (
-                  <option value={d.device_id} key={d.device_id}>
-                    {d.device_id} — {d.name}
+                  <option value={d.unique_identifier} key={d.unique_identifier}>
+                    {d.unique_identifier} — {d.name}
                   </option>
                 ))}
               </select>
@@ -756,7 +761,7 @@ console.log(">>> USER ID:", currentUser?.id);
                         {toVietnamTime(row.timestamp)}
                       </td>
                       <td className="px-6 py-4 text-gray-900">
-                        {row.device_id}
+                        {row.unique_identifier}
                       </td>
                       <td className="px-6 py-4 text-gray-900">
                         {row.sensor}

@@ -40,7 +40,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '24082002',
-  database: 'iot_data_sharing'
+  database: 'testtinasoft'
 });
 
 db.connect(err => {
@@ -51,13 +51,6 @@ db.connect(err => {
   }
 });
 
-// API kiểm tra kết nối
-app.get('/api/health', (req, res) => {
-  db.query('SELECT 1', (err, result) => {
-    if (err) return res.status(500).json({ ok: false });
-    res.json({ ok: true });
-  });
-});
 
 // ========================== API: ĐĂNG KÝ ==========================
 
@@ -167,46 +160,52 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/add-device', (req, res) => {
-  const { name, description, device_type_id, user_id, province, district, ward } = req.body;
-  let { device_id } = req.body;
+  const { name, description, device_type_id, created_by, province, district, ward } = req.body;
+  let { unique_identifier } = req.body;
 
-  device_id = device_id.trim().toUpperCase();
+  // ====== FORMAT UNIQUE IDENTIFIER ======
+  unique_identifier = (unique_identifier || "")
+    .toString()
+    .normalize("NFD")                // tách dấu
+    .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+    .replace(/\s+/g, "")             // xóa space
+    .toUpperCase();                  // HOA toàn bộ
 
-  if (!name || !device_id || !device_type_id || !user_id) {
+  // ====== VALIDATE ======
+  if (!name || !unique_identifier || !device_type_id || !created_by) {
     return res.status(400).json({ message: 'Thiếu thông tin bắt buộc.' });
   }
 
-  const api_key = crypto.randomBytes(32).toString('hex');
-  const locationString = [ward, district, province].filter(Boolean).join(', ');
+  // ====== LOCATION STRING ======
+  const locationString = [ward, district, province].filter(Boolean).join(", ") || null;
 
   const sql = `
     INSERT INTO devices (
-      name, device_id, description, device_type_id,
-      api_key, user_id,
+      name, unique_identifier, description, device_type_id,
+      created_by,
       location,
       province, district, ward,
-      createAt, updateAt
+      create_date, last_update_date
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
   `;
 
   db.query(
     sql,
     [
       name,
-      device_id,
+      unique_identifier,
       description || null,
       device_type_id,
-      api_key,
-      user_id,
-      locationString,   // chuỗi hiển thị
-      province || null, // Lưu riêng từng field
+      created_by,
+      locationString,
+      province || null,
       district || null,
       ward || null
     ],
     (err, result) => {
       if (err) {
-        console.error(' Lỗi thêm thiết bị:', err);
+        console.error('❌ Lỗi thêm thiết bị:', err);
 
         if (err.code === 'ER_DUP_ENTRY') {
           return res.status(400).json({ message: 'Mã thiết bị bị trùng. Vui lòng nhập mã khác.' });
@@ -215,51 +214,34 @@ app.post('/api/add-device', (req, res) => {
         return res.status(500).json({ message: 'Không thể thêm thiết bị.' });
       }
 
-      console.log(`✅ Thêm thiết bị mới: ${device_id} (key=${api_key})`);
-      res.json({ status: 'success', message: 'Thêm thiết bị thành công.', api_key });
+      console.log(`✅ Thêm thiết bị mới: ${unique_identifier} (id=${result.insertId})`);
+
+      return res.json({
+        status: 'success',
+        message: 'Thêm thiết bị thành công!',
+        id: result.insertId,
+        unique_identifier
+      });
     }
   );
 });
 
 
 
-// ================== API: RESET API KEY ==================
-app.post('/api/devices/:id/reset-key', (req, res) => {
-  const { id } = req.params;
-  if (!id) return res.status(400).json({ message: 'Thiếu ID thiết bị.' });
-
-  const newKey = crypto.randomBytes(32).toString('hex');
-
-  const sql = `UPDATE devices SET api_key = ?, updateAt = NOW() WHERE id = ?`;
-  db.query(sql, [newKey, id], (err, result) => {
-    if (err) {
-      console.error(' Lỗi reset key:', err);
-      return res.status(500).json({ message: 'Không thể reset API key.' });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy thiết bị.' });
-    }
-
-    console.log(`🔑 Đã reset API key cho thiết bị ID=${id}`);
-    res.json({ status: 'success', message: 'Đã reset API key thành công.', newKey });
-  });
-});
 
 // ==================  API: LẤY DANH SÁCH THIẾT BỊ ==================
 app.get('/api/devices', (req, res) => {
   const sql = `
     SELECT 
       d.id,
-      d.device_id,
+      d.unique_identifier,
       d.name,
       d.description,
       d.device_type_id,
-      d.api_key,
       d.location,
       dt.name AS device_type_name,
-      d.createAt,
-      d.updateAt
+      d.create_date,
+      d.last_update_date
     FROM devices d
     LEFT JOIN device_types dt ON d.device_type_id = dt.id
     ORDER BY d.id DESC
@@ -278,57 +260,79 @@ app.get('/api/devices', (req, res) => {
 // ========================== API: UPLOAD DỮ LIỆU CHO THIẾT BỊ ==========================
 app.post("/api/device/upload", async (req, res) => {
   try {
-    const { api_key, device_id, timestamp, ...sensors } = req.body;
+    let { id, unique_identifier, timestamp, ...sensors } = req.body;
 
-    // 1. Kiểm tra metadata thiết bị
-    const [rows] = await db.promise().query(
-      "SELECT * FROM devices WHERE device_id = ? AND api_key = ?",
-      [device_id, api_key]
-    );
-    if (rows.length === 0) {
-      return res.status(403).json({ message: "Sai API key hoặc device_id" });
+    // 0. Chuẩn hóa mã thiết bị
+    unique_identifier = (unique_identifier || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "")
+      .toUpperCase();
+
+    if (!id || !unique_identifier) {
+      return res.status(400).json({ message: "Thiếu ID hoặc unique_identifier" });
     }
 
-    // 2. Lấy ngày tháng để tạo partition
+    // 1. Check metadata
+    const [rows] = await db.promise().query(
+      "SELECT * FROM devices WHERE unique_identifier = ? AND id = ?",
+      [unique_identifier, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(403).json({ message: "Sai ID hoặc unique_identifier" });
+    }
+
+    // 2. Chuẩn thời gian
     const time = new Date(timestamp || Date.now());
+    const isoTime = time.toISOString();
     const year = time.getFullYear();
     const month = String(time.getMonth() + 1).padStart(2, "0");
     const day = String(time.getDate()).padStart(2, "0");
 
-    // 3. Lưu file phân đoạn theo sensor
-    for (const [sensor, value] of Object.entries(sensors)) {
-      const path = `device_id=${device_id}/sensor=${sensor}/year=${year}/month=${month}/day=${day}/`;
-      const filename = `${Date.now()}.json`;
+    // 3. Upload từng sensor
+    const locationMeta = {
+      province: rows[0].province || null,
+      district: rows[0].district || null,
+      ward: rows[0].ward || null
+    };
 
-      const raw = {
-        device_id,
+    for (const [sensor, value] of Object.entries(sensors)) {
+      if (value === undefined || value === null) continue; // tránh lỗi
+
+      const path = `unique_identifier=${unique_identifier}/sensor=${sensor}/year=${year}/month=${month}/day=${day}/`;
+      const filename = `${Date.now()}_${sensor}.json`;
+
+      const payload = {
+        unique_identifier,
         sensor,
-        timestamp,
+        timestamp: isoTime,
         value,
-         province: rows[0].province || null,
-       district: rows[0].district || null,
-        ward: rows[0].ward || null
+        ...locationMeta
       };
 
       await minioClient.putObject(
         "thingsboard-data",
         path + filename,
-        JSON.stringify(raw, null, 2)
+        JSON.stringify(payload, null, 2)
       );
     }
 
     return res.json({
       status: "success",
-      message: "Đã ghi dữ liệu theo thiết bị và sensor!",
+      message: "Upload thành công!"
     });
+
   } catch (err) {
-    console.error(" Lỗi upload:", err);
+    console.error("❌ Upload error:", err);
     res.status(500).json({ message: "Upload failed" });
   }
 });
+
 /// ========================== API: LỌC DỮ LIỆU  ==========================
 app.get("/api/filter", async (req, res) => {
-  const { device_id, sensor, start, end, province, district, ward } = req.query;
+  const { unique_identifier, sensor, start, end, province, district, ward } = req.query;
 
   try {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
@@ -350,7 +354,7 @@ app.get("/api/filter", async (req, res) => {
       const t = new Date(rec.timestamp);
       if (t < startDate || t > endDate) continue;
 
-      if (device_id && rec.device_id !== device_id) continue;
+      if (unique_identifier && rec.unique_identifier !== unique_identifier) continue;
       if (sensor && rec.sensor !== sensor) continue;
 
       if (province && rec.province !== province) continue;
@@ -383,7 +387,7 @@ async function readJSON(path) {
 }
 // ========================== API: TẠO DATASET SAU KHI LỌC DỮ LIỆU ==========================
 app.get("/api/dataset", async (req, res) => {
-  const { device_id, sensor, start, end, province, district, ward } = req.query;
+  const { unique_identifier, sensor, start, end, province, district, ward } = req.query;
 
   try {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
@@ -405,7 +409,7 @@ app.get("/api/dataset", async (req, res) => {
       const t = new Date(rec.timestamp);
       if (t < startDate || t > endDate) continue;
 
-      if (device_id && rec.device_id !== device_id) continue;
+      if (unique_identifier && rec.unique_identifier !== unique_identifier) continue;
       if (sensor && rec.sensor !== sensor) continue;
 
       if (province && rec.province !== province) continue;
@@ -448,17 +452,17 @@ function cleanFilter(filter) {
 
 // Lưu filter mới
 app.post('/api/export_filters', (req, res) => {
-  const { user_id, filter_name, filter_json } = req.body;
+  const { created_by, filter_name, filter_json } = req.body;
 
-  if (!user_id || !filter_json) {
+  if (!created_by || !filter_json) {
     return res.status(400).json({ error: 'Missing fields' });
   }
 
   const sql = `
-    INSERT INTO export_filters (user_id, filter_name, filter_json, createAt)
+    INSERT INTO export_filters (created_by, filter_name, filter_json, createAt)
     VALUES (?, ?, ?, NOW())
   `;
-  db.query(sql, [user_id, filter_name, JSON.stringify(filter_json)], (err, result) => {
+  db.query(sql, [created_by, filter_name, JSON.stringify(filter_json)], (err, result) => {
     if (err) {
       console.error('SQL error:', err);
       return res.status(500).json({ error: err });
@@ -472,9 +476,9 @@ app.get('/api/export_filters/:uid', (req, res) => {
   const uid = req.params.uid;
 
   const sql = `
-    SELECT id, user_id, filter_name, filter_json, createAt
+    SELECT id, created_by, filter_name, filter_json, createAt
     FROM export_filters
-    WHERE user_id = ?
+    WHERE created_by = ?
     ORDER BY createAt DESC
   `;
 
@@ -512,7 +516,7 @@ app.get('/api/export_filters/:id/dataset', async (req, res) => {
 
     const params = new URLSearchParams();
 
-    if (filter.device_id && filter.device_id !== 'all') params.set('device_id', filter.device_id);
+    if (filter.unique_identifier && filter.unique_identifier !== 'all') params.set('unique_identifier', filter.unique_identifier);
     if (filter.sensor && filter.sensor !== 'all') params.set('sensor', filter.sensor);
     if (filter.start && filter.start !== 'all') params.set('start', filter.start);
     if (filter.end && filter.end !== 'all') params.set('end', filter.end);
@@ -554,7 +558,7 @@ app.get('/api/export_filters/:id/export_csv', async (req, res) => {
 
     const params = new URLSearchParams();
 
-    if (filter.device_id && filter.device_id !== 'all') params.set('device_id', filter.device_id);
+    if (filter.unique_identifier && filter.unique_identifier !== 'all') params.set('unique_identifier', filter.unique_identifier);
     if (filter.sensor && filter.sensor !== 'all') params.set('sensor', filter.sensor);
     if (filter.start && filter.start !== 'all') params.set('start', filter.start);
     if (filter.end && filter.end !== 'all') params.set('end', filter.end);
@@ -579,8 +583,8 @@ app.get('/api/export_filters/:id/export_csv', async (req, res) => {
       if (jsonData.devices)
         Object.values(jsonData.devices).forEach((a) => rowsCSV.push(...a));
 
-      let csv = 'timestamp,device_id,sensor,value\n';
-      csv += rowsCSV.map((r) => `${r.timestamp},${r.device_id},${r.sensor},${r.value}`).join('\n');
+      let csv = 'timestamp,unique_identifier,sensor,value\n';
+      csv += rowsCSV.map((r) => `${r.timestamp},${r.unique_identifier},${r.sensor},${r.value}`).join('\n');
 
       const fileName = rows[0].filter_name || 'dataset.csv';
 
@@ -618,11 +622,11 @@ app.delete("/api/export_filters/:id", (req, res) => {
 // ================== API: TỔNG HỢP==================
 
 app.get('/api/merge', async (req, res) => {
-  const { device_id, sensor, start, end } = req.query;
+  const { unique_identifier, sensor, start, end } = req.query;
 
   try {
     const dataset = {
-      device_id: device_id || "all",
+      unique_identifier: unique_identifier || "all",
       total: 0,
       sensors: {}
     };
@@ -633,8 +637,8 @@ app.get('/api/merge', async (req, res) => {
 
     // prefix cho MinIO
     let prefix = "";
-    if (device_id) prefix = `device_id=${device_id}/`;
-    if (device_id && sensor) prefix = `device_id=${device_id}/sensor=${sensor}/`;
+    if (unique_identifier) prefix = `unique_identifier=${unique_identifier}/`;
+    if (unique_identifier && sensor) prefix = `unique_identifier=${unique_identifier}/sensor=${sensor}/`;
 
     const files = [];
     const stream = minioClient.listObjectsV2("thingsboard-data", prefix, true);
@@ -655,7 +659,7 @@ app.get('/api/merge', async (req, res) => {
         const json = JSON.parse(raw);
 
         // Validate dữ liệu
-        if (!json.device_id || !json.sensor || !json.timestamp) continue;
+        if (!json.unique_identifier || !json.sensor || !json.timestamp) continue;
 
         const t = new Date(json.timestamp);
         if (t < startTime || t > endTime) continue;
@@ -704,15 +708,15 @@ app.get('/api/device-types', (req, res) => {
 });
 
 // ================== 🗑️ API: XÓA THIẾT BỊ ==================
-app.delete('/api/devices/:device_id', (req, res) => {
-  const { device_id } = req.params;
+app.delete('/api/devices/:unique_identifier', (req, res) => {
+  const { unique_identifier } = req.params;
 
-  if (!device_id) {
+  if (!unique_identifier) {
     return res.status(400).json({ status: 'error', message: 'Thiếu mã thiết bị cần xóa.' });
   }
 
-  const sql = 'DELETE FROM devices WHERE device_id = ?';
-  db.query(sql, [device_id], (err, result) => {
+  const sql = 'DELETE FROM devices WHERE unique_identifier = ?';
+  db.query(sql, [unique_identifier], (err, result) => {
     if (err) {
       console.error(' Lỗi khi xóa thiết bị:', err);
       return res.status(500).json({ status: 'error', message: 'Lỗi hệ thống khi xóa thiết bị.' });
@@ -722,7 +726,7 @@ app.delete('/api/devices/:device_id', (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Không tìm thấy thiết bị để xóa.' });
     }
 
-    console.log(`🗑️ Đã xóa thiết bị có device_id=${device_id}`);
+    console.log(`🗑️ Đã xóa thiết bị có unique_identifier=${unique_identifier}`);
     return res.status(200).json({ status: 'success', message: 'Xóa thiết bị thành công!' });
   });
 });
