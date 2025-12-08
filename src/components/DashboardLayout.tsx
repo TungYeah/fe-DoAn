@@ -17,7 +17,8 @@ import {
   Bell,
   ChevronDown,
   MessageCircle,
-  Bot
+  Bot,
+  History,
 } from "lucide-react";
 
 type DashboardLayoutProps = {
@@ -103,7 +104,11 @@ export default function DashboardLayout({
     { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
     { id: "notifications", label: "Thông báo", icon: Bell },
     { id: "chat", label: "Chat", icon: MessageCircle },
+<<<<<<< Updated upstream
     { id: "ai", label: "AI Assistant", icon: Bot }
+=======
+    { id: "history", label: "Lịch sử", icon: History },
+>>>>>>> Stashed changes
 
   ];
 
