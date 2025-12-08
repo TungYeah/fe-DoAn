@@ -100,13 +100,12 @@ export default function DashboardLayout({
     { id: "import-device", label: "Import thiết bị", icon: Upload },
     { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon },
     { id: "query", label: "Truy vấn", icon: Search },
-    { id: "revenue", label: "Doanh thu", icon: DollarSign },
     { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
-    { id: "notifications", label: "Thông báo", icon: Bell },
-    { id: "chat", label: "Chat", icon: MessageCircle },
-    { id: "ai", label: "AI Assistant", icon: Bot },
+    { id: "revenue", label: "Doanh thu", icon: DollarSign },
     { id: "history", label: "Lịch sử", icon: History },
-
+    { id: "notifications", label: "Thông báo", icon: Bell },
+    { id: "chat", label: "Bình luận", icon: MessageCircle },
+    { id: "ai", label: "AI Assistant", icon: Bot },
   ];
 
   return (
