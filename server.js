@@ -181,13 +181,13 @@ app.post('/api/add-device', (req, res) => {
 
   const sql = `
     INSERT INTO devices (
-      name, unique_identifier, description, device_type_id,
+      flag_status,is_deleted, name, unique_identifier, description, device_type_id,
       created_by,
       location,
       province, district, ward,
       create_date, last_update_date
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    VALUES ('1','0', ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
   `;
 
   db.query(
