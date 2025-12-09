@@ -35,13 +35,19 @@ type UserItem = {
   email: string;
   role: string;
   unit: string;
+
   status: "active" | "inactive";
+  statusLabel: string;      // 👉 lý do: Hoạt động / Bị Admin chặn / Người dùng khóa tài khoản
+  locked: boolean;
+  deactivated: boolean;
+
   devices: number;
   joinDate: string;
   enabled: boolean | null;
   activationDate: string;
   lastActive: string;
 };
+
 
 type UserStats = {
   totalUsers: number;
@@ -195,76 +201,112 @@ export default function UsersPage() {
     setSelectedUser(user);
     setIsToggleStatusModalOpen(true);
   };
-  const handleConfirmToggleStatus = async () => {
-    if (!selectedUser) return;
+ const handleConfirmToggleStatus = async () => {
+  if (!selectedUser) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
-      return;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
+    return;
+  }
+
+  // Đang active -> gọi /lock, đang inactive -> gọi /unlock
+  const isActive = selectedUser.status === "active";
+
+  const url = `${API_BASE_URL}/api/v1/admin/users/${encodeURIComponent(
+    selectedUser.email
+  )}/${isActive ? "lock" : "unlock"}`;
+
+  try {
+    setTogglingStatus(true);
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        err.message || "Cập nhật trạng thái tài khoản thất bại"
+      );
     }
 
-    const isActive = selectedUser.status === "active";
+    const data = await res.json(); // UserResponse từ BE
 
-    const url = `${API_BASE_URL}/api/v1/admin/users/${encodeURIComponent(
-      selectedUser.email
-    )}/${isActive ? "lock" : "unlock"}`;
+    // ===== Lấy locked / deactivated từ BE =====
+    const locked =
+      data.locked === true || data.locked === 1 || data.locked === "1";
 
-    try {
-      setTogglingStatus(true);
+    const deactivatedRaw = data.deactivated ?? data.deactived;
+    const deactivated =
+      deactivatedRaw === true ||
+      deactivatedRaw === 1 ||
+      deactivatedRaw === "1";
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    // ===== Tính status + statusLabel giống mapping ban đầu =====
+    let newStatus: "active" | "inactive" = "active";
+    let newStatusLabel = "Hoạt động";
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(
-          err.message || "Cập nhật trạng thái tài khoản thất bại"
-        );
-      }
+    if (locked || deactivated) {
+      newStatus = "inactive";
+      newStatusLabel = locked
+        ? "Bị Admin chặn"
+        : "Người dùng khóa tài khoản";
+    }
 
-      const data = await res.json(); // UserResponse từ BE
+    // Cập nhật list users
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === data.id
+          ? {
+              ...u,
+              status: newStatus,
+              statusLabel: newStatusLabel,
+              locked,
+              deactivated,
+            }
+          : u
+      )
+    );
 
-      // locked = true -> inactive, locked = false -> active
-      const newStatus: "active" | "inactive" = data.locked
-        ? "inactive"
-        : "active";
+    // Cập nhật selectedUser (nếu đang mở modal)
+    setSelectedUser((prev) =>
+      prev && prev.id === data.id
+        ? {
+            ...prev,
+            status: newStatus,
+            statusLabel: newStatusLabel,
+            locked,
+            deactivated,
+          }
+        : prev
+    );
 
-      // Cập nhật list users trên bảng
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === data.id
-            ? {
-                ...u,
-                status: newStatus,
-              }
-            : u
-        )
-      );
-
-      // Cập nhật selectedUser (nếu modal đang mở)
-      setSelectedUser((prev) =>
-        prev && prev.id === data.id ? { ...prev, status: newStatus } : prev
-      );
-
+    // Thông báo
+    if (newStatus === "active") {
+      alert(`Đã Kích hoạt tài khoản: ${data.fullName || selectedUser.name}`);
+    } else if (locked) {
+      alert(`Đã chặn tài khoản: ${data.fullName || selectedUser.name}`);
+    } else {
+      // Trường hợp chỉ deactivated = true
       alert(
-        newStatus === "inactive"
-          ? `Đã chặn tài khoản: ${data.fullName || selectedUser.name}`
-          : `Đã bỏ chặn tài khoản: ${data.fullName || selectedUser.name}`
+        `Tài khoản hiện không hoạt động: ${newStatusLabel} (${data.fullName ||
+          selectedUser.name})`
       );
-
-      setIsToggleStatusModalOpen(false);
-    } catch (e: any) {
-      alert(e.message || "Có lỗi xảy ra khi cập nhật trạng thái tài khoản");
-    } finally {
-      setTogglingStatus(false);
     }
-  };
+
+    setIsToggleStatusModalOpen(false);
+  } catch (e: any) {
+    alert(e.message || "Có lỗi xảy ra khi cập nhật trạng thái tài khoản");
+  } finally {
+    setTogglingStatus(false);
+  }
+};
+
 
   const handleEdit = (user: UserItem) => {
     setSelectedUser(user);
@@ -354,50 +396,73 @@ export default function UsersPage() {
         const data = await res.json();
         console.log("Users page:", data);
 
-        const mapped: UserItem[] = (data.content || []).map((u: any) => {
-          const joinDate = u.createdAt
-            ? new Date(u.createdAt).toLocaleString("vi-VN")
-            : "";
+const mapped: UserItem[] = (data.content || []).map((u: any) => {
+  const joinDate = u.createdAt
+    ? new Date(u.createdAt).toLocaleString("vi-VN")
+    : "";
 
-          // ✅ Tính ngày/ trạng thái kích hoạt theo enabled
-          let activationDate = "Chưa kích hoạt";
+  // ===== Trạng thái kích hoạt theo enabled =====
+  let activationDate = "Chưa kích hoạt";
 
-          if (u.enabled === true || u.enabled === 1) {
-            activationDate = joinDate || "Đã kích hoạt";
-          } else if (u.enabled === false || u.enabled === 0) {
-            activationDate = "Chưa xác thực";
-          } else if (u.enabled == null) {
-            activationDate = "Chưa xác thực";
-          }
+  if (u.enabled === true || u.enabled === 1) {
+    activationDate = joinDate || "Đã kích hoạt";
+  } else if (u.enabled === false || u.enabled === 0 || u.enabled == null) {
+    activationDate = "Chưa xác thực";
+  }
 
-          // ✅ Ưu tiên ROLE_ADMIN nếu user có nhiều role
-          const roles: string[] = u.roles || [];
-          let mainRole: string = "ROLE_USER";
+  // ===== Vai trò chính =====
+  const roles: string[] = u.roles || [];
+  let mainRole: string = "ROLE_USER";
 
-          if (roles.includes("ROLE_ADMIN")) {
-            mainRole = "ROLE_ADMIN";
-          } else if (roles.includes("ROLE_USER")) {
-            mainRole = "ROLE_USER";
-          } else if (u.mainRole) {
-            mainRole = u.mainRole;
-          }
+  if (roles.includes("ROLE_ADMIN")) {
+    mainRole = "ROLE_ADMIN";
+  } else if (roles.includes("ROLE_USER")) {
+    mainRole = "ROLE_USER";
+  } else if (u.mainRole) {
+    mainRole = u.mainRole;
+  }
 
-          return {
-            id: u.id,
-            name: u.fullName ?? u.username ?? "No name",
-            email: u.email,
-            role: mainRole, // 👈 dùng role đã tính
-            unit: u.unit ?? "Không rõ",
-            status: u.locked || u.disabled ? "inactive" : "active",
-            devices: u.devicesCount ?? 0,
-            joinDate,
-            enabled: u.enabled ?? null,
-            activationDate,
-            lastActive: u.last_active
-              ? new Date(u.last_active).toLocaleString("vi-VN")
-              : "Chưa ghi nhận",
-          };
-        });
+  // ===== Trạng thái dựa trên locked & deactivated =====
+  const isLocked =
+    u.locked === true || u.locked === 1 || u.locked === "1";
+  const isDeactivated =
+    u.deactivated === true || u.deactivated === 1 || u.deactivated === "1";
+
+  let status: "active" | "inactive" = "active";
+  let statusLabel = "Hoạt động";
+
+  if (isLocked || isDeactivated) {
+    status = "inactive";
+
+    if (isLocked) {
+      statusLabel = "Bị Admin chặn";
+    } else {
+      statusLabel = "Người dùng khóa tài khoản";
+    }
+  }
+
+  return {
+    id: u.id,
+    name: u.fullName ?? u.username ?? "No name",
+    email: u.email,
+    role: mainRole,
+    unit: u.unit ?? "Không rõ",
+
+    status,
+    statusLabel,
+    locked: isLocked,
+    deactivated: isDeactivated,
+
+    devices: u.devicesCount ?? 0,
+    joinDate,
+    enabled: u.enabled ?? null,
+    activationDate,
+    lastActive: u.last_active
+      ? new Date(u.last_active).toLocaleString("vi-VN")
+      : "Chưa ghi nhận",
+  };
+});
+
 
         setUsers(mapped);
       } catch (err) {
@@ -729,25 +794,28 @@ export default function UsersPage() {
                   <td className="px-6 py-4 text-gray-700">{user.unit}</td>
 
                   {/* Trạng thái */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {user.status === "active" ? (
-                        <>
-                          <UserCheck className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-green-600">
-                            Hoạt động
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <UserX className="w-4 h-4 text-red-600" />
-                          <span className="text-sm text-red-600">
-                            Không hoạt động
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </td>
+<td className="px-6 py-4">
+  <div className="flex flex-col">
+    <div className="flex items-center gap-2">
+      {user.status === "active" ? (
+        <>
+          <UserCheck className="w-4 h-4 text-green-600" />
+          <span className="text-sm text-green-600">Hoạt động</span>
+        </>
+      ) : (
+        <>
+          <UserX className="w-4 h-4 text-red-600" />
+          <span className="text-sm text-red-600">Không hoạt động</span>
+        </>
+      )}
+    </div>
+
+    {user.status === "inactive" && (
+      <span className="text-xs text-gray-500 mt-1">{user.statusLabel}</span>
+    )}
+  </div>
+</td>
+
 
                   {/* Thiết bị */}
                   <td className="px-6 py-4">
@@ -808,9 +876,7 @@ export default function UsersPage() {
                             ? "hover:bg-red-50 text-red-600"
                             : "hover:bg-green-50 text-green-600"
                         }`}
-                        title={
-                          user.status === "active" ? "Chặn" : "Bỏ chặn"
-                        }
+                        title={user.status === "active" ? "Chặn" : "Kích hoạt"}
                       >
                         {user.status === "active" ? (
                           <Ban className="w-4 h-4" />
@@ -947,15 +1013,16 @@ export default function UsersPage() {
                     <Shield className="w-4 h-4 text-gray-500" />
                     <p className="text-[11px] text-gray-500">Vai trò</p>
                   </div>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs ${
-                      selectedUser.role === "Admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {selectedUser.role}
-                  </span>
+<span
+  className={`inline-block px-3 py-1 rounded-full text-xs ${
+    selectedUser.role === "ROLE_ADMIN"
+      ? "bg-purple-100 text-purple-700"
+      : "bg-gray-100 text-gray-700"
+  }`}
+>
+  {selectedUser.role}
+</span>
+
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-2 mb-1">
@@ -1027,30 +1094,37 @@ export default function UsersPage() {
               </div>
               {/* Status */}
               <div
-                className={`p-3 rounded-lg border ${
-                  selectedUser.status === "active"
-                    ? "bg-green-50 border-green-200"
-                    : "bg-red-50 border-red-200"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {selectedUser.status === "active" ? (
-                    <>
-                      <UserCheck className="w-5 h-5 text-green-600" />
-                      <span className="text-sm text-green-700">
-                        Tài khoản đang hoạt động
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <UserX className="w-5 h-5 text-red-600" />
-                      <span className="text-sm text-red-700">
-                        Tài khoản không hoạt động
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
+  className={`p-3 rounded-lg border ${
+    selectedUser.status === "active"
+      ? "bg-green-50 border-green-200"
+      : "bg-red-50 border-red-200"
+  }`}
+>
+  <div className="flex items-center gap-2">
+    {selectedUser.status === "active" ? (
+      <>
+        <UserCheck className="w-5 h-5 text-green-600" />
+        <span className="text-sm text-green-700">
+          Tài khoản đang hoạt động
+        </span>
+      </>
+    ) : (
+      <>
+        <UserX className="w-5 h-5 text-red-600" />
+        <span className="text-sm text-red-700">
+          Tài khoản không hoạt động
+        </span>
+      </>
+    )}
+  </div>
+
+  {selectedUser.status === "inactive" && (
+    <p className="text-xs text-gray-600 mt-1">
+      {selectedUser.statusLabel}
+    </p>
+  )}
+</div>
+
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button
@@ -1315,9 +1389,9 @@ export default function UsersPage() {
         title={
           selectedUser?.status === "active"
             ? "Chặn tài khoản"
-            : "Bỏ chặn tài khoản"
+            : "Kích hoạt tài khoản"
         }
-                  customWidth="max-w-[380px]"   
+        customWidth="max-w-[380px]"
       >
         {selectedUser && (
           <div className="space-y-4 text-center">
@@ -1337,7 +1411,7 @@ export default function UsersPage() {
               <p className="text-gray-700 mb-2">
                 {selectedUser.status === "active"
                   ? "Bạn có chắc muốn chặn tài khoản:"
-                  : "Bạn có chắc muốn bỏ chặn tài khoản:"}
+                  : "Bạn có chắc muốn Kích hoạt tài khoản:"}
               </p>
               <p className="text-gray-900 font-semibold">{selectedUser.name}</p>
             </div>
@@ -1349,7 +1423,13 @@ export default function UsersPage() {
                   : "bg-blue-50 border-blue-200"
               }`}
             >
-              <p className="text-xs ${selectedUser.status === 'active' ? 'text-yellow-800' : 'text-blue-800'}">
+              <p
+                className={`text-xs ${
+                  selectedUser.status === "active"
+                    ? "text-yellow-800"
+                    : "text-blue-800"
+                }`}
+              >
                 {selectedUser.status === "active"
                   ? "⚠️ Người dùng sẽ không thể đăng nhập và truy cập hệ thống"
                   : "✅ Người dùng sẽ có thể đăng nhập và sử dụng hệ thống trở lại"}
@@ -1380,7 +1460,7 @@ export default function UsersPage() {
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    {togglingStatus ? "Đang bỏ chặn..." : "Bỏ chặn"}
+                    {togglingStatus ? "Đang Kích hoạt..." : "Kích hoạt"}
                   </>
                 )}
               </button>
