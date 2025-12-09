@@ -31,6 +31,15 @@ import ChatPage from "./components/ChatPage";
 import AIPage from "./components/pages/AIPage";
 import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 
+
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import FAQPage from "./pages/FAQPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+
+type View = "landing" | "login" | "register" | "dashboard" | "about" | "contact" | "faq" | "help" | "terms" | "privacy";
+
 // =========================
 // ProtectedRoute — yêu cầu login
 // =========================
@@ -76,7 +85,12 @@ export default function App() {
               : <RegisterPageWrapper />
           }
         />
-
+        {/* PUBLIC INFO PAGES */}
+        <Route path="/about" element={<AboutPageWrapper />} />
+        <Route path="/contact" element={<ContactPageWrapper />} />
+        <Route path="/faq" element={<FAQPageWrapper />} />
+        <Route path="/terms" element={<TermsPageWrapper />} />
+        <Route path="/privacy" element={<PrivacyPageWrapper />} />
         <Route path="/activation-result" element={<ActivationResultPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -126,6 +140,33 @@ function RegisterPageWrapper() {
     />
   );
 }
+// PUBLIC PAGE WRAPPERS
+function AboutPageWrapper() {
+  const navigate = useNavigate();
+  return <AboutPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
+function ContactPageWrapper() {
+  const navigate = useNavigate();
+  return <ContactPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
+function FAQPageWrapper() {
+  const navigate = useNavigate();
+  return <FAQPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
+
+function TermsPageWrapper() {
+  const navigate = useNavigate();
+  return <TermsPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
+function PrivacyPageWrapper() {
+  const navigate = useNavigate();
+  return <PrivacyPage onNavigate={(v) => navigate("/" + v)} />;
+}
+
 
 /* =========================
     DASHBOARD ROUTING

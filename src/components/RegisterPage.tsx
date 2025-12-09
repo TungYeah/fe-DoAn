@@ -82,12 +82,55 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         
         {/* Left side giữ nguyên nếu muốn */}
-        <motion.div
+<motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
           className="hidden lg:block"
         >
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="text-white text-xl tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                  PTIT
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+                  PTIT IoT Platform
+                </h1>
+                <p className="text-gray-600">Nền tảng IoT Việt Nam</p>
+              </div>
+            </div>
+
+            <h2 className="text-4xl text-gray-900 mt-8">
+              Bắt đầu hành trình IoT!
+            </h2>
+            <p className="text-xl text-gray-600">
+              Tạo tài khoản để truy cập đầy đủ tính năng quản lý thiết bị IoT
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <span className="text-red-600">✓</span>
+                </div>
+                <p className="text-gray-600">Quản lý không giới hạn thiết bị</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <span className="text-red-600">✓</span>
+                </div>
+                <p className="text-gray-600">Chia sẻ dữ liệu IoT</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <span className="text-red-600">✓</span>
+                </div>
+                <p className="text-gray-600">Miễn phí cho sinh viên PTIT</p>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Right side */}

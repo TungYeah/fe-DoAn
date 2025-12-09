@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Lock, Mail, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, AlertTriangle,Wifi } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 type LoginProps = {
@@ -227,7 +227,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
 
         {/* LEFT SIDE */}
-        <motion.div
+<motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -236,7 +236,9 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                <div className="text-white text-xl font-black">PTIT</div>
+                <div className="text-white text-xl tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                  PTIT
+                </div>
               </div>
               <div>
                 <h1 className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
@@ -246,7 +248,24 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
               </div>
             </div>
 
-            <h2 className="text-4xl text-gray-900 mt-8">Chào mừng trở lại!</h2>
+            <h2 className="text-4xl text-gray-900 mt-8">
+              Chào mừng trở lại!
+            </h2>
+            <p className="text-xl text-gray-600">
+              Đăng nhập để quản lý thiết bị IoT và thu thập dữ liệu của bạn
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Wifi className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-gray-900">Kết nối thiết bị</p>
+                  <p className="text-sm text-gray-600">Quản lý hàng trăm thiết bị IoT</p>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
 
