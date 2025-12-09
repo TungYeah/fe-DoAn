@@ -19,8 +19,15 @@ import {
   Ban,
   CheckCircle,
   AlertTriangle,
+  User2,
+  UserCheck,
+  UserCircle,
+  ShieldAlert,
+  ShieldBan,
+  ShieldCheck,
 } from "lucide-react";
 import { Modal } from "../ui/modal";
+import { Description } from "@radix-ui/react-dialog";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -34,6 +41,7 @@ type HistoryItem = {
   createdBy: string;
   lastUpdatedBy: string;
   identify: string;
+  description: string;
   action: string;
   historyType: string;
   content: any;
@@ -193,6 +201,8 @@ export default function HistoryPage() {
           createdBy: h.createdBy ?? h.created_by ?? "",
           lastUpdatedBy: h.lastUpdatedBy ?? h.last_updated_by ?? "",
           identify: h.identify ?? "",
+          description: h.description ?? "",
+
           action: h.action ?? "",
           historyType: h.historyType ?? h.history_type ?? "",
           content: h.content,
@@ -551,16 +561,19 @@ export default function HistoryPage() {
                   Thời gian
                 </th>
                 <th className="px-4 py-3 text-left text-xs text-gray-600">
-                  Hành động
+                  Loại hành động
                 </th>
                 <th className="px-4 py-3 text-left text-xs text-gray-600">
-                  Loại
-                </th>
-                <th className="px-4 py-3 text-left text-xs text-gray-600">
-                  Định danh
+                  Loại quản lý
                 </th>
                 <th className="px-4 py-3 text-left text-xs text-gray-600">
                   Người thực hiện
+                </th>
+                <th className="px-4 py-3 text-left text-xs text-gray-600">
+                  Định danh đối tượng
+                </th>
+                <th className="px-4 py-3 text-left text-xs text-gray-600">
+                  Hành động
                 </th>
                 <th className="px-4 py-3 text-left text-xs text-gray-600">
                   Trạng thái
@@ -663,7 +676,18 @@ export default function HistoryPage() {
                             : "Không rõ"}
                         </span>
                       </td>
+                      {/* created by */}
+                      <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
 
+                      <UserCircle className="w-3.5 h-3.5 text-gray-400" />
+
+                          <span className="text-xs text-gray-900">
+                          {item.createdBy || "—"}
+                        </span>
+                                                </div>
+
+                      </td>
                       {/* identify */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -673,13 +697,16 @@ export default function HistoryPage() {
                           </span>
                         </div>
                       </td>
-
-                      {/* created by */}
+                      {/* Hành động */}
                       <td className="px-4 py-3">
-                        <span className="text-xs text-gray-600">
-                          {item.createdBy || "—"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-xs text-gray-900">
+                            {item.description || "—"}
+                          </span>
+                        </div>
                       </td>
+
 
                       {/* status */}
                       <td className="px-4 py-3">
@@ -898,17 +925,17 @@ export default function HistoryPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
           <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <User className="w-4 h-4 text-gray-500" /> Người tạo
+            <User className="w-4 h-4 text-gray-500" /> Người thực hiện
           </p>
           <p className="text-sm text-gray-900">{selectedHistory.createdBy}</p>
         </div>
 
         <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
           <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <User className="w-4 h-4 text-gray-500" /> Người cập nhật
+            <User className="w-4 h-4 text-gray-500" /> Đối tượng định danh
           </p>
           <p className="text-sm text-gray-900">
-            {selectedHistory.lastUpdatedBy || "—"}
+            {selectedHistory.identify || "—"}
           </p>
         </div>
       </div>
@@ -916,9 +943,9 @@ export default function HistoryPage() {
       {/* ===================== Định danh ===================== */}
       <div className="p-4 rounded-xl border border-blue-200 bg-blue-50">
         <p className="text-[12px] text-blue-700 font-semibold mb-1 flex items-center gap-1">
-          <Shield className="w-4 h-4 text-blue-700" /> Định danh
+          <ShieldCheck className="w-4 h-4 text-blue-700" /> Hành động
         </p>
-        <p className="text-sm text-blue-900">{selectedHistory.identify}</p>
+        <p className="text-sm text-blue-900">{selectedHistory.description}</p>
       </div>
 
       {/* ===================== Trạng thái ===================== */}

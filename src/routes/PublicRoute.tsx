@@ -5,11 +5,9 @@ import { useAuth } from "../contexts/AuthContext";
 export default function PublicRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
 
-  // đang load /current
-  if (loading) return null; // hoặc hiển thị spinner
+  if (loading) return null;
 
-  // nếu đã đăng nhập → đá sang dashboard
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/dashboard/" replace />;
 
   return <>{children}</>;
 }

@@ -1,287 +1,451 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, Trash2, Filter, CheckCheck, Circle, AlertCircle, Info, CheckCircle, XCircle } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Clock,
+  Info,
+  RefreshCcw,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 
-type NotificationType = "info" | "success" | "warning" | "error";
-
-type Notification = {
-  id: number;
-  type: NotificationType;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-};
-
-const notificationsData: Notification[] = [
-  { id: 1, type: "error", title: "Cảnh báo thiết bị", message: "Cảm biến nhiệt độ #3 ngừng hoạt động", time: "5 phút trước", read: false },
-  { id: 2, type: "success", title: "Import thành công", message: "Đã import 250 bản ghi dữ liệu mới", time: "15 phút trước", read: false },
-  { id: 3, type: "warning", title: "Cảnh báo nhiệt độ cao", message: "Nhiệt độ phòng A1 đạt 35°C", time: "1 giờ trước", read: false },
-  { id: 4, type: "info", title: "Cập nhật hệ thống", message: "Hệ thống sẽ bảo trì vào 2h sáng mai", time: "2 giờ trước", read: true },
-  { id: 5, type: "success", title: "Người dùng mới", message: "Có 5 người dùng mới đăng ký", time: "3 giờ trước", read: true },
-  { id: 6, type: "info", title: "Báo cáo tuần", message: "Báo cáo hiệu suất tuần đã sẵn sàng", time: "1 ngày trước", read: true },
-  { id: 7, type: "warning", title: "Dung lượng sắp đầy", message: "Dung lượng lưu trữ đạt 85%", time: "2 ngày trước", read: true },
-  { id: 8, type: "error", title: "Lỗi kết nối", message: "Mất kết nối với 3 thiết bị", time: "2 ngày trước", read: true },
-];
+const API_BASE_URL = "http://localhost:8080";
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(notificationsData);
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | NotificationType>("all");
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredNotifications = notifications.filter(notif => {
-    const matchesReadFilter = filter === "all" || 
-      (filter === "unread" && !notif.read) || 
-      (filter === "read" && notif.read);
-    const matchesTypeFilter = typeFilter === "all" || notif.type === typeFilter;
-    return matchesReadFilter && matchesTypeFilter;
-  });
+  const [actionFilter, setActionFilter] = useState("all");
+  const [visible, setVisible] = useState(10); // số thông báo hiển thị ban đầu
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const email = localStorage.getItem("email");
+  const token = localStorage.getItem("token");
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
+  // =========================
+  // TIME AGO
+  // =========================
+  function timeAgo(dateStr: string) {
+    const diff = (new Date().getTime() - new Date(dateStr).getTime()) / 1000;
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
+    if (diff < 60) return `${Math.floor(diff)} giây trước`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
 
-  const handleDelete = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
+    return `${Math.floor(diff / 86400)} ngày trước`;
+  }
 
-  const handleDeleteAll = () => {
-    if (confirm("Bạn có chắc muốn xóa tất cả thông báo?")) {
-      setNotifications([]);
+  // =========================
+  // LOAD DATA
+  // =========================
+  const loadNotifications = async () => {
+    if (!token) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/admin/history?page=0&size=1000`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Lỗi tải thông báo");
+
+      const data = await res.json();
+
+      const list = (data.content || [])
+        .map((h: any) => ({
+          id: h.id,
+          action: h.action ?? "",
+          historyType: h.historyType ?? "",
+          description: h.description ?? "",
+          createdBy: h.createdBy ?? "",
+          createDate: h.createDate,
+          read: false,
+        }))
+        .filter((n: any) => n.createdBy === email);
+
+      setNotifications(list);
+      setFiltered(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getNotificationIcon = (type: NotificationType) => {
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  // =========================
+  // STATS
+  // =========================
+  const total = notifications.length;
+
+  const today = notifications.filter((n) => {
+    const d = new Date(n.createDate);
+    const now = new Date();
+    return (
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  }).length;
+
+  // =========================
+  // APPLY FILTER
+  // =========================
+  useEffect(() => {
+    if (actionFilter === "all") {
+      setFiltered(notifications);
+    } else {
+      setFiltered(notifications.filter((n) => n.action === actionFilter));
+    }
+  }, [actionFilter, notifications]);
+
+  // =========================
+  // LOCAL ACTIONS
+  // =========================
+  const markAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const deleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  // =========================
+  // COLORS + ICONS
+  // =========================
+  const getColor = (action: string) =>
+    action === "CREATE"
+      ? "border-green-300 bg-green-50"
+      : action === "UPDATE"
+      ? "border-blue-300 bg-blue-50"
+      : "border-red-300 bg-red-50";
+  const getNotificationIcon = (
+    type: "success" | "error" | "warning" | "info"
+  ) => {
     switch (type) {
       case "success":
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-6 h-6 text-green-600" />;
       case "error":
-        return <XCircle className="w-5 h-5" />;
+        return <XCircle className="w-6 h-6 text-red-600" />;
       case "warning":
-        return <AlertCircle className="w-5 h-5" />;
+        return <AlertCircle className="w-6 h-6 text-yellow-600" />;
       default:
-        return <Info className="w-5 h-5" />;
+        return <Info className="w-6 h-6 text-blue-600" />;
     }
   };
-
-  const getNotificationColor = (type: NotificationType) => {
+  const getNotificationType = (action: string) => {
+    if (action === "CREATE") return "success";
+    if (action === "UPDATE") return "info";
+    if (action === "DELETE") return "error";
+    return "info";
+  };
+  const getBgColor = (type: string) => {
     switch (type) {
       case "success":
-        return "bg-green-100 text-green-600 border-green-200";
-      case "error":
-        return "bg-red-100 text-red-600 border-red-200";
+        return "bg-green-50 border-green-300";
       case "warning":
-        return "bg-yellow-100 text-yellow-600 border-yellow-200";
+        return "bg-yellow-50 border-yellow-300";
+      case "error":
+        return "bg-red-50 border-red-300";
       default:
-        return "bg-blue-100 text-blue-600 border-blue-200";
+        return "bg-blue-50 border-blue-300";
     }
   };
 
+  const getIcon = (action: string) =>
+    action === "DELETE" ? (
+      <XCircle className="text-red-600 w-6 h-6" />
+    ) : action === "UPDATE" ? (
+      <CheckCircle className="text-blue-600 w-6 h-6" />
+    ) : action === "CREATE" ? (
+      <CheckCircle className="text-green-600 w-6 h-6" />
+    ) : (
+      <Info className="text-gray-600 w-6 h-6" />
+    );
+
+  // =========================
+  // RENDER
+  // =========================
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* HEADER */}
+       <motion.div
+              initial={{ opacity: 0, y: -15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Thông báo</h1>
           <p className="text-gray-600">
-            Bạn có {unreadCount} thông báo chưa đọc
+            Bạn có {filtered.length} thông báo từ hoạt động của bạn
           </p>
         </div>
-        <div className="flex gap-3">
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0}
-            className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-red-600 hover:text-red-600 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={loadNotifications}
+            className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
-            <CheckCheck className="w-5 h-5" />
-            Đánh dấu tất cả đã đọc
+            <RefreshCcw className="w-5 h-5" />
+            Làm mới
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleDeleteAll}
-            className="px-4 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          >
-            <Trash2 className="w-5 h-5" />
-            Xóa tất cả
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Tổng thông báo</p>
-          <p className="text-2xl text-gray-900">{notifications.length}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Chưa đọc</p>
-          <p className="text-2xl text-red-600">{unreadCount}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Đã đọc</p>
-          <p className="text-2xl text-green-600">{notifications.length - unreadCount}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Hôm nay</p>
-          <p className="text-2xl text-blue-600">5</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-4 border border-gray-200"
-      >
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <span className="text-gray-700">Bộ lọc:</span>
-          </div>
-          
-          {/* Read/Unread Filter */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "all"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Tất cả
-            </button>
-            <button
-              onClick={() => setFilter("unread")}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "unread"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Chưa đọc
-            </button>
-            <button
-              onClick={() => setFilter("read")}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "read"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Đã đọc
-            </button>
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none transition-colors"
-          >
-            <option value="all">Tất cả loại</option>
-            <option value="info">Thông tin</option>
-            <option value="success">Thành công</option>
-            <option value="warning">Cảnh báo</option>
-            <option value="error">Lỗi</option>
-          </select>
-        </div>
       </motion.div>
 
-      {/* Notifications List */}
-      <div className="space-y-3">
-        {filteredNotifications.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl p-12 border border-gray-200 text-center"
-          >
-            <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-xl text-gray-600">Không có thông báo</p>
-          </motion.div>
-        ) : (
-          filteredNotifications.map((notification, index) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`bg-white rounded-2xl p-4 border-2 transition-all hover:shadow-md ${
-                notification.read ? "border-gray-200" : "border-red-200 bg-red-50"
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                {/* Icon */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 flex-shrink-0 ${getNotificationColor(notification.type)}`}>
-                  {getNotificationIcon(notification.type)}
-                </div>
+      {/* =========================
+          STATS BOXES
+      ========================= */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Tổng thông báo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-600 mb-1">Tổng thông báo</p>
+          <p className="text-2xl text-gray-900">
+            {loading ? "…" : filtered.length.toLocaleString("vi-VN")}
+          </p>
+        </motion.div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <h3 className="text-gray-900">{notification.title}</h3>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {!notification.read && (
-                        <Circle className="w-2 h-2 fill-red-600 text-red-600" />
-                      )}
-                      <span className="text-sm text-gray-500">{notification.time}</span>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 mb-3">{notification.message}</p>
-                  
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {!notification.read && (
-                      <button
-                        onClick={() => handleMarkAsRead(notification.id)}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm flex items-center gap-1"
-                      >
-                        <Check className="w-4 h-4" />
-                        Đánh dấu đã đọc
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(notification.id)}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm flex items-center gap-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))
-        )}
+        {/* Thông báo hôm nay */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-600 mb-1">Hôm nay</p>
+          <p className="text-2xl text-blue-600">
+            {loading ? "…" : today.toLocaleString("vi-VN")}
+          </p>
+        </motion.div>
+
+        {/* Tạo mới */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-600 mb-1">Tạo mới</p>
+          <p className="text-2xl text-green-600">
+            {loading
+              ? "…"
+              : notifications
+                  .filter((n) => n.action === "CREATE")
+                  .length.toLocaleString("vi-VN")}
+          </p>
+        </motion.div>
+
+        {/* Cập nhật */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-600 mb-1">Cập nhật</p>
+          <p className="text-2xl text-orange-600">
+            {loading
+              ? "…"
+              : notifications
+                  .filter((n) => n.action === "UPDATE")
+                  .length.toLocaleString("vi-VN")}
+          </p>
+        </motion.div>
+
+        {/* Xóa */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-600 mb-1">Đã xóa</p>
+          <p className="text-2xl text-red-600">
+            {loading
+              ? "…"
+              : notifications
+                  .filter((n) => n.action === "DELETE")
+                  .length.toLocaleString("vi-VN")}
+          </p>
+        </motion.div>
       </div>
 
-      {/* Pagination */}
-      {filteredNotifications.length > 0 && (
-        <div className="flex justify-center">
-          <div className="flex gap-2">
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              Trước
-            </button>
-            <button className="px-4 py-2 bg-red-600 text-white rounded-lg">1</button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">2</button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">3</button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              Sau
-            </button>
+      {/* FILTER BAR */}
+      <div className="flex gap-3 items-center bg-white p-4 rounded-xl border shadow-sm">
+        <span className="text-gray-700 font-medium">Lọc theo hành động:</span>
+
+        <button
+          onClick={() => setActionFilter("all")}
+          className={`px-4 py-2 rounded-lg border ${
+            actionFilter === "all"
+              ? "bg-red-600 text-white border-red-600"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          Tất cả
+        </button>
+
+        <button
+          onClick={() => setActionFilter("CREATE")}
+          className={`px-4 py-2 rounded-lg border ${
+            actionFilter === "CREATE"
+              ? "bg-green-600 text-white border-green-600"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          Tạo mới
+        </button>
+
+        <button
+          onClick={() => setActionFilter("UPDATE")}
+          className={`px-4 py-2 rounded-lg border ${
+            actionFilter === "UPDATE"
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          Cập nhật
+        </button>
+
+        <button
+          onClick={() => setActionFilter("DELETE")}
+          className={`px-4 py-2 rounded-lg border ${
+            actionFilter === "DELETE"
+              ? "bg-red-600 text-white border-red-600"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          Xóa
+        </button>
+      </div>
+
+      {/* LIST */}
+{/* LIST */} 
+<div className="space-y-4">
+  {loading && <p className="text-center">Đang tải...</p>}
+
+  {!loading && filtered.length === 0 && (
+    <div className="bg-white border rounded-xl p-10 text-center">
+      <Bell className="w-16 h-16 mx-auto text-gray-400" />
+      <p className="text-gray-600 mt-3">Không có thông báo</p>
+    </div>
+  )}
+
+  {!loading &&
+    filtered.slice(0, visible).map((n, idx) => {
+      const type = getNotificationType(n.action);
+
+      return (
+        <motion.div
+          key={n.id}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: idx * 0.03 }}
+          className={`relative flex gap-4 p-4 rounded-xl bg-white border hover:shadow-md ${
+            type === "success"
+              ? "border-green-200"
+              : type === "warning"
+              ? "border-yellow-200"
+              : type === "error"
+              ? "border-red-200"
+              : "border-blue-200"
+          }`}
+        >
+          {/* TIME AGO – góc phải */}
+          <div className="absolute right-4 top-3 text-sm text-gray-500 flex gap-2 items-center">
+            <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+            {timeAgo(n.createDate)}
           </div>
-        </div>
-      )}
+
+          {/* ICON – có màu */}
+          <div
+            className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${
+              type === "success"
+                ? "bg-green-100 text-green-600"
+                : type === "warning"
+                ? "bg-yellow-100 text-yellow-600"
+                : type === "error"
+                ? "bg-red-100 text-red-600"
+                : "bg-blue-100 text-blue-600"
+            }`}
+          >
+            {getNotificationIcon(type)}
+          </div>
+
+          {/* CONTENT */}
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 text-lg">
+              {n.historyType.replace(/_/g, " ")}
+            </h3>
+
+            <p className="text-gray-800 mt-1 font-medium">
+              Người thực hiện:{" "}
+              <span className="text-blue-700">{n.createdBy}</span>
+            </p>
+
+            <p className="text-gray-700 mt-1">
+              {n.description || "Không có mô tả"}
+            </p>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 mt-3">
+              {!n.read && (
+                <button
+                  onClick={() => markAsRead(n.id)}
+                  className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1"
+                >
+                  <Check className="w-4 h-4" /> Đánh dấu đã đọc
+                </button>
+              )}
+
+              <button
+                onClick={() => deleteNotification(n.id)}
+                className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1"
+              >
+                <Trash2 className="w-4 h-4" /> Xóa
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      );
+    })}
+
+  {/* NÚT XEM THÊM */}
+  {!loading && visible < filtered.length && (
+    <div className="flex justify-center mt-4">
+
+                <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+        onClick={() => setVisible((v) => v + 10)}
+            className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-600 text-red rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
+            <ChevronDown className="w-5 h-5" />
+            Xem thêm
+          </motion.button>
+    </div>
+  )}
+</div>
+
     </div>
   );
 }

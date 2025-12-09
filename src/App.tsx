@@ -1,4 +1,6 @@
 import React from "react";
+import ForbiddenPage from "./components/pages/ForbiddenPage";
+
 import {
   BrowserRouter,
   Routes,
@@ -29,9 +31,21 @@ import ChatPage from "./components/ChatPage";
 import AIPage from "./components/pages/AIPage";
 import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 
+// =========================
+// ProtectedRoute — yêu cầu login
+// =========================
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+// =========================
+// AdminRoute — yêu cầu ADMIN
+// =========================
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const role = localStorage.getItem("role");
+  if (role !== "ADMIN") return <Navigate to="/403" replace />;
   return <>{children}</>;
 }
 
@@ -39,12 +53,37 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* LANDING PAGE */}
         <Route path="/" element={<LandingPageWrapper />} />
-        <Route path="/login" element={<LoginPageWrapper />} />
-        <Route path="/register" element={<RegisterPageWrapper />} />
+
+        {/* LOGIN */}
+        <Route
+          path="/login"
+          element={
+            localStorage.getItem("token")
+              ? <Navigate to="/dashboard/" replace />
+              : <LoginPageWrapper />
+          }
+        />
+
+        {/* REGISTER */}
+        <Route
+          path="/register"
+          element={
+            localStorage.getItem("token")
+              ? <Navigate to="/dashboard/" replace />
+              : <RegisterPageWrapper />
+          }
+        />
+
         <Route path="/activation-result" element={<ActivationResultPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+        {/* 403 */}
+        <Route path="/403" element={<ForbiddenPage />} />
+
+        {/* Dashboard */}
         <Route
           path="/dashboard/*"
           element={
@@ -54,14 +93,15 @@ export default function App() {
           }
         />
 
+        {/* fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   );
 }
 
 /* WRAPPERS */
-
 function LandingPageWrapper() {
   const navigate = useNavigate();
   return <LandingPage onNavigate={(v) => navigate("/" + v)} />;
@@ -72,7 +112,7 @@ function LoginPageWrapper() {
   return (
     <LoginPage
       onNavigate={(v) => navigate("/" + v)}
-      onLogin={() => navigate("/dashboard")}
+      onLogin={() => navigate("/dashboard/")}
     />
   );
 }
@@ -87,37 +127,85 @@ function RegisterPageWrapper() {
   );
 }
 
-/* DASHBOARD ROUTES */
-
+/* =========================
+    DASHBOARD ROUTING
+========================= */
 function DashboardRoutes() {
   const navigate = useNavigate();
   const current = location.pathname.replace("/dashboard/", "") || "dashboard";
+
   return (
     <DashboardLayout
       currentPage={current}
       onNavigate={(page) => navigate(`/dashboard/${page}`)}
       onLogout={() => {
         localStorage.clear();
-        navigate("/login");
+        window.location.href = "/login";  // hard redirect, nhanh nhất
       }}
+
     >
       <Routes>
+
+        {/* USER + ADMIN */}
         <Route path="/" element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="devices" element={<DevicesPage />} />
-        <Route path="import-device" element={<ImportDevicePage />} />
-        <Route path="history" element={<HistoryPage />} />
         <Route path="import-data" element={<ImportDataPage />} />
         <Route path="query" element={<QueryPage />} />
-        <Route path="revenue" element={<RevenuePage />} />
         <Route path="charts" element={<ChartsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="ai" element={<AIPage />} />
-        <Route path="*" element={<Navigate to="/dashboard/dashboard" replace />} />
+
+        {/* ADMIN ONLY */}
+        <Route
+          path="users"
+          element={
+            <AdminRoute>
+              <UsersPage />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="devices"
+          element={
+            <AdminRoute>
+              <DevicesPage />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="import-device"
+          element={
+            <AdminRoute>
+              <ImportDevicePage />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="revenue"
+          element={
+            <AdminRoute>
+              <RevenuePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="history"
+          element={
+            <AdminRoute>
+              <HistoryPage />
+            </AdminRoute>
+          }
+        />
+
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/dashboard/" replace />} />
+
       </Routes>
     </DashboardLayout>
   );
