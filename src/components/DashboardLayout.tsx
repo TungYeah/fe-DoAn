@@ -58,55 +58,79 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const [userInfo, setUserInfo] = useState({
-    fullName: "",
-    email: "",
-    avatar: "",
-  });
+const [userInfo, setUserInfo] = useState({
+  fullName: "",
+  email: "",
+  avatar: "",
+  role: "USER", // mặc định
+});
+
 
   // ========================
   // Fetch current user
   // ========================
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return; // chưa login thì thôi
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
 
-    fetch("http://localhost:8080/api/v1/auth/current", {
-      headers: { Authorization: `Bearer ${token}` },
+  fetch("http://localhost:8080/api/v1/auth/current", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => res.json())
+    .then((u) => {
+      const highestRole = getHighestRoleFromUser(u);
+
+      console.log("Roles từ backend:", u.roles);
+      console.log("Role cao nhất:", highestRole);
+
+      setUserInfo({
+        fullName: u.fullName || "",
+        email: u.email || "",
+        avatar: u.avatar || "",
+        role: highestRole,
+      });
+
+      localStorage.setItem("role", highestRole);
     })
-      .then((res) => res.json())
-      .then((u) => {
-        // cập nhật state
-        setUserInfo({
-          fullName: u.fullName || "",
-          email: u.email || "",
-          avatar: u.avatar || "", // path dạng "/uploads/avatars/img.png"
-        });
+    .catch((err) => console.error("Get current user error:", err));
+}, []);
 
-        // nếu muốn xài chỗ khác thì lưu localStorage
-        localStorage.setItem("fullName", u.fullName || "");
-        localStorage.setItem("email", u.email || "");
-      })
-      .catch((err) => console.error("Get current user error:", err));
-  }, []);
+
+// Lấy role cao nhất từ object user trả về từ backend
+function getHighestRoleFromUser(user: any): "ADMIN" | "USER" {
+  const roles = user.roles || [];
+
+  // Backend trả dạng: ["ROLE_ADMIN"] hoặc ["ROLE_USER"]
+  const normalized = roles.map((r: string) => r.replace("ROLE_", ""));
+
+  if (normalized.includes("ADMIN")) return "ADMIN";
+  return "USER";
+}
+
 
   const displayName =
     userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
 
-  const menuItems = [
-    { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
-    { id: "users", label: "Quản lý User", icon: Users },
-    { id: "devices", label: "Quản lý thiết bị", icon: Cpu },
-    { id: "import-device", label: "Import thiết bị", icon: Upload },
-    { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon },
-    { id: "query", label: "Truy vấn", icon: Search },
-    { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
-    { id: "revenue", label: "Doanh thu", icon: DollarSign },
-    { id: "history", label: "Lịch sử", icon: History },
-    { id: "notifications", label: "Thông báo", icon: Bell },
-    { id: "chat", label: "Bình luận", icon: MessageCircle },
-    { id: "ai", label: "AI Assistant", icon: Bot },
-  ];
+const menuItems = [
+  { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
+
+  // ADMIN ONLY
+  { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
+  { id: "devices", label: "Quản lý thiết bị", icon: Cpu, adminOnly: true },
+  { id: "import-device", label: "Import thiết bị", icon: Upload, adminOnly: true },
+  { id: "revenue", label: "Doanh thu", icon: DollarSign, adminOnly: true },
+
+
+  // USER + ADMIN
+  { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon },
+  { id: "query", label: "Truy vấn", icon: Search },
+  { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
+  { id: "notifications", label: "Thông báo", icon: Bell },
+    { id: "history", label: "Lịch sử", icon: History, adminOnly: true },
+  { id: "chat", label: "Bình luận", icon: MessageCircle },
+  { id: "ai", label: "AI Assistant", icon: Bot },
+];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -213,23 +237,30 @@ export default function DashboardLayout({
         } overflow-hidden`}
       >
         <nav className="p-4 space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
-                  currentPage === item.id
-                    ? "bg-red-600 text-white shadow"
-                    : "hover:bg-gray-100"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </button>
-            );
-          })}
+          {menuItems
+  .filter(item => {
+    // Nếu menu này dành riêng Admin → user thì không hiện
+    if (item.adminOnly && userInfo.role !== "ADMIN") return false;
+    return true;
+  })
+  .map((item) => {
+    const Icon = item.icon;
+    return (
+      <button
+        key={item.id}
+        onClick={() => onNavigate(item.id)}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
+          currentPage === item.id
+            ? "bg-red-600 text-white shadow"
+            : "hover:bg-gray-100"
+        }`}
+      >
+        <Icon className="w-5 h-5" />
+        {item.label}
+      </button>
+    );
+  })}
+
         </nav>
       </aside>
 
