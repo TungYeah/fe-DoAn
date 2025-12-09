@@ -4,7 +4,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { motion } from "motion/react";
 
 type LandingProps = {
-  onNavigate: (view: "landing" | "login" | "register") => void;
+  onNavigate: (view: "landing" | "login" | "register" | "about" | "contact" | "faq" | "help" | "terms" | "privacy") => void;
 };
 
 export default function LandingPage({ onNavigate }: LandingProps) {
@@ -105,18 +105,21 @@ export default function LandingPage({ onNavigate }: LandingProps) {
             <nav className="hidden md:flex items-center gap-8">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
+                onClick={() => onNavigate("about")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
               >
                 Giới thiệu
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
+                onClick={() => onNavigate("faq")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
               >
                 Tính năng
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
+                onClick={() => onNavigate("contact")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
               >
                 Liên hệ
@@ -680,16 +683,10 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               <h4 className="text-white mb-4">Liên kết</h4>
               <ul className="space-y-2">
                 <li>
-                  <button className="hover:text-red-500 transition-colors">Giới thiệu</button>
+                  <button onClick={() => onNavigate("about")} className="hover:text-red-500 transition-colors">Giới thiệu</button>
                 </li>
                 <li>
-                  <button className="hover:text-red-500 transition-colors">Tính năng</button>
-                </li>
-                <li>
-                  <button className="hover:text-red-500 transition-colors">Tài liệu</button>
-                </li>
-                <li>
-                  <button className="hover:text-red-500 transition-colors">Liên hệ</button>
+                  <button onClick={() => onNavigate("faq")} className="hover:text-red-500 transition-colors">Tính năng</button>
                 </li>
               </ul>
             </div>
@@ -699,16 +696,13 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               <h4 className="text-white mb-4">Hỗ trợ</h4>
               <ul className="space-y-2">
                 <li>
-                  <button className="hover:text-red-500 transition-colors">Trung tâm trợ giúp</button>
+                  <button onClick={() => onNavigate("contact")} className="hover:text-red-500 transition-colors">Liên hệ</button>
                 </li>
                 <li>
-                  <button className="hover:text-red-500 transition-colors">Điều khoản</button>
+                  <button onClick={() => onNavigate("terms")} className="hover:text-red-500 transition-colors">Điều khoản</button>
                 </li>
                 <li>
-                  <button className="hover:text-red-500 transition-colors">Chính sách</button>
-                </li>
-                <li>
-                  <button className="hover:text-red-500 transition-colors">FAQ</button>
+                  <button onClick={() => onNavigate("privacy")} className="hover:text-red-500 transition-colors">Chính sách</button>
                 </li>
               </ul>
             </div>
