@@ -65,16 +65,14 @@ export default function AIPage() {
                 {messages.map((msg, i) => (
                     <div
                         key={i}
-                        className={`w-full flex ${
-                            msg.role === "user" ? "justify-end" : "justify-start"
-                        }`}
+                        className={`w-full flex ${msg.role === "user" ? "justify-end" : "justify-start"
+                            }`}
                     >
                         <div
-                            className={`px-4 py-3 rounded-2xl shadow max-w-[80%] ${
-                                msg.role === "user"
+                            className={`px-4 py-3 rounded-2xl shadow max-w-[80%] ${msg.role === "user"
                                     ? "bg-red-600 text-white"
                                     : "bg-white border border-gray-200"
-                            }`}
+                                }`}
                             style={{ whiteSpace: "pre-wrap" }}
                         >
                             {msg.content}
