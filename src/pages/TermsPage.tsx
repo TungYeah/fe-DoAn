@@ -17,7 +17,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
     },
     {
       title: '3. Quyền và Trách Nhiệm Người Dùng',
-      content: 'Người dùng có quyền sử dụng các tính năng của nền tảng theo gói dịch vụ được cấp. Bạn có trách nhiệm bảo mật thông tin tài khoản, không chia sẻ API key hoặc thông tin đăng nhập với người khác. Bạn chịu trách nhiệm về mọi hoạt động diễn ra dưới tài khoản của mình.',
+      content: 'Không chia sẻ API key; đảm bảo dữ liệu gửi lên là hợp lệ và không gây hại hệ thống.',
     },
     {
       title: '4. Nội Dung và Dữ Liệu',

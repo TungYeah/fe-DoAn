@@ -18,7 +18,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./components/pages/DashboardPage";
 import UsersPage from "./components/pages/UsersPage";
 import DevicesPage from "./components/pages/DevicesPage";
-import ImportDevicePage from "./components/pages/ImportDevicePage";
+import DeviceTypesPage from "./components/pages/DeviceTypesPage";
 import HistoryPage from "./components/pages/HistoryPage";
 import ImportDataPage from "./components/pages/ImportDataPage";
 import QueryPage from "./components/pages/QueryPage";
@@ -31,14 +31,23 @@ import ChatPage from "./components/ChatPage";
 import AIPage from "./components/pages/AIPage";
 import ResetPasswordPage from "./components/pages/ResetPasswordPage";
 
-
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import FAQPage from "./pages/FAQPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 
-type View = "landing" | "login" | "register" | "dashboard" | "about" | "contact" | "faq" | "help" | "terms" | "privacy";
+type View =
+  | "landing"
+  | "login"
+  | "register"
+  | "dashboard"
+  | "about"
+  | "contact"
+  | "faq"
+  | "help"
+  | "terms"
+  | "privacy";
 
 // =========================
 // ProtectedRoute — yêu cầu login
@@ -62,7 +71,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* LANDING PAGE */}
         <Route path="/" element={<LandingPageWrapper />} />
 
@@ -70,9 +78,11 @@ export default function App() {
         <Route
           path="/login"
           element={
-            localStorage.getItem("token")
-              ? <Navigate to="/dashboard/" replace />
-              : <LoginPageWrapper />
+            localStorage.getItem("token") ? (
+              <Navigate to="/dashboard/" replace />
+            ) : (
+              <LoginPageWrapper />
+            )
           }
         />
 
@@ -80,9 +90,11 @@ export default function App() {
         <Route
           path="/register"
           element={
-            localStorage.getItem("token")
-              ? <Navigate to="/dashboard/" replace />
-              : <RegisterPageWrapper />
+            localStorage.getItem("token") ? (
+              <Navigate to="/dashboard/" replace />
+            ) : (
+              <RegisterPageWrapper />
+            )
           }
         />
         {/* PUBLIC INFO PAGES */}
@@ -109,7 +121,6 @@ export default function App() {
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
     </BrowserRouter>
   );
@@ -156,7 +167,6 @@ function FAQPageWrapper() {
   return <FAQPage onNavigate={(v) => navigate("/" + v)} />;
 }
 
-
 function TermsPageWrapper() {
   const navigate = useNavigate();
   return <TermsPage onNavigate={(v) => navigate("/" + v)} />;
@@ -166,7 +176,6 @@ function PrivacyPageWrapper() {
   const navigate = useNavigate();
   return <PrivacyPage onNavigate={(v) => navigate("/" + v)} />;
 }
-
 
 /* =========================
     DASHBOARD ROUTING
@@ -181,19 +190,17 @@ function DashboardRoutes() {
       onNavigate={(page) => navigate(`/dashboard/${page}`)}
       onLogout={() => {
         localStorage.clear();
-        window.location.href = "/login";  // hard redirect, nhanh nhất
+        window.location.href = "/login"; // hard redirect, nhanh nhất
       }}
-
     >
       <Routes>
-
         {/* USER + ADMIN */}
         <Route path="/" element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="import-data" element={<ImportDataPage />} />
         <Route path="query" element={<QueryPage />} />
         <Route path="charts" element={<ChartsPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="devices" element={<DevicesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="chat" element={<ChatPage />} />
@@ -208,21 +215,21 @@ function DashboardRoutes() {
             </AdminRoute>
           }
         />
-
-        <Route
-          path="devices"
+<Route
+          path="import-data"
           element={
             <AdminRoute>
-              <DevicesPage />
+              <ImportDataPage />
             </AdminRoute>
           }
         />
 
+
         <Route
-          path="import-device"
+          path="device-types"
           element={
             <AdminRoute>
-              <ImportDevicePage />
+              <DeviceTypesPage />
             </AdminRoute>
           }
         />
@@ -246,7 +253,6 @@ function DashboardRoutes() {
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/dashboard/" replace />} />
-
       </Routes>
     </DashboardLayout>
   );

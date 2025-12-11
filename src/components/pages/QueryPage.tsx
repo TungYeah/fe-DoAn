@@ -62,7 +62,9 @@ function exportCSV(dataset: any, fileName?: string) {
   if (rows.length === 0) return;
   const header = "timestamp,unique_identifier,sensor,value\n";
   const csvRows = rows
-    .map((r: any) => `${r.timestamp},${r.unique_identifier},${r.sensor},${r.value}`)
+    .map(
+      (r: any) => `${r.timestamp},${r.unique_identifier},${r.sensor},${r.value}`
+    )
     .join("\n");
 
   const blob = new Blob([header + csvRows], {
@@ -81,10 +83,16 @@ export default function QueryPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { user } = useAuth();
   console.log(">>> CURRENT USER:", user);
-console.log(">>> USER ID:", currentUser?.id);
+  console.log(">>> USER ID:", currentUser?.id);
+  const [sensorList, setSensorList] = useState<string[]>([]);
 
-const CURRENT_USER_ID = user?.id || currentUser?.id;
+  const CURRENT_USER_ID = user?.id || currentUser?.id;
+  const roleList = user?.roles || currentUser?.roles || [];
 
+  const isAdmin = roleList.includes("ROLE_ADMIN");
+
+  console.log("ROLE LIST:", roleList);
+  console.log("IS ADMIN:", isAdmin);
   // ================== STATE BACKEND LOGIC ==================
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>("all");
@@ -114,45 +122,94 @@ const CURRENT_USER_ID = user?.id || currentUser?.id;
   const [history, setHistory] = useState<any[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [currentHistoryId, setCurrentHistoryId] = useState<number | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPerPage, setHistoryPerPage] = useState(5);
 
   // UI state
   const [showResults, setShowResults] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
+  function normalizeName(str: string) {
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // xoá dấu
+      .replace(/\s+/g, "") // xoá khoảng cách
+      .toLowerCase(); // viết thường
+  }
+
   // ============ lấy thong tin ng dùng ===============
 
   useEffect(() => {
-  const fetchCurrentUser = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
-      const res = await fetch("http://localhost:8080/api/v1/auth/current", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-      const data = await res.json();
-      console.log(">>> API CURRENT:", data);
+        if (!res.ok) return;
 
-      setCurrentUser(data);  // lưu user vào state
-    } catch (err) {
-      console.error("Lỗi lấy current user:", err);
-    }
-  };
+        const data = await res.json();
+        setCurrentUser(data);
+      } catch (err) {
+        console.error("Lỗi lấy current user:", err);
+      }
+    };
 
-  fetchCurrentUser();
-}, []);
+    fetchCurrentUser();
+  }, []);
+  // ====load list sensor====
+  useEffect(() => {
+    const fetchDeviceTypes = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/device-types");
+        const data = await res.json();
+
+        const list = data.device_types || [];
+
+        const sensors = list.map((dt: any) => ({
+          label: dt.name, // hiển thị trên dropdown
+          value: normalizeName(dt.name), // dùng để lọc
+        }));
+
+        setSensorList(sensors);
+      } catch (err) {
+        console.error("Lỗi load device-types:", err);
+      }
+    };
+
+    fetchDeviceTypes();
+  }, []);
 
   // ============ LOAD THIẾT BỊ ===============
   useEffect(() => {
-    fetch("http://localhost:5000/api/devices")
-      .then((res) => res.json())
-      .then((data) => setDevices(data.devices || []))
-      .catch(() => setDevices([]));
-  }, []);
+    if (!CURRENT_USER_ID) return;
+
+    const fetchDevices = async () => {
+      try {
+        const uid = CURRENT_USER_ID;
+        const role = isAdmin ? "admin" : "user";
+
+        const res = await fetch(
+          `http://localhost:5000/api/devices?user_id=${uid}&role=${role}`
+        );
+
+        const json = await res.json();
+        setDevices(json.devices || []);
+      } catch (err) {
+        console.error("Lỗi tải thiết bị:", err);
+        setDevices([]);
+      }
+    };
+
+    fetchDevices();
+  }, [CURRENT_USER_ID, isAdmin]);
 
   // ============ LOAD PROVINCE API ============ (depth=3 để có sẵn quận, xã)
   useEffect(() => {
@@ -211,6 +268,16 @@ const CURRENT_USER_ID = user?.id || currentUser?.id;
     }
     setIsHistoryLoading(false);
   }
+  const historyTotalPages = Math.max(
+    1,
+    Math.ceil(history.length / historyPerPage)
+  );
+
+  const historyStartIndex = (historyPage - 1) * historyPerPage;
+  const currentHistory = history.slice(
+    historyStartIndex,
+    historyStartIndex + historyPerPage
+  );
 
   useEffect(() => {
     loadHistory();
@@ -222,7 +289,8 @@ const CURRENT_USER_ID = user?.id || currentUser?.id;
     try {
       const params = new URLSearchParams();
 
-      if (selectedDevice !== "all") params.append("unique_identifier", selectedDevice);
+      if (selectedDevice !== "all")
+        params.append("unique_identifier", selectedDevice);
       if (selectedMetric !== "all") params.append("sensor", selectedMetric);
 
       const startISO = dateFromVN ? VNLocalToISO(dateFromVN) : "all";
@@ -265,7 +333,7 @@ const CURRENT_USER_ID = user?.id || currentUser?.id;
     setIsLoading(false);
   }
 
-  // ============ LƯU FILTER ===============  
+  // ============ LƯU FILTER ===============
   async function saveFilter(filter: any, fileName: string) {
     if (!CURRENT_USER_ID) return;
 
@@ -278,11 +346,11 @@ const CURRENT_USER_ID = user?.id || currentUser?.id;
         filter_json: filter,
       }),
     });
-console.log(">>> SEND FILTER:", {
-  created_by: CURRENT_USER_ID,
-  filter_name: fileName,
-  filter_json: filter,
-});
+    console.log(">>> SEND FILTER:", {
+      created_by: CURRENT_USER_ID,
+      filter_name: fileName,
+      filter_json: filter,
+    });
 
     loadHistory();
   }
@@ -336,15 +404,15 @@ console.log(">>> SEND FILTER:", {
       return;
     }
 
-    let fileName = prompt(
-      "Nhập tên file CSV (bỏ trống để dùng tên mặc định):"
-    );
+    let fileName = prompt("Nhập tên file CSV (bỏ trống để dùng tên mặc định):");
 
     if (fileName) {
       const vietnameseRegex =
         /[áàảãạăắằẳẵặâấầẩẫậóòỏõọôốồổỗộơớờởỡợéèẻẽẹêếềểễệíìỉĩịúùủũụưứừửữựýỳỷỹỵđ]/i;
       if (vietnameseRegex.test(fileName)) {
-        alert("Không được dùng dấu tiếng Việt trong tên file! Vui lòng đặt tên không dấu.");
+        alert(
+          "Không được dùng dấu tiếng Việt trong tên file! Vui lòng đặt tên không dấu."
+        );
         return;
       }
       if (!fileName.endsWith(".csv")) {
@@ -404,16 +472,19 @@ console.log(">>> SEND FILTER:", {
   return (
     <div className="space-y-6">
       {/* Header */}
-<motion.div
-  initial={{ opacity: 0, y: -15 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4 }}
-  className="flex items-center justify-between"
->         <div>
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between"
+      >
+        {" "}
+        <div>
           <h1 className="text-3xl text-gray-900 mb-2">Truy vấn dữ liệu</h1>
 
           <p className="text-gray-600">
-            Tìm kiếm và lọc dữ liệu từ thiết bị IoT, xuất CSV và xem lịch sử tải xuống.
+            Tìm kiếm và lọc dữ liệu từ thiết bị IoT, xuất CSV và xem lịch sử tải
+            xuống.
           </p>
         </div>
       </motion.div>
@@ -437,7 +508,7 @@ console.log(">>> SEND FILTER:", {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Thiết bị */}
           <div>
-            <label className="block text-gray-700 mb-2">Thiết bị</label>
+            <label className="block text-gray-700 mb-2">Thiết bị của bạn</label>
             <div className="relative">
               <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
@@ -445,7 +516,7 @@ console.log(">>> SEND FILTER:", {
                 onChange={(e) => setSelectedDevice(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors appearance-none"
               >
-                <option value="all">Tất cả thiết bị</option>
+                <option value="all">Thiết bị của bạn</option>
                 {devices.map((d: any) => (
                   <option value={d.unique_identifier} key={d.unique_identifier}>
                     {d.unique_identifier} — {d.name}
@@ -466,11 +537,12 @@ console.log(">>> SEND FILTER:", {
                 className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors appearance-none"
               >
                 <option value="all">Tất cả</option>
-                <option value="temperature">Temperature</option>
-                <option value="humidity">Humidity</option>
-                <option value="co2">CO₂</option>
-                <option value="light">Light</option>
-                <option value="battery">Battery</option>
+
+                {sensorList.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -628,9 +700,7 @@ console.log(">>> SEND FILTER:", {
                 <Filter className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-sm text-gray-600">Số điều kiện lọc</p>
-                  <p className="text-2xl text-gray-900">
-                    {activeFiltersCount}
-                  </p>
+                  <p className="text-2xl text-gray-900">{activeFiltersCount}</p>
                 </div>
               </div>
             </div>
@@ -674,7 +744,9 @@ console.log(">>> SEND FILTER:", {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() =>
-                    alert("Hiện tại backend chỉ hỗ trợ CSV, JSON đang phát triển.")
+                    alert(
+                      "Hiện tại backend chỉ hỗ trợ CSV, JSON đang phát triển."
+                    )
                   }
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
@@ -685,7 +757,9 @@ console.log(">>> SEND FILTER:", {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() =>
-                    alert("Hiện tại backend chỉ hỗ trợ CSV, Excel đang phát triển.")
+                    alert(
+                      "Hiện tại backend chỉ hỗ trợ CSV, Excel đang phát triển."
+                    )
                   }
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                 >
@@ -763,12 +837,8 @@ console.log(">>> SEND FILTER:", {
                       <td className="px-6 py-4 text-gray-900">
                         {row.unique_identifier}
                       </td>
-                      <td className="px-6 py-4 text-gray-900">
-                        {row.sensor}
-                      </td>
-                      <td className="px-6 py-4 text-gray-900">
-                        {row.value}
-                      </td>
+                      <td className="px-6 py-4 text-gray-900">{row.sensor}</td>
+                      <td className="px-6 py-4 text-gray-900">{row.value}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -779,10 +849,9 @@ console.log(">>> SEND FILTER:", {
             {rows.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-700">
                 <p>
-                  Trang {page} / {totalPages} — Hiển thị{" "}
-                  {startIndex + 1}–
-                  {Math.min(startIndex + perPage, rows.length)} /{" "}
-                  {rows.length} bản ghi
+                  Trang {page} / {totalPages} — Hiển thị {startIndex + 1}–
+                  {Math.min(startIndex + perPage, rows.length)} / {rows.length}{" "}
+                  bản ghi
                 </p>
                 <div className="flex items-center gap-1">
                   {/* Prev */}
@@ -839,9 +908,7 @@ console.log(">>> SEND FILTER:", {
 
                   {/* Next */}
                   <button
-                    onClick={() =>
-                      setPage((p) => Math.min(totalPages, p + 1))
-                    }
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     className={`px-3 py-1 rounded-md border ${
                       page === totalPages
@@ -858,199 +925,294 @@ console.log(">>> SEND FILTER:", {
         </>
       )}
 
-{/* ================= LỊCH SỬ TẢI XUỐNG ================= */}
-{showHistory && (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.3 }}
-    className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-  >
-    {/* Header */}
-    <div className="bg-gradient-to-r from-red-700 to-red-600 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-            <History className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-white text-xl font-semibold">
-              Lịch sử truy vấn & tải xuống
-            </h3>
-            <p className="text-white text-sm font-semibold">
-              Quản lý các truy vấn đã thực hiện
-            </p>
-          </div>
-        </div>
+      {/* ================= LỊCH SỬ TẢI XUỐNG ================= */}
+      {showHistory && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-red-700 to-red-600 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <History className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white text-xl font-semibold">
+                    Lịch sử truy vấn & tải xuống
+                  </h3>
+                  <p className="text-white text-sm font-semibold">
+                    Quản lý các truy vấn đã thực hiện
+                  </p>
+                </div>
+              </div>
 
-        <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm">
-          {history.length} lần export
-        </span>
-      </div>
-    </div>
-
-    {/* Content */}
-    <div className="px-6 py-4">
-      {isHistoryLoading && (
-        <p className="text-gray-600 text-sm">Đang tải lịch sử...</p>
-      )}
-
-      {!isHistoryLoading && history.length === 0 && (
-        <p className="text-gray-600 text-sm">Chưa có lịch sử.</p>
-      )}
-
-      {!isHistoryLoading && history.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm text-gray-600">
-                  Tên file
-                </th>
-                <th className="px-4 py-3 text-left text-sm text-gray-600">
-                  Thời gian
-                </th>
-                <th className="px-4 py-3 text-center text-sm text-gray-600">
-                  Định dạng
-                </th>
-                <th className="px-4 py-3 text-center text-sm text-gray-600">
-                  Trạng thái
-                </th>
-                <th className="px-4 py-3 text-center text-sm text-gray-600">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-200">
-  {history.map((item) => (
-    <tr key={item.id} className="hover:bg-gray-50 transition-all">
-      
-      {/* TÊN FILE */}
-        <td className="px-4 py-3">
-          <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}>
-          <div className="flex items-center gap-3">
-            
-            {/* Icon document */}
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4" />
-            </div>
-            {/* Info */}
-              <p className="text-gray-900 font-medium">{item.filter_name}</p>
-            {/* <p className="text-xs text-gray-500">Tải {item.download_count ?? 0} lần</p>  có thể thêm sau*/}
-          </div>
-                      </motion.button>
-
-        </td>
-
-
-      <td className="px-4 py-3 text-sm text-gray-700">
-        {toVietnamTime(item.createAt)}
-      </td>
-      <td className="px-4 py-3 text-center">
-          {(() => {
-            // Lấy format từ API — fallback = CSV
-            const format = item.format
-              ? item.format.toUpperCase()
-              : item.filter_name?.toLowerCase().endsWith(".xlsx")
-              ? "EXCEL"
-              : item.filter_name?.toLowerCase().endsWith(".json")
-              ? "JSON"
-              : "CSV";
-
-            // Chọn màu theo format
-            const colorClass =
-              format === "CSV"
-                ? "bg-green-100 text-green-700"
-                : format === "EXCEL"
-                ? "bg-orange-100 text-orange-700"
-                : "bg-blue-100 text-blue-700"; // JSON
-
-            return (
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-                {format}
+              <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm">
+                {history.length} lần export
               </span>
-            );
-          })()}
-      </td>
-      {/* TRẠNG THÁI */}
-      <td className="px-4 py-3 text-center">
-        {currentHistoryId === item.id ? (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            Đang hiển thị
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-4">
+            {isHistoryLoading && (
+              <p className="text-gray-600 text-sm">Đang tải lịch sử...</p>
+            )}
+
+            {!isHistoryLoading && history.length === 0 && (
+              <p className="text-gray-600 text-sm">Chưa có lịch sử.</p>
+            )}
+
+            {!isHistoryLoading && history.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm text-gray-600">
+                        Tên file
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm text-gray-600">
+                        Thời gian
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm text-gray-600">
+                        Định dạng
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm text-gray-600">
+                        Trạng thái
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm text-gray-600">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-200">
+                    {currentHistory.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-gray-50 transition-all"
+                      >
+                        {/* TÊN FILE */}
+                        <td className="px-4 py-3">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <div className="flex items-center gap-3">
+                              {/* Icon document */}
+                              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              {/* Info */}
+                              <p className="text-gray-900 font-medium">
+                                {item.filter_name}
+                              </p>
+                              {/* <p className="text-xs text-gray-500">Tải {item.download_count ?? 0} lần</p>  có thể thêm sau*/}
+                            </div>
+                          </motion.button>
+                        </td>
+
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {toVietnamTime(item.createAt)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {(() => {
+                            // Lấy format từ API — fallback = CSV
+                            const format = item.format
+                              ? item.format.toUpperCase()
+                              : item.filter_name
+                                  ?.toLowerCase()
+                                  .endsWith(".xlsx")
+                              ? "EXCEL"
+                              : item.filter_name
+                                  ?.toLowerCase()
+                                  .endsWith(".json")
+                              ? "JSON"
+                              : "CSV";
+
+                            // Chọn màu theo format
+                            const colorClass =
+                              format === "CSV"
+                                ? "bg-green-100 text-green-700"
+                                : format === "EXCEL"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-blue-100 text-blue-700"; // JSON
+
+                            return (
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${colorClass}`}
+                              >
+                                {format}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* TRẠNG THÁI */}
+                        <td className="px-4 py-3 text-center">
+                          {currentHistoryId === item.id ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+                              <span className="w-2 h-2 rounded-full bg-green-500" />
+                              Đang hiển thị
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              Chưa hiển thị
+                            </span>
+                          )}
+                        </td>
+
+                        {/* THAO TÁC */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-3">
+                            {/* XEM */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleViewDataset(item.id)}
+                              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </motion.button>
+
+                            {/* TẢI */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDownloadHistory(item.id)}
+                              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              <Download className="w-4 h-4" />
+                            </motion.button>
+
+                            {/* XOÁ */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDeleteHistory(item.id)}
+                              className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </motion.button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          {/* Pagination for history */}
+<div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
+  <div className="flex items-center gap-2">
+    <span>Hiển thị mỗi trang:</span>
+    <select
+      value={historyPerPage}
+      onChange={(e) => {
+        setHistoryPerPage(Number(e.target.value));
+        setHistoryPage(1);
+      }}
+      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+    >
+      <option value={5}>5</option>
+      <option value={10}>10</option>
+      <option value={20}>20</option>
+    </select>
+  </div>
+
+  <div className="flex items-center gap-1">
+    {/* Prev */}
+    <button
+      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+      disabled={historyPage === 1}
+      className={`px-3 py-1 rounded-md border ${
+        historyPage === 1
+          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-50"
+      }`}
+    >
+      Trước
+    </button>
+
+    {/* Number pagination */}
+    {(() => {
+      const arr: (number | string)[] = [];
+      const maxButtons = 5;
+
+      if (historyTotalPages <= maxButtons) {
+        for (let i = 1; i <= historyTotalPages; i++) arr.push(i);
+      } else {
+        arr.push(1);
+        if (historyPage > 3) arr.push("...");
+        const middle = [historyPage - 1, historyPage, historyPage + 1].filter(
+          (p) => p > 1 && p < historyTotalPages
+        );
+        arr.push(...middle);
+        if (historyPage < historyTotalPages - 2) arr.push("...");
+        arr.push(historyTotalPages);
+      }
+
+      return arr.map((num, i) =>
+        num === "..." ? (
+          <span key={i} className="px-2 text-gray-400">
+            ...
           </span>
         ) : (
-          <span className="text-xs text-gray-500">Chưa hiển thị</span>
-        )}
-      </td>
-
-      {/* THAO TÁC */}
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-center gap-3">
-
-          {/* XEM */}
-          <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-            onClick={() => handleViewDataset(item.id)}
-            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700"
+          <button
+            key={i}
+            onClick={() => setHistoryPage(num as number)}
+            className={`px-3 py-1 rounded-md border ${
+              num === historyPage
+                ? "bg-red-600 text-white border-red-600"
+                : "bg-white hover:bg-gray-50"
+            }`}
           >
-            <Eye className="w-4 h-4" />
-                        </motion.button>
+            {num}
+          </button>
+        )
+      );
+    })()}
 
-          {/* TẢI */}
-          <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-            onClick={() => handleDownloadHistory(item.id)}
-            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Download className="w-4 h-4" />
-          </motion.button>
+    {/* Next */}
+    <button
+      onClick={() =>
+        setHistoryPage((p) => Math.min(historyTotalPages, p + 1))
+      }
+      disabled={historyPage === historyTotalPages}
+      className={`px-3 py-1 rounded-md border ${
+        historyPage === historyTotalPages
+          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-50"
+      }`}
+    >
+      Sau
+    </button>
+  </div>
+</div>
 
-          {/* XOÁ */}
-          <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-            onClick={() => handleDeleteHistory(item.id)}
-            className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50"
-          >
-            <Trash2 className="w-4 h-4" />
-          </motion.button>
-
-        </div>
-      </td>
-
-    </tr>
-  ))}
-</tbody>
-
-          </table>
-        </div>
+          <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 flex items-center justify-between">
+            <p>
+              Hiển thị{" "}
+              <span className="text-gray-900 font-medium">
+                {history.length}
+              </span>{" "}
+              lần export gần nhất.
+            </p>
+            <button
+              onClick={loadHistory}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Làm mới
+            </button>
+          </div>
+        </motion.div>
       )}
-    </div>
-
-    {/* Footer */}
-    <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 flex items-center justify-between">
-      <p>
-        Hiển thị{" "}
-        <span className="text-gray-900 font-medium">{history.length}</span>{" "}
-        lần export gần nhất.
-      </p>
-      <button
-        onClick={loadHistory}
-        className="flex items-center gap-2 text-red-600 hover:text-red-700"
-      >
-        <RefreshCcw className="w-4 h-4" />
-        Làm mới
-      </button>
-    </div>
-  </motion.div>
-)}
-
     </div>
   );
 }

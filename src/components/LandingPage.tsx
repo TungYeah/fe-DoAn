@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { ChevronRight, Database, Shield, Zap, Users, LineChart, Cloud, Menu, X, Wifi, Activity, Award } from "lucide-react";
+import {
+  ChevronRight,
+  Database,
+  Shield,
+  Zap,
+  Users,
+  LineChart,
+  Cloud,
+  Menu,
+  X,
+  Wifi,
+  Activity,
+  Award,
+} from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { motion } from "motion/react";
 
 type LandingProps = {
-  onNavigate: (view: "landing" | "login" | "register" | "about" | "contact" | "faq" | "help" | "terms" | "privacy") => void;
+  onNavigate: (
+    view:
+      | "landing"
+      | "login"
+      | "register"
+      | "about"
+      | "contact"
+      | "faq"
+      | "help"
+      | "terms"
+      | "privacy"
+  ) => void;
 };
 
 export default function LandingPage({ onNavigate }: LandingProps) {
@@ -29,19 +53,19 @@ export default function LandingPage({ onNavigate }: LandingProps) {
         className="fixed top-24 right-8 z-40 hidden lg:block"
       >
         <motion.div
-          animate={{ 
+          animate={{
             y: [0, -10, 0],
           }}
-          transition={{ 
+          transition={{
             duration: 3,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
           className="relative"
         >
           {/* Glow effect */}
           <div className="absolute inset-0 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl blur-xl opacity-30 animate-pulse" />
-          
+
           {/* Logo container */}
           <div className="relative bg-white rounded-2xl shadow-2xl p-6 border-4 border-red-600">
             <div className="w-28 h-28 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center relative overflow-hidden">
@@ -49,18 +73,19 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-red-300 to-transparent animate-spin-slow" />
               </div>
-              
+
               {/* PTIT Text */}
               <div className="relative text-center">
-                <div className="text-white text-3xl tracking-wider" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                <div
+                  className="text-white text-3xl tracking-wider"
+                  style={{ fontFamily: "Arial Black, sans-serif" }}
+                >
                   PTIT
                 </div>
-                <div className="text-red-100 text-xs mt-1">
-                  IoT Platform
-                </div>
+                <div className="text-red-100 text-xs mt-1">IoT Platform</div>
               </div>
             </div>
-            
+
             {/* Decorative corners */}
             <div className="absolute -top-2 -left-2 w-4 h-4 border-t-4 border-l-4 border-red-400 rounded-tl-lg" />
             <div className="absolute -top-2 -right-2 w-4 h-4 border-t-4 border-r-4 border-red-400 rounded-tr-lg" />
@@ -73,13 +98,15 @@ export default function LandingPage({ onNavigate }: LandingProps) {
       {/* ================= HEADER ================= */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-white/80 backdrop-blur-sm"
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md shadow-lg"
+            : "bg-white/80 backdrop-blur-sm"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
@@ -88,7 +115,10 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/20" />
                 {/* PTIT Logo Text */}
                 <div className="relative text-center z-10">
-                  <div className="text-white text-sm tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                  <div
+                    className="text-white text-sm tracking-wide"
+                    style={{ fontFamily: "Arial Black, sans-serif" }}
+                  >
                     PTIT
                   </div>
                 </div>
@@ -103,21 +133,21 @@ export default function LandingPage({ onNavigate }: LandingProps) {
 
             {/* Desktop Menu */}
             <nav className="hidden md:flex items-center gap-8">
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => onNavigate("about")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
               >
                 Giới thiệu
               </motion.button>
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => onNavigate("faq")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
               >
                 Tính năng
               </motion.button>
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => onNavigate("contact")}
                 className="text-gray-700 hover:text-red-600 transition-colors"
@@ -134,7 +164,10 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 Đăng nhập
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(220, 38, 38, 0.3)" }}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: "0 10px 30px rgba(220, 38, 38, 0.3)",
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onNavigate("register")}
                 className="px-6 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg transition-all shadow-lg"
@@ -148,13 +181,17 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-gray-700 hover:text-red-600"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               className="md:hidden mt-4 pb-4 border-t pt-4"
@@ -191,34 +228,34 @@ export default function LandingPage({ onNavigate }: LandingProps) {
       <section className="relative pt-20 min-h-[90vh] flex items-center overflow-hidden">
         {/* Background with red and white */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-white to-red-50" />
-        
+
         {/* Decorative Elements */}
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
           }}
-          transition={{ 
+          transition={{
             duration: 5,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
           className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-red-600 to-red-800 rounded-full mix-blend-multiply filter blur-xl"
         />
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.3, 1],
             opacity: [0.2, 0.4, 0.2],
           }}
-          transition={{ 
+          transition={{
             duration: 7,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 1
+            delay: 1,
           }}
           className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-br from-red-400 to-red-600 rounded-full mix-blend-multiply filter blur-xl"
         />
-        
+
         {/* Floating particles */}
         {[...Array(6)].map((_, i) => (
           <motion.div
@@ -244,7 +281,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
         <div className="relative max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="space-y-8">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -255,35 +292,41 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </div>
             </motion.div>
 
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-5xl lg:text-6xl text-gray-900"
+              className="text-5xl lg:text-2xl text-gray-900"
             >
-              Nền tảng IoT{" "}
+              Nền tảng thu thập dữ liệu cảm biến IoT{" "}
               <span className="bg-gradient-to-r from-red-700 to-red-500 bg-clip-text text-transparent">
-                Việt Nam
+                phục vụ AI on Sensor
               </span>
             </motion.h1>
 
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-xl text-gray-600"
+              className="text-lg text-gray-600"
             >
-              Hệ thống quản lý và phân tích dữ liệu IoT hiện đại, được phát triển bởi và cho cộng đồng sinh viên - giảng viên PTIT
+              Data Lake dành cho IoT giúp thu thập – lưu trữ – xử lý – chia sẻ
+              dữ liệu phục vụ huấn luyện mô hình AI trực tiếp trên thiết bị cảm
+              biến (AI on Sensor). Hỗ trợ nghiên cứu, giảng dạy và triển khai
+              các bài lab IoT tại PTIT.
             </motion.p>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4"
             >
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.3)" }}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: "0 20px 40px rgba(220, 38, 38, 0.3)",
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onNavigate("register")}
                 className="group px-8 py-4 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 relative overflow-hidden"
@@ -295,7 +338,9 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 <span className="relative z-10">Bắt đầu ngay</span>
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
               </motion.button>
-              <motion.button 
+              <motion.button
+                onClick={() => onNavigate("faq")}
+
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 border-2 border-red-600 text-red-600 rounded-xl hover:bg-red-50 transition-all"
@@ -305,7 +350,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
             </motion.div>
 
             {/* Stats with animation */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
@@ -315,41 +360,47 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 whileHover={{ scale: 1.1 }}
                 className="cursor-pointer"
               >
-                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">500+</p>
+                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+                  500+
+                </p>
                 <p className="text-sm text-gray-600">Sinh viên</p>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.1 }}
                 className="cursor-pointer"
               >
-                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">50+</p>
-                <p className="text-sm text-gray-600">Thiết bị IoT</p>
+<p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+  50+
+</p>
+<p className="text-sm text-gray-600">Loại cảm biến</p>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.1 }}
                 className="cursor-pointer"
               >
-                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">24/7</p>
+                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+                  24/7
+                </p>
                 <p className="text-sm text-gray-600">Giám sát</p>
               </motion.div>
             </motion.div>
           </div>
 
           {/* Right Image */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative"
           >
-            <motion.div 
-              animate={{ 
+            <motion.div
+              animate={{
                 rotate: [3, -3, 3],
               }}
-              transition={{ 
+              transition={{
                 duration: 6,
                 repeat: Infinity,
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
               className="absolute inset-0 bg-gradient-to-br from-red-700 via-red-600 to-yellow-500 rounded-3xl transform"
             />
@@ -359,7 +410,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 alt="PTIT IoT Platform"
                 className="rounded-3xl shadow-2xl w-full h-auto relative z-10 border-4 border-white"
               />
-              
+
               {/* Floating badges */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
@@ -368,7 +419,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               >
                 <Wifi className="w-8 h-8 text-red-600" />
               </motion.div>
-              
+
               <motion.div
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
@@ -384,16 +435,14 @@ export default function LandingPage({ onNavigate }: LandingProps) {
       {/* ================= FEATURES SECTION ================= */}
       <section className="py-20 bg-gradient-to-b from-white to-red-50">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl text-gray-900 mb-4">
-              Tính năng nổi bật
-            </h2>
+            <h2 className="text-4xl text-gray-900 mb-4">Tính năng nổi bật</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Giải pháp toàn diện cho việc quản lý và phân tích dữ liệu IoT
             </p>
@@ -401,140 +450,150 @@ export default function LandingPage({ onNavigate }: LandingProps) {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-red-100 hover:border-red-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <Database className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl text-gray-900 mb-3">
-                Lưu trữ an toàn
-              </h3>
+              <h3 className="text-xl text-gray-900 mb-3">Lưu trữ an toàn</h3>
               <p className="text-gray-600">
-                Dữ liệu được mã hóa và lưu trữ an toàn trên cloud, đảm bảo tính bảo mật cao nhất
+                Hệ thống Data Lake thu thập và lưu trữ dữ liệu cảm biến phục vụ nghiên cứu IoT & AI.
+
               </p>
             </motion.div>
 
             {/* Feature 2 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-yellow-100 hover:border-yellow-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-yellow-600 to-yellow-500 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <LineChart className="w-7 h-7 text-white" />
               </motion.div>
               <h3 className="text-xl text-gray-900 mb-3">
-                Phân tích thời gian thực
+                Phân tích dữ liệu thực
               </h3>
               <p className="text-gray-600">
-                Theo dõi và phân tích dữ liệu cảm biến theo thời gian thực với biểu đồ trực quan
+                Theo dõi dữ liệu real-time và hỗ trợ pipeline xử lý cho huấn luyện mô hình AI on Sensor.
+
               </p>
             </motion.div>
 
             {/* Feature 3 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-red-100 hover:border-red-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-red-600 to-yellow-500 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <Zap className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl text-gray-900 mb-3">
-                Hiệu năng cao
-              </h3>
+              <h3 className="text-xl text-gray-900 mb-3">Hiệu năng cao</h3>
               <p className="text-gray-600">
-                Xử lý hàng nghìn điểm dữ liệu mỗi giây với độ trễ cực thấp
+                Tối ưu xử lý dữ liệu lớn từ các thiết bị IoT cho nghiên cứu.
               </p>
             </motion.div>
 
             {/* Feature 4 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-yellow-100 hover:border-yellow-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-red-600 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <Shield className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl text-gray-900 mb-3">
-                Bảo mật tối ưu
-              </h3>
+              <h3 className="text-xl text-gray-900 mb-3">Bảo mật tối ưu</h3>
               <p className="text-gray-600">
-                Xác thực đa lớp và phân quyền chi tiết cho từng người dùng
+                Bảo mật API, phân quyền dataset và kiểm soát truy cập theo vai trò.
               </p>
             </motion.div>
 
             {/* Feature 5 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-red-100 hover:border-red-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-red-700 to-yellow-500 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <Users className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl text-gray-900 mb-3">
-                Cộng tác nhóm
-              </h3>
+              <h3 className="text-xl text-gray-900 mb-3">Cộng tác nhóm</h3>
               <p className="text-gray-600">
-                Chia sẻ dữ liệu và cộng tác trong nhóm nghiên cứu một cách dễ dàng
+                Chia sẻ dataset giữa các nhóm nghiên cứu, lớp học hoặc đề tài khoa học.
               </p>
             </motion.div>
 
             {/* Feature 6 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.6 }}
-              whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)" }}
+              whileHover={{
+                y: -10,
+                boxShadow: "0 20px 40px rgba(220, 38, 38, 0.15)",
+              }}
               className="group p-8 bg-white rounded-2xl border-2 border-yellow-100 hover:border-yellow-300 transition-all shadow-lg"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-14 h-14 bg-gradient-to-br from-yellow-600 to-red-700 rounded-xl flex items-center justify-center mb-6 shadow-lg"
               >
                 <Cloud className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl text-gray-900 mb-3">
-                Đám mây linh hoạt
-              </h3>
+              <h3 className="text-xl text-gray-900 mb-3">Đám mây linh hoạt</h3>
               <p className="text-gray-600">
-                Truy cập từ mọi nơi, mọi thiết bị với nền tảng cloud hiện đại
+                Tích hợp với Data Lake phục vụ lưu trữ dữ liệu lớn IoT.
               </p>
             </motion.div>
           </div>
@@ -544,27 +603,27 @@ export default function LandingPage({ onNavigate }: LandingProps) {
       {/* ================= CTA SECTION ================= */}
       <section className="py-20 bg-gradient-to-br from-red-700 via-red-600 to-yellow-600 text-white relative overflow-hidden">
         {/* Decorative Elements */}
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 180, 360],
           }}
-          transition={{ 
+          transition={{
             duration: 20,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear",
           }}
           className="absolute top-0 right-0 w-96 h-96 bg-yellow-500/20 rounded-full -translate-y-1/2 translate-x-1/2"
         />
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.3, 1],
             rotate: [360, 180, 0],
           }}
-          transition={{ 
+          transition={{
             duration: 25,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear",
           }}
           className="absolute bottom-0 left-0 w-96 h-96 bg-red-800/20 rounded-full translate-y-1/2 -translate-x-1/2"
         />
@@ -588,7 +647,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                     className="rounded-2xl shadow-2xl border-4 border-white/20"
                   />
                 </motion.div>
-                
+
                 {/* Floating badge */}
                 <motion.div
                   animate={{ y: [0, -15, 0] }}
@@ -600,7 +659,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -611,12 +670,16 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 Sẵn sàng khám phá IoT cùng PTIT?
               </h2>
               <p className="text-xl text-red-100">
-                Tham gia cùng hàng trăm sinh viên và giảng viên đang sử dụng nền tảng để nghiên cứu và phát triển các dự án IoT sáng tạo
+                Tham gia cùng hàng trăm sinh viên và giảng viên đang sử dụng nền
+                tảng để nghiên cứu và phát triển các dự án IoT sáng tạo
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255, 255, 255, 0.3)" }}
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 20px 40px rgba(255, 255, 255, 0.3)",
+                  }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onNavigate("register")}
                   className="group px-8 py-4 bg-white text-red-700 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
@@ -624,7 +687,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                   Đăng ký miễn phí
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="px-8 py-4 border-2 border-white text-white rounded-xl hover:bg-white/10 transition-all"
@@ -635,17 +698,17 @@ export default function LandingPage({ onNavigate }: LandingProps) {
 
               <div className="flex items-center gap-4 pt-4">
                 <div className="flex -space-x-2">
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.2, zIndex: 10 }}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-white" 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-white"
                   />
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.2, zIndex: 10 }}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-2 border-white" 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-2 border-white"
                   />
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.2, zIndex: 10 }}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-red-700 border-2 border-white" 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-red-700 border-2 border-white"
                   />
                 </div>
                 <p className="text-yellow-100">
@@ -669,12 +732,14 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 </div>
                 <div>
                   <h3 className="text-white">PTIT IoT Platform</h3>
-                  <p className="text-xs text-gray-500">Nền tảng IoT thông minh</p>
+                  <p className="text-xs text-gray-500">
+                    Nền tảng IoT thông minh
+                  </p>
                 </div>
               </div>
               <p className="text-gray-400 mb-4">
-                Hệ thống quản lý và phân tích dữ liệu IoT chuyên nghiệp dành cho sinh viên và giảng viên
-                Học viện Công nghệ Bưu chính Viễn thông.
+                Hệ thống quản lý và phân tích dữ liệu IoT chuyên nghiệp dành cho
+                sinh viên và giảng viên Học viện Công nghệ Bưu chính Viễn thông.
               </p>
             </div>
 
@@ -683,10 +748,20 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               <h4 className="text-white mb-4">Liên kết</h4>
               <ul className="space-y-2">
                 <li>
-                  <button onClick={() => onNavigate("about")} className="hover:text-red-500 transition-colors">Giới thiệu</button>
+                  <button
+                    onClick={() => onNavigate("about")}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    Giới thiệu
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate("faq")} className="hover:text-red-500 transition-colors">Tính năng</button>
+                  <button
+                    onClick={() => onNavigate("faq")}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    Tính năng
+                  </button>
                 </li>
               </ul>
             </div>
@@ -696,13 +771,28 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               <h4 className="text-white mb-4">Hỗ trợ</h4>
               <ul className="space-y-2">
                 <li>
-                  <button onClick={() => onNavigate("contact")} className="hover:text-red-500 transition-colors">Liên hệ</button>
+                  <button
+                    onClick={() => onNavigate("contact")}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    Liên hệ
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate("terms")} className="hover:text-red-500 transition-colors">Điều khoản</button>
+                  <button
+                    onClick={() => onNavigate("terms")}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    Điều khoản
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate("privacy")} className="hover:text-red-500 transition-colors">Chính sách</button>
+                  <button
+                    onClick={() => onNavigate("privacy")}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    Chính sách
+                  </button>
                 </li>
               </ul>
             </div>
@@ -710,12 +800,19 @@ export default function LandingPage({ onNavigate }: LandingProps) {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} PTIT IoT Platform — Học viện Công nghệ Bưu chính Viễn thông
+              © {new Date().getFullYear()} PTIT IoT Platform — Học viện Công
+              nghệ Bưu chính Viễn thông
             </p>
             <div className="flex gap-6">
-              <button className="hover:text-red-500 transition-colors">Facebook</button>
-              <button className="hover:text-red-500 transition-colors">GitHub</button>
-              <button className="hover:text-red-500 transition-colors">Email</button>
+              <button className="hover:text-red-500 transition-colors">
+                Facebook
+              </button>
+              <button className="hover:text-red-500 transition-colors">
+                GitHub
+              </button>
+              <button className="hover:text-red-500 transition-colors">
+                Email
+              </button>
             </div>
           </div>
         </div>

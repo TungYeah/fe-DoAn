@@ -31,50 +31,39 @@ export default function FAQPage({ onNavigate }: FAQPageProps) {
     { id: "pricing", label: "Giá cả" },
   ];
 
-  const faqs: FAQ[] = [
-    {
-      category: "general",
-      question: "PTIT IoT Platform là gì?",
-      answer:
-        "Nền tảng giúp sinh viên & giảng viên quản lý thiết bị IoT, thu thập, phân tích dữ liệu và xây dựng ứng dụng IoT nhanh chóng.",
-    },
-    {
-      category: "general",
-      question: "Ai có thể sử dụng nền tảng này?",
-      answer:
-        "Sinh viên, giảng viên và các đơn vị thuộc PTIT. Yêu cầu có email @ptit.edu.vn.",
-    },
-    {
-      category: "account",
-      question: "Làm sao để đăng ký tài khoản?",
-      answer:
-        "Nhấn Đăng ký → nhập email PTIT → xác thực email → hoàn tất tài khoản.",
-    },
-    {
-      category: "account",
-      question: "Quên mật khẩu phải làm sao?",
-      answer:
-        "Nhấn Quên mật khẩu → nhập email → hệ thống gửi link đặt lại mật khẩu.",
-    },
-    {
-      category: "technical",
-      question: "Kết nối thiết bị IoT như thế nào?",
-      answer:
-        "Thêm thiết bị → lấy API key → gửi dữ liệu từ code thiết bị qua HTTP hoặc MQTT.",
-    },
-    {
-      category: "technical",
-      question: "Dữ liệu có được bảo mật không?",
-      answer:
-        "Có. Tất cả kết nối đều sử dụng SSL/TLS và lưu trữ trong hệ thống bảo mật nhiều lớp.",
-    },
-    {
-      category: "pricing",
-      question: "Nền tảng có miễn phí không?",
-      answer:
-        "Có. Toàn bộ sinh viên & giảng viên PTIT được sử dụng miễn phí.",
-    },
-  ];
+const faqs: FAQ[] = [
+  {
+    category: "general",
+    question: "Nền tảng IoT Data Lake dùng để làm gì?",
+    answer: "Nền tảng hỗ trợ thu thập, lưu trữ và chia sẻ dữ liệu cảm biến phục vụ huấn luyện mô hình AI on Sensor.",
+  },
+  {
+    category: "technical",
+    question: "Làm thế nào để thiết bị gửi dữ liệu?",
+    answer: "Thiết bị có thể gửi dữ liệu qua HTTP hoặc MQTT bằng API key do hệ thống cấp.",
+  },
+  {
+    category: "technical",
+    question: "Tôi có thể tải dữ liệu để train AI không?",
+    answer: "Có. Hệ thống hỗ trợ export CSV/JSON để đưa vào pipeline machine learning.",
+  },
+  {
+    category: "account",
+    question: "Dữ liệu có được phân quyền không?",
+    answer: "Có. Dataset có thể chia sẻ theo người dùng hoặc nhóm nghiên cứu.",
+  },
+  {
+    category: "general",
+    question: "Nền tảng lưu trữ dữ liệu ở đâu?",
+    answer: "Dữ liệu được lưu trong MinIO Data Lake nội bộ của hệ thống.",
+  },
+  {
+    category: "general",
+    question: "Nền tảng có miễn phí không?",
+    answer: "Miễn phí cho sinh viên và giảng viên PTIT.",
+  },
+];
+
 
   const filteredFAQs = faqs.filter((f) => {
     const matchCategory = activeCategory === "all" || f.category === activeCategory;

@@ -14,7 +14,10 @@ import {
   Activity,
   Copy,
   Filter,
-  RefreshCcw,
+  RefreshCcw,PackageOpen,
+  User2,
+  UserPlus,
+  UserPlus2,
 } from "lucide-react";
 
 import {
@@ -52,11 +55,29 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../ui/dialog";
-
+import { useAuth } from "../../contexts/AuthContext";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
 export default function DevicesPage() {
+  // PHÂN TRANG
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user } = useAuth();
+  console.log(">>> CURRENT USER:", user);
+  console.log(">>> USER ID:", currentUser?.id);
+
+  const CURRENT_USER_ID = user?.id || currentUser?.id;
+  // FE: roles trả về từ Spring Boot là array string
+  const roleList = user?.roles || currentUser?.roles || [];
+
+  const isAdmin = roleList.includes("ROLE_ADMIN");
+
+  console.log("ROLE LIST:", roleList);
+  console.log("IS ADMIN:", isAdmin);
+
   // =================== STATE =====================
   const [activeTab, setActiveTab] = useState<"overview" | "details">(
     "overview"
@@ -100,17 +121,94 @@ export default function DevicesPage() {
 
   // ============ FETCH DATA ============
   useEffect(() => {
+    if (!currentUser?.id) return; // ⛔ chặn khi user chưa load xong
     fetchDevices();
     fetchDeviceTypes();
     fetchProvinces();
+  }, [currentUser]);
+  // ============ lấy thong tin ng dùng ===============
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          console.warn("⛔ Không có token -> không fetch current user");
+          return;
+        }
+
+        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        // Kiểm tra status API (tránh đọc JSON sai)
+        if (!res.ok) {
+          console.error("❌ Lấy current user thất bại, status:", res.status);
+
+          // Token hết hạn → logout optional
+          if (res.status === 401 || res.status === 403) {
+            console.warn("⚠️ Token hết hạn hoặc không hợp lệ");
+            // localStorage.removeItem("token");  // nếu muốn logout
+          }
+
+          return;
+        }
+
+        const data = await res.json();
+
+        console.log(">>> CURRENT USER (API):", data);
+
+        setCurrentUser(data);
+      } catch (err) {
+        console.error("🔥 Lỗi khi fetch current user:", err);
+      }
+    };
+
+    fetchCurrentUser();
   }, []);
 
   const fetchDevices = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/devices");
-      setDevices(res.data?.devices || []);
+      // Lấy user id
+      const uid =
+        user?.id || currentUser?.id || Number(localStorage.getItem("user_id"));
+
+      if (!uid) {
+        console.log("⛔ Không có user_id -> dừng fetch devices.");
+        return;
+      }
+
+      // Lấy roles: ưu tiên AuthContext -> fallback currentUser
+      const roleList = user?.roles || currentUser?.roles || [];
+
+      const isAdmin = roleList.includes("ROLE_ADMIN");
+
+      console.log("FETCH DEVICES → ROLES:", roleList);
+      console.log("FETCH DEVICES → IS ADMIN:", isAdmin);
+
+      // Gọi API với role
+      const res = await axios.get("http://localhost:5000/api/devices", {
+        params: {
+          user_id: uid,
+          role: isAdmin ? "admin" : "user",
+        },
+      });
+
+      console.log(">>> DATA DEVICES:", res.data);
+
+      setDevices(
+        (res.data?.devices || []).map((d: any) => ({
+          ...d,
+          status: getStatusFromFlag(d.flag_status),
+        }))
+      );
     } catch (err) {
-      console.error("Lỗi tải thiết bị:", err);
+      console.error("❌ Lỗi tải thiết bị:", err);
     }
   };
 
@@ -194,7 +292,7 @@ export default function DevicesPage() {
 
       await axios.post("http://localhost:5000/api/add-device", {
         ...newDevice,
-        created_by: 1, // thêm auth token
+        created_by: CURRENT_USER_ID,
         location: locationString || null,
         province: provinceName || null,
         district: districtName || null,
@@ -231,12 +329,33 @@ export default function DevicesPage() {
 
     return okSearch && okStatus;
   });
+  // Khi thay đổi search hoặc filter → trở về trang 1
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterStatus]);
+
+  // phân trang
+  const totalRecords = filteredDevices.length;
+  const totalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / perPage);
+  const startIndex = (page - 1) * perPage;
+
+  const currentDevices = filteredDevices.slice(
+    startIndex,
+    startIndex + perPage
+  );
 
   // API upload URL helper
   const getUploadUrl = (deviceId: string) =>
     `http://localhost:5001/upload/${deviceId}`;
 
   // ============================ UI ============================
+  // Chuyển flag_status thành status string
+  const getStatusFromFlag = (flag: number | string | null | undefined) => {
+    if (flag === 1 || flag === "1") return "online";
+    if (flag === 0 || flag === "0") return "offline";
+    return "warning";
+  };
+
   return (
     <div className="space-y-8">
       {/* TITLE */}
@@ -332,7 +451,28 @@ export default function DevicesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDevices.map((device, idx) => (
+            {filteredDevices.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500"
+              >
+                    <PackageOpen className="w-20 h-20 text-gray-300 mb-4" />
+
+                <p className="text-lg font-medium">Bạn chưa có thiết bị nào</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Hãy thêm thiết bị đầu tiên của bạn!
+                </p>
+
+                <button
+                  onClick={() => setIsAddOpen(true)}
+                  className="mt-4 px-5 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 shadow"
+                >
+                  + Thêm thiết bị
+                </button>
+              </motion.div>
+            )}
+            {currentDevices.map((device, idx) => (
               <motion.div
                 key={device.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -370,6 +510,15 @@ export default function DevicesPage() {
                       </p>
                     </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                  <UserPlus2 className="w-4 h-4" />
+                  <span className="text-sm">
+                    {" "}
+                    {device.creator_name
+                      ? `${device.creator_name} (${device.creator_email})`
+                      : `ID: ${device.created_by}`}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-gray-600 mb-1">
@@ -476,6 +625,33 @@ export default function DevicesPage() {
             transition={{ duration: 0.25 }}
             className="overflow-hidden rounded-2xl border bg-white shadow-sm"
           >
+            {" "}
+            <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <span>Hiển thị mỗi trang:</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Tổng{" "}
+                <span className="font-semibold text-gray-900">
+                  {totalRecords.toLocaleString("vi-VN")}
+                </span>{" "}
+                thiết bị
+              </p>
+            </div>
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
@@ -484,6 +660,9 @@ export default function DevicesPage() {
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700 text-left px-6">
                     Loại
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-left px-6">
+                    Người tạo
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700 text-left px-6">
                     Vị trí
@@ -501,7 +680,21 @@ export default function DevicesPage() {
               </TableHeader>
 
               <TableBody>
-                {filteredDevices.map((d, idx) => (
+                {filteredDevices.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-12 text-center text-gray-500 text-lg"
+                    >
+                      <div className="flex flex-col items-center justify-center">
+                            <PackageOpen className="w-50 h-50 text-gray-300 mb-4" />
+
+                        <p>Không có thiết bị nào</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {currentDevices.map((d, idx) => (
                   <motion.tr
                     key={d.id}
                     initial={{ opacity: 0, y: 15 }}
@@ -527,6 +720,11 @@ export default function DevicesPage() {
                       <Badge className="rounded-full px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 text-[13px]">
                         {d.device_type_name}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="px-6 text-sm text-gray-700">
+                      {d.creator_name
+                        ? `${d.creator_name} (${d.creator_email})`
+                        : d.created_by}
                     </TableCell>
 
                     <TableCell className="text-[14px] text-gray-700 px-6">
@@ -618,6 +816,82 @@ export default function DevicesPage() {
                 ))}
               </TableBody>
             </Table>
+            {totalRecords > 0 && (
+              <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-700">
+                <p>
+                  Trang {page} / {totalPages} — Hiển thị {startIndex + 1}–
+                  {Math.min(startIndex + perPage, totalRecords)} /{" "}
+                  {totalRecords} thiết bị
+                </p>
+
+                <div className="flex items-center gap-1">
+                  {/* Prev */}
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className={`px-3 py-1 rounded-md border ${
+                      page === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                  >
+                    Trước
+                  </button>
+
+                  {/* Page Numbers */}
+                  {(() => {
+                    const arr: (number | string)[] = [];
+                    const maxButtons = 5;
+
+                    if (totalPages <= maxButtons) {
+                      for (let i = 1; i <= totalPages; i++) arr.push(i);
+                    } else {
+                      arr.push(1);
+                      if (page > 3) arr.push("...");
+                      const middle = [page - 1, page, page + 1].filter(
+                        (p) => p > 1 && p < totalPages
+                      );
+                      arr.push(...middle);
+                      if (page < totalPages - 2) arr.push("...");
+                      arr.push(totalPages);
+                    }
+
+                    return arr.map((num, i) =>
+                      num === "..." ? (
+                        <span key={i} className="px-2 text-gray-400">
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={i}
+                          onClick={() => setPage(num as number)}
+                          className={`px-3 py-1 rounded-md border ${
+                            num === page
+                              ? "bg-red-600 text-white border-red-600"
+                              : "bg-white hover:bg-gray-50"
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      )
+                    );
+                  })()}
+
+                  {/* Next */}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className={`px-3 py-1 rounded-md border ${
+                      page === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                  >
+                    Sau
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       )}
@@ -667,7 +941,7 @@ export default function DevicesPage() {
           <div>
             <div className="flex items-center gap-5 mb-3">
               <div className="w-1 h-4 bg-red-600 rounded-full"></div>
-              <b class="pl-3 border-l-4 border-red-600">
+              <b className="pl-3 border-l-4 border-red-600">
                 {" "}
                 &nbsp; THÔNG TIN CƠ BẢN
               </b>
@@ -720,7 +994,7 @@ export default function DevicesPage() {
                   onChange={(e) =>
                     setNewDevice({
                       ...newDevice,
-                      device_type_id: Number(e.target.value),
+                      device_type_id: e.target.value,
                     })
                   }
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
@@ -871,9 +1145,10 @@ export default function DevicesPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                {selectedDevice.status === "online" ? (
+                {getStatusFromFlag(selectedDevice.flag_status) === "online" ? (
                   <Wifi className="w-6 h-6 text-blue-600" />
-                ) : selectedDevice.status === "offline" ? (
+                ) : getStatusFromFlag(selectedDevice.flag_status) ===
+                  "offline" ? (
                   <WifiOff className="w-6 h-6 text-red-600" />
                 ) : (
                   <Power className="w-6 h-6 text-yellow-600" />
@@ -926,7 +1201,25 @@ export default function DevicesPage() {
                 <p className="text-xs text-green-600"> Đã copy ID</p>
               )}
             </div>
+            {/* CREATED BY */}
+            <div className="p-4 bg-gray-50 rounded-xl border">
+              <p className="text-xs text-gray-500">Tạo bởi</p>
+              <p className="text-sm text-gray-900 mt-1">
+                {selectedDevice.creator_name
+                  ? `${selectedDevice.creator_name} (${selectedDevice.creator_email})`
+                  : `User ID: ${selectedDevice.created_by}`}
+              </p>
+            </div>
 
+            {/* CREATE DATE */}
+            <div className="p-4 bg-gray-50 rounded-xl border">
+              <p className="text-xs text-gray-500">Ngày tạo</p>
+              <p className="text-sm text-gray-900 mt-1">
+                {selectedDevice.create_date
+                  ? new Date(selectedDevice.create_date).toLocaleString("vi-VN")
+                  : "Không có dữ liệu"}
+              </p>
+            </div>
             {/* Upload URL */}
             <div className="p-4 bg-gray-50 rounded-xl border space-y-2">
               <p className="text-xs text-gray-500">API Upload URL</p>
