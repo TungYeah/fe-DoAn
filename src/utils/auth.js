@@ -4,7 +4,7 @@ export async function checkAuth() {
   if (!token) return null;
 
   try {
-    const response = await fetch("http://localhost:8080/api/v1/auth/current", {
+    const response = await fetch("http://20.249.208.207:8080/api/v1/auth/current", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

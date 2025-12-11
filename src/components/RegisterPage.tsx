@@ -29,17 +29,19 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
     if (formData.password !== formData.confirmPassword) {
       setRegisterError("Mật khẩu và xác nhận mật khẩu không khớp!");
       return;
-    } 
+    }
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/register", {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+      const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: formData.fullName,
           email: formData.email,
           password: formData.password,
-          unit: formData.organization, // ENUM CNTT / DTVT
+          unit: formData.organization,
         }),
       });
 
@@ -50,17 +52,17 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
         return;
       }
 
-      // Không lưu token – backend không trả token khi đăng ký
       alert(data.message || "Đăng ký thành công. Vui lòng kiểm tra email!");
-
       setRegisterError("");
-      onNavigate("login"); // quay lại màn login
+
+      onNavigate("login");
 
     } catch (error) {
       console.error(error);
       setRegisterError("Không thể kết nối tới server!");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
@@ -80,9 +82,9 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
       </div>
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        
+
         {/* Left side giữ nguyên nếu muốn */}
-<motion.div
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -140,7 +142,7 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
-            
+
             <div className="mb-8">
               <h3 className="text-2xl text-gray-900 mb-2">Đăng ký tài khoản</h3>
               <p className="text-gray-600">Điền thông tin để tạo tài khoản</p>

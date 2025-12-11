@@ -79,12 +79,17 @@ function exportCSV(dataset: any, fileName?: string) {
   URL.revokeObjectURL(url);
 }
 
+type SensorOption = {
+  label: string;
+  value: string;
+};
+
 export default function QueryPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { user } = useAuth();
   console.log(">>> CURRENT USER:", user);
   console.log(">>> USER ID:", currentUser?.id);
-  const [sensorList, setSensorList] = useState<string[]>([]);
+  const [sensorList, setSensorList] = useState<SensorOption[]>([]);
 
   const CURRENT_USER_ID = user?.id || currentUser?.id;
   const roleList = user?.roles || currentUser?.roles || [];
@@ -145,7 +150,7 @@ export default function QueryPage() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        const res = await fetch("http://20.249.208.207:8080/api/v1/auth/current", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -168,7 +173,7 @@ export default function QueryPage() {
   useEffect(() => {
     const fetchDeviceTypes = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/device-types");
+        const res = await fetch("http://20.249.208.207:5000/api/device-types");
         const data = await res.json();
 
         const list = data.device_types || [];
@@ -197,7 +202,7 @@ export default function QueryPage() {
         const role = isAdmin ? "admin" : "user";
 
         const res = await fetch(
-          `http://localhost:5000/api/devices?user_id=${uid}&role=${role}`
+          `http://20.249.208.207:5000/api/devices?user_id=${uid}&role=${role}`
         );
 
         const json = await res.json();
@@ -258,7 +263,7 @@ export default function QueryPage() {
     setIsHistoryLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/export_filters/${CURRENT_USER_ID}`
+        `http://20.249.208.207:5000/api/export_filters/${CURRENT_USER_ID}`
       );
       const json = await res.json();
       setHistory(json || []);
@@ -308,7 +313,7 @@ export default function QueryPage() {
       // (Tuỳ backend có hỗ trợ min/max value hay không, tạm thời không gửi)
 
       const res = await fetch(
-        `http://localhost:5000/api/dataset?${params.toString()}`
+        `http://20.249.208.207:5000/api/dataset?${params.toString()}`
       );
       const json = await res.json();
 
@@ -337,7 +342,7 @@ export default function QueryPage() {
   async function saveFilter(filter: any, fileName: string) {
     if (!CURRENT_USER_ID) return;
 
-    await fetch("http://localhost:5000/api/export_filters", {
+    await fetch("http://20.249.208.207:5000/api/export_filters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -358,7 +363,7 @@ export default function QueryPage() {
   // ============ XEM LẠI DATASET TỪ HISTORY ===============
   async function handleViewDataset(id: number) {
     const res = await fetch(
-      `http://localhost:5000/api/export_filters/${id}/dataset`
+      `http://20.249.208.207:5000/api/export_filters/${id}/dataset`
     );
     const json = await res.json();
     setDataset(json);
@@ -379,7 +384,7 @@ export default function QueryPage() {
   // ============ DOWNLOAD CSV TỪ HISTORY ===============
   function handleDownloadHistory(id: number) {
     window.open(
-      `http://localhost:5000/api/export_filters/${id}/export_csv`,
+      `http://20.249.208.207:5000/api/export_filters/${id}/export_csv`,
       "_blank"
     );
   }
@@ -389,7 +394,7 @@ export default function QueryPage() {
     const ok = window.confirm("Bạn có chắc muốn xóa lịch sử này?");
     if (!ok) return;
 
-    await fetch(`http://localhost:5000/api/export_filters/${id}`, {
+    await fetch(`http://20.249.208.207:5000/api/export_filters/${id}`, {
       method: "DELETE",
     });
 

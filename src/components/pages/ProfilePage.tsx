@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 const getAvatarUI = (avatar?: string | null) => {
   const src =
     avatar && avatar.trim() !== ""
-      ? `http://localhost:8080${avatar}`
+      ? `http://20.249.208.207:8080${avatar}`
       : "/847969.png"; // Ảnh mặc định trong public/
 
   return (
@@ -45,7 +45,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        const res = await fetch("http://20.249.208.207:8080/api/v1/auth/current", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
