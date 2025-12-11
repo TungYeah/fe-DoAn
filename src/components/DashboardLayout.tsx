@@ -19,6 +19,8 @@ import {
   MessageCircle,
   Bot,
   History,
+  ListCheck,
+  ListCollapse,
 } from "lucide-react";
 
 type DashboardLayoutProps = {
@@ -116,13 +118,13 @@ const menuItems = [
 
   // ADMIN ONLY
   { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
-  { id: "devices", label: "Quản lý thiết bị", icon: Cpu, adminOnly: true },
-  { id: "import-device", label: "Import thiết bị", icon: Upload, adminOnly: true },
+  { id: "devices", label: "Quản lý thiết bị", icon: Cpu},
+  { id: "device-types", label: "Quản lý loại thiết bị", icon: ListCollapse, adminOnly: true },
   { id: "revenue", label: "Doanh thu", icon: DollarSign, adminOnly: true },
 
 
   // USER + ADMIN
-  { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon },
+  { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon , adminOnly: true},
   { id: "query", label: "Truy vấn", icon: Search },
   { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
   { id: "notifications", label: "Thông báo", icon: Bell },

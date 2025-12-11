@@ -43,6 +43,7 @@ const db = mysql.createConnection({
   database: 'testtinasoft'
 });
 
+
 db.connect(err => {
   if (err) {
     console.error('Lỗi kết nối MySQL:', err);
@@ -231,30 +232,42 @@ app.post('/api/add-device', (req, res) => {
 
 // ==================  API: LẤY DANH SÁCH THIẾT BỊ ==================
 app.get('/api/devices', (req, res) => {
-  const sql = `
-    SELECT 
-      d.id,
-      d.unique_identifier,
-      d.name,
-      d.description,
-      d.device_type_id,
-      d.location,
-      dt.name AS device_type_name,
-      d.create_date,
-      d.last_update_date
-    FROM devices d
-    LEFT JOIN device_types dt ON d.device_type_id = dt.id
-    ORDER BY d.id DESC
-  `;
+  const userId = req.query.user_id;
+  const role = req.query.role; // "admin" | "user"
 
-  db.query(sql, (err, results) => {
+let sql = `
+  SELECT 
+    d.*, 
+    dt.name AS device_type_name,
+    u.full_name AS creator_name,
+    u.email AS creator_email
+  FROM devices d
+  LEFT JOIN device_types dt ON dt.id = d.device_type_id
+  LEFT JOIN users u ON u.id = d.created_by
+`;
+
+
+  
+  const params = [];
+
+  // Nếu không phải admin → lọc thiết bị theo created_by
+if (role !== "admin") {
+  sql += " WHERE d.created_by = ?";
+  params.push(userId);
+}
+
+  sql += " ORDER BY d.id DESC";
+
+  db.query(sql, params, (err, results) => {
     if (err) {
-      console.error(' Lỗi lấy danh sách thiết bị:', err);
-      return res.status(500).json({ message: 'Không thể tải danh sách thiết bị.' });
+      console.error("Lỗi lấy thiết bị:", err);
+      return res.status(500).json({ message: "Không thể tải thiết bị." });
     }
-    res.json({ status: 'success', devices: results });
+
+    res.json({ devices: results });
   });
 });
+
 
 
 // ========================== API: UPLOAD DỮ LIỆU CHO THIẾT BỊ ==========================
@@ -704,6 +717,85 @@ app.get('/api/device-types', (req, res) => {
       return res.status(500).json({ message: 'Không thể lấy danh sách loại thiết bị.' });
     }
     res.json({ status: 'success', device_types: results });
+  });
+});
+
+// ==================== THÊM LOẠI THIẾT BỊ=========
+app.post('/api/device-types', (req, res) => {
+  const { name, manufacturer, category, description } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: 'Tên loại thiết bị không được bỏ trống.' });
+  }
+
+  // Tạo UUID chuẩn 36 ký tự
+  const id = crypto.randomUUID();
+
+  const sql = `
+    INSERT INTO device_types 
+    (id, flag_status, is_deleted, name, manufacturer, category, description, create_date, last_update_date)
+    VALUES (?, '1', '0', ?, ?, ?, ?, NOW(), NOW())
+  `;
+
+  db.query(
+    sql,
+    [id, name, manufacturer || null, category || null, description || null],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Lỗi thêm loại thiết bị:", err);
+        return res.status(500).json({ message: 'Không thể thêm loại thiết bị.' });
+      }
+
+      return res.json({
+        status: 'success',
+        message: 'Thêm loại thiết bị thành công!',
+        id: id  // trả về UUID vừa sinh
+      });
+    }
+  );
+});
+
+//============= CẬP NHẬT LOẠI THIẾT BỊ====
+app.put('/api/device-types/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, manufacturer, category, description } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: 'Tên loại thiết bị không được bỏ trống.' });
+  }
+
+  const sql = `
+    UPDATE device_types
+    SET name = ?, manufacturer = ?, category = ?, description = ?, last_update_date = NOW()
+    WHERE id = ?
+  `;
+
+  db.query(sql, [name, manufacturer, category, description, id], (err, result) => {
+    if (err) {
+      console.error("❌ Lỗi sửa loại thiết bị:", err);
+      return res.status(500).json({ message: 'Không thể sửa loại thiết bị.' });
+    }
+
+    return res.json({ status: 'success', message: 'Cập nhật loại thiết bị thành công!' });
+  });
+});
+//=========== XÓA LOẠI THIẾT BỊ=======
+app.delete('/api/device-types/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sql = "DELETE FROM device_types WHERE id = ?";
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Lỗi xóa loại thiết bị:", err);
+      return res.status(500).json({ message: 'Không thể xóa loại thiết bị.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy loại thiết bị.' });
+    }
+
+    return res.json({ status: 'success', message: 'Xóa loại thiết bị thành công!' });
   });
 });
 

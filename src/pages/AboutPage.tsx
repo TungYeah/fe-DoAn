@@ -39,7 +39,7 @@ export default function AboutPage({ onNavigate }: AboutPageProps) {
     {
       icon: Target,
       title: 'Sứ Mệnh',
-      desc: 'Cung cấp nền tảng thu thập, chia sẻ dữ liệu IoT mạnh mẽ',
+      desc: 'Xây dựng hạ tầng dữ liệu IoT phục vụ giảng dạy, nghiên cứu và phát triển.',
       color: 'bg-red-50 border-red-200',
     },
     {
@@ -136,8 +136,10 @@ export default function AboutPage({ onNavigate }: AboutPageProps) {
             Về PTIT IoT Platform
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Nền tảng thu thập, chia sẻ dữ liệu IoT hàng đầu dành cho sinh viên và giảng viên của Học viện Công nghệ Bưu chính Viễn thông, 
-            mang đến trải nghiệm học tập và nghiên cứu IoT tốt nhất.
+            Nền tảng Data Lake dành cho IoT hỗ trợ thu thập – lưu trữ – phân tích dữ liệu 
+cảm biến phục vụ huấn luyện mô hình AI on Sensor, nghiên cứu khoa học và 
+giảng dạy tại Học viện Công nghệ Bưu chính Viễn thông.
+
           </p>
         </motion.div>
 
