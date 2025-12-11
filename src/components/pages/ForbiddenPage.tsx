@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Shield, Lock, AlertTriangle, Home, ArrowLeft, Eye } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import React from 'react';
 
 interface ForbiddenPageProps {
   onNavigate: (page: string) => void;
@@ -19,7 +20,7 @@ interface Particle {
 export default function ForbiddenPage({ onNavigate }: ForbiddenPageProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Generate floating particles
@@ -171,11 +172,11 @@ export default function ForbiddenPage({ onNavigate }: ForbiddenPageProps) {
                     ease: 'easeInOut',
                   }}
                 />
-                
+
                 {/* Shield Icon */}
                 <div className="relative bg-gradient-to-br from-red-500 to-red-700 p-8 rounded-3xl shadow-2xl">
                   <Shield className="w-24 h-24 text-white" strokeWidth={1.5} />
-                  
+
                   {/* Lock Overlay */}
                   <motion.div
                     className="absolute inset-0 flex items-center justify-center"
@@ -241,7 +242,7 @@ export default function ForbiddenPage({ onNavigate }: ForbiddenPageProps) {
             transition={{ delay: 0.8, duration: 0.6 }}
           >
             <motion.button
-onClick={() => navigate("/dashboard/")}
+              onClick={() => navigate("/dashboard/")}
               className="group relative px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-lg overflow-hidden"
               whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)' }}
               whileTap={{ scale: 0.95 }}
