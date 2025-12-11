@@ -23,6 +23,8 @@ import {
   ListCollapse,
 } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 type DashboardLayoutProps = {
   currentPage: string;
   onNavigate: (v: string) => void;
@@ -36,8 +38,8 @@ type DashboardLayoutProps = {
 const getAvatarUI = (avatar?: string | null) => {
   const src =
     avatar && avatar.trim() !== ""
-      ? `http://localhost:8080${avatar}`
-      : "/847969.png"; // ảnh mặc định trong public/
+      ? `${API_BASE}${avatar}`
+      : "/847969.png";
 
   return (
     <img
@@ -60,61 +62,52 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-const [userInfo, setUserInfo] = useState({
-  fullName: "",
-  email: "",
-  avatar: "",
-  role: "USER", // mặc định
-});
+  const [userInfo, setUserInfo] = useState({
+    fullName: "",
+    email: "",
+    avatar: "",
+    role: "USER",
+  });
 
-
-  // ========================
+  // =======================
   // Fetch current user
-  // ========================
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
+  // =======================
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  fetch("http://localhost:8080/api/v1/auth/current", {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => res.json())
-    .then((u) => {
-      const highestRole = getHighestRoleFromUser(u);
-
-      console.log("Roles từ backend:", u.roles);
-      console.log("Role cao nhất:", highestRole);
-
-      setUserInfo({
-        fullName: u.fullName || "",
-        email: u.email || "",
-        avatar: u.avatar || "",
-        role: highestRole,
-      });
-
-      localStorage.setItem("role", highestRole);
+    fetch(`${API_BASE}/api/v1/auth/current`, {
+      headers: { Authorization: `Bearer ${token}` },
     })
-    .catch((err) => console.error("Get current user error:", err));
-}, []);
+      .then((res) => res.json())
+      .then((u) => {
+        const highestRole = getHighestRoleFromUser(u);
 
+        setUserInfo({
+          fullName: u.fullName || "",
+          email: u.email || "",
+          avatar: u.avatar || "",
+          role: highestRole,
+        });
 
-// Lấy role cao nhất từ object user trả về từ backend
-function getHighestRoleFromUser(user: any): "ADMIN" | "USER" {
-  const roles = user.roles || [];
+        localStorage.setItem("role", highestRole);
+      })
+      .catch((err) => console.error("Get current user error:", err));
+  }, []);
 
-  // Backend trả dạng: ["ROLE_ADMIN"] hoặc ["ROLE_USER"]
-  const normalized = roles.map((r: string) => r.replace("ROLE_", ""));
+  // Xác định role cao nhất
+  function getHighestRoleFromUser(user: any): "ADMIN" | "USER" {
+    const roles = user.roles || [];
+    const normalized = roles.map((r: string) => r.replace("ROLE_", ""));
 
-  if (normalized.includes("ADMIN")) return "ADMIN";
-  return "USER";
-}
-
+    return normalized.includes("ADMIN") ? "ADMIN" : "USER";
+  }
 
   const displayName =
     userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
 
-const menuItems = [
-  { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
+  const menuItems = [
+    { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
 
   // ADMIN ONLY
   { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
@@ -171,12 +164,10 @@ const menuItems = [
             />
 
             <div className="relative">
-              {/* USER BUTTON */}
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg"
               >
-                {/* Avatar */}
                 {getAvatarUI(userInfo.avatar)}
 
                 <div className="hidden md:block text-left">
@@ -187,7 +178,6 @@ const menuItems = [
                 <ChevronDown className="w-4 h-4 text-gray-600" />
               </button>
 
-              {/* Dropdown Menu */}
               {userMenuOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -234,35 +224,28 @@ const menuItems = [
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${
-          sidebarOpen ? "w-64" : "w-0"
-        } overflow-hidden`}
+        className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${sidebarOpen ? "w-64" : "w-0"
+          } overflow-hidden`}
       >
         <nav className="p-4 space-y-2">
           {menuItems
-  .filter(item => {
-    // Nếu menu này dành riêng Admin → user thì không hiện
-    if (item.adminOnly && userInfo.role !== "ADMIN") return false;
-    return true;
-  })
-  .map((item) => {
-    const Icon = item.icon;
-    return (
-      <button
-        key={item.id}
-        onClick={() => onNavigate(item.id)}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
-          currentPage === item.id
-            ? "bg-red-600 text-white shadow"
-            : "hover:bg-gray-100"
-        }`}
-      >
-        <Icon className="w-5 h-5" />
-        {item.label}
-      </button>
-    );
-  })}
-
+            .filter((item) => !(item.adminOnly && userInfo.role !== "ADMIN"))
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${currentPage === item.id
+                      ? "bg-red-600 text-white shadow"
+                      : "hover:bg-gray-100"
+                    }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              );
+            })}
         </nav>
       </aside>
 

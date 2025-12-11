@@ -57,7 +57,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://localhost:8080/api/v1/auth/current", {
+    fetch("http://20.249.208.207:8080/api/v1/auth/current", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -68,7 +68,7 @@ export default function SettingsPage() {
           email: user.email,
           avatar:
             user.avatar && user.avatar.trim() !== ""
-              ? `http://localhost:8080${user.avatar}`
+              ? `http://20.249.208.207:8080${user.avatar}`
               : "/847969.png",
         });
       });
@@ -85,14 +85,14 @@ export default function SettingsPage() {
         [
           JSON.stringify({
             fullName: profileData.name,
-            unitEnum: profileData.unit,
+            unit: profileData.unit,
           }),
         ],
         { type: "application/json" }
       )
     );
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/update", {
+    const res = await fetch("http://20.249.208.207:8080/api/v1/auth/update", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -117,7 +117,7 @@ export default function SettingsPage() {
     const token = localStorage.getItem("token");
 
     const res = await fetch(
-      "http://localhost:8080/api/v1/auth/change-password",
+      "http://20.249.208.207:8080/api/v1/auth/change-password",
       {
         method: "POST",
         headers: {
@@ -157,7 +157,7 @@ export default function SettingsPage() {
         [
           JSON.stringify({
             fullName: profileData.name,
-            unitEnum: profileData.unit,
+            unit: profileData.unit,
           }),
         ],
         { type: "application/json" }
@@ -165,7 +165,7 @@ export default function SettingsPage() {
     );
     formData.append("avatar", file);
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/update", {
+    const res = await fetch("http://20.249.208.207:8080/api/v1/auth/update", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -178,7 +178,7 @@ export default function SettingsPage() {
         ...profileData,
         avatar:
           updated.avatar && updated.avatar.trim() !== ""
-            ? `http://localhost:8080${updated.avatar}`
+            ? `http://20.249.208.207:8080${updated.avatar}`
             : "/847969.png",
       });
 
@@ -198,7 +198,7 @@ const handleDeleteAccount = async (password) => {
   setDeleteLoading(true);
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:8080/api/v1/user/deactivate", {
+  const res = await fetch("http://20.249.208.207:8080/api/v1/user/deactivate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

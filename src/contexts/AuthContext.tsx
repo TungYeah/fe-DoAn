@@ -7,15 +7,16 @@ import React, {
 } from "react";
 
 type User = {
+  id: number;
   fullName: string;
   email: string;
-  // nếu sau này BE trả thêm role, id... thì thêm vào đây
+  roles: string[];
 };
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  reloadUser: () => Promise<void>; // gọi lại /current
+  reloadUser: () => Promise<void>;
   logout: () => void;
 };
 
@@ -25,10 +26,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Hàm gọi API /current, dùng lại nhiều chỗ
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
   const fetchCurrentUser = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+      const res = await fetch(`${API_BASE}/api/v1/auth/current`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -41,12 +43,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await res.json();
+
       setUser({
+        id: data.id,
         fullName: data.fullName,
         email: data.email,
+        roles: data.roles || [],
       });
 
-      // lưu thêm cho vui (nếu bạn đang dùng ở chỗ khác)
       localStorage.setItem("fullName", data.fullName);
       localStorage.setItem("email", data.email);
     } catch (err) {
@@ -55,7 +59,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Hàm public cho các component khác gọi (ví dụ LoginPage)
   const reloadUser = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -65,7 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await fetchCurrentUser(token);
   };
 
-  // Khi mở web lần đầu → kiểm tra luôn xem có token + user hay không
   useEffect(() => {
     (async () => {
       await reloadUser();
@@ -87,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// hook dùng trong các component
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth phải được dùng trong AuthProvider");

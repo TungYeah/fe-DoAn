@@ -55,7 +55,7 @@ type UserStats = {
   newUsersToday: number;
 };
 
-const API_BASE_URL = "http://localhost:8080"; // chỉnh nếu BE dùng port khác
+const API_BASE_URL = "http://20.249.208.207:8080"; // chỉnh nếu BE dùng port khác
 const UNIT_OPTIONS = [
   { value: "CNTT", label: "Công nghệ thông tin" },
   { value: "DTVT", label: "Điện tử viễn thông" },

@@ -25,11 +25,15 @@ import {
   ShieldAlert,
   ShieldBan,
   ShieldCheck,
+  Trash2,              // ✅ FIX: thiếu import
 } from "lucide-react";
 import { Modal } from "../ui/modal";
 import { Description } from "@radix-ui/react-dialog";
 
-const API_BASE_URL = "http://localhost:8080";
+// =======================
+// 🔥 Dùng ENV để build production
+// =======================
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type HistoryItem = {
   id: string;
@@ -65,21 +69,19 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(
-    null
-  );
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedHistory, setSelectedHistory] =
+    useState<HistoryItem | null>(null);
 
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // phân trang FE
+  // phân trang
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
 
   // ============================
-  // helpers
+  // helper: parse content
   // ============================
-
   const parseContent = (content: any) => {
     if (content == null) return {};
     if (typeof content === "object") return content;
@@ -92,26 +94,6 @@ export default function HistoryPage() {
     }
     return { raw: content };
   };
-
-  const getActionColor = (a: string) =>
-    a === "CREATE"
-      ? "bg-green-100 text-green-700"
-      : a === "UPDATE"
-      ? "bg-blue-100 text-blue-700"
-      : a === "DELETE"
-      ? "bg-red-100 text-red-700"
-      : "bg-gray-100 text-gray-700";
-
-  const getActionIcon = (a: string) =>
-    a === "CREATE" ? (
-      <Plus className="w-3 h-3" />
-    ) : a === "UPDATE" ? (
-      <Edit className="w-3 h-3" />
-    ) : a === "DELETE" ? (
-      <Trash2 className="w-3 h-3" />
-    ) : (
-      <Activity className="w-3 h-3" />
-    );
 
   const getTypeColor = (t: string) =>
     t === "USER_MANAGEMENT"
@@ -137,7 +119,6 @@ export default function HistoryPage() {
   const isToday = (iso?: string) => {
     if (!iso) return false;
     const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return false;
     const now = new Date();
     return (
       d.getFullYear() === now.getFullYear() &&
@@ -155,20 +136,15 @@ export default function HistoryPage() {
   };
 
   // ============================
-  // load data
+  // load History
   // ============================
-
   const loadHistory = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("No token in localStorage");
-      return;
-    }
+    if (!token) return;
 
     try {
       setLoading(true);
 
-      // lấy nhiều nhất có thể, FE tự phân trang
       const res = await fetch(
         `${API_BASE_URL}/api/admin/history?page=0&size=1000`,
         {
@@ -181,7 +157,7 @@ export default function HistoryPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `Fetch history failed: ${res.status}`);
+        throw new Error(err.message || "Fetch history failed");
       }
 
       const data = await res.json();
@@ -202,7 +178,6 @@ export default function HistoryPage() {
           lastUpdatedBy: h.lastUpdatedBy ?? h.last_updated_by ?? "",
           identify: h.identify ?? "",
           description: h.description ?? "",
-
           action: h.action ?? "",
           historyType: h.historyType ?? h.history_type ?? "",
           content: h.content,
@@ -225,9 +200,8 @@ export default function HistoryPage() {
   }, []);
 
   // ============================
-  // filter
+  // Filter
   // ============================
-
   useEffect(() => {
     let data = [...history];
 
@@ -245,7 +219,7 @@ export default function HistoryPage() {
       const matchesType =
         selectedType === "all" || item.historyType === selectedType;
 
-      // filter date
+      // date filter
       let matchesDate = true;
       if (dateFrom) {
         const from = new Date(dateFrom + "T00:00:00");
@@ -262,20 +236,16 @@ export default function HistoryPage() {
     });
 
     setFiltered(data);
-    setPage(1); // mỗi lần filter thì về trang 1
+    setPage(1);
   }, [searchTerm, selectedAction, selectedType, dateFrom, dateTo, history]);
 
   // ============================
-  // phân trang FE
+  // Pagination
   // ============================
   const totalRecords = filtered.length;
   const totalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / perPage);
   const startIndex = (page - 1) * perPage;
   const currentHistory = filtered.slice(startIndex, startIndex + perPage);
-
-  const handleExport = (format: "csv" | "excel" | "json") => {
-    alert(`Đang xuất lịch sử dạng ${format.toUpperCase()} (demo)…`);
-  };
 
   const handleViewDetails = (item: HistoryItem) => {
     setSelectedHistory(item);
@@ -283,12 +253,12 @@ export default function HistoryPage() {
   };
 
   // ============================
-  // render
+  // Render
   // ============================
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+
+      {/* ============================ HEADER ============================ */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -297,25 +267,25 @@ export default function HistoryPage() {
       >
         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Lịch sử hệ thống</h1>
-          <p className="text-gray-600">
-            Quản lý và theo dõi mọi hoạt động trong hệ thống
-          </p>
+          <p className="text-gray-600">Quản lý và theo dõi mọi hoạt động</p>
         </div>
+
         <div className="flex gap-3">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleExport("excel")}
+            onClick={() => alert("Export (demo)")}
             className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-red-600 hover:text-red-600 transition-all flex items-center gap-2"
           >
             <Download className="w-5 h-5" />
             Xuất báo cáo
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={loadHistory}
-            className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg flex items-center gap-2"
           >
             <RefreshCcw className="w-5 h-5" />
             Làm mới

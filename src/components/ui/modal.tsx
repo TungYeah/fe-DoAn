@@ -13,6 +13,7 @@ interface ModalProps {
   showCloseButton?: boolean;
   closeOnBackdrop?: boolean;
   footer?: React.ReactNode;
+  customWidth?: string;
 }
 
 export function Modal({

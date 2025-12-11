@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Lock, Mail, Eye, EyeOff, AlertTriangle,Wifi } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, AlertTriangle, Wifi } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 type LoginProps = {
   onNavigate: (view: string) => void;
@@ -10,6 +12,7 @@ type LoginProps = {
 
 export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -18,42 +21,38 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
   const [reactivateMessage, setReactivateMessage] = useState("");
   const [loadingRestore, setLoadingRestore] = useState(false);
 
-  // ======================
-  // 🔥 SWITCH FORM MODE
-  // login / forgot / reset
-  // ======================
+  // Forgot/reset mode
   const [isForgot, setIsForgot] = useState(false);
   const [isResetPassword, setIsResetPassword] = useState(false);
 
-  // FORGOT PASSWORD
+  // Forgot fields
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  // RESET PASSWORD
+  // Reset fields
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [resetMsg, setResetMsg] = useState("");
 
-  // ======================
-  // 🔥 CHECK TOKEN ON URL
-  // ======================
   const [params] = useSearchParams();
 
+  // ======================
+  // CHECK RESET TOKEN
+  // ======================
   useEffect(() => {
     const t = params.get("token");
     if (t) {
       setResetToken(t);
-      setIsResetPassword(true);  // mở form đặt mật khẩu
+      setIsResetPassword(true);
       setIsForgot(false);
     }
   }, [params]);
 
-
   // ======================
-  // 🔥 SUBMIT FORGOT PASSWORD
+  // FORGOT PASSWORD
   // ======================
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +62,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     try {
       setForgotLoading(true);
 
-      const res = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+      const res = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: forgotEmail }),
@@ -83,9 +82,8 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setForgotLoading(false);
   };
 
-
   // ======================
-  // 🔥 SUBMIT RESET PASSWORD
+  // RESET PASSWORD
   // ======================
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +94,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       return;
     }
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+    const res = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -110,15 +108,12 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setResetMsg(txt);
 
     if (res.ok) {
-      setTimeout(() => {
-        setIsResetPassword(false);
-      }, 2000);
+      setTimeout(() => setIsResetPassword(false), 2000);
     }
   };
 
-
   // ======================
-  // 🔥 LOGIN HANDLER
+  // LOGIN
   // ======================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +122,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setReactivateMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/authenticate", {
+      const response = await fetch(`${API_BASE}/api/v1/auth/authenticate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -138,7 +133,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       if (err) {
         if (err.code === 1005 || err.message?.includes("vô hiệu hóa")) {
           setLocked(true);
-          setLoginError(err.message || "Tài khoản của bạn đã bị vô hiệu hóa!");
+          setLoginError(err.message || "Tài khoản đã bị vô hiệu hóa!");
           return;
         }
         if (
@@ -147,11 +142,13 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           err.message?.toLowerCase().includes("locked")
         ) {
           setLocked(true);
-          setLoginError("Tài khoản của bạn đã bị quản trị viên chặn và không thể đăng nhập.");
+          setLoginError(
+            "Tài khoản của bạn đã bị quản trị viên chặn và không thể đăng nhập."
+          );
           return;
         }
         if (err.code === 1006 || err.message?.includes("chưa kích hoạt")) {
-          setLoginError(err.message || "Tài khoản chưa kích hoạt. Vui lòng kiểm tra email!");
+          setLoginError(err.message || "Tài khoản chưa kích hoạt. Kiểm tra email!");
           return;
         }
 
@@ -164,7 +161,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
       localStorage.setItem("token", token);
 
-      const userRes = await fetch("http://localhost:8080/api/v1/auth/current", {
+      const userRes = await fetch(`${API_BASE}/api/v1/auth/current`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -179,16 +176,15 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     }
   };
 
-
   // ======================
-  // 🔥 REQUEST REACTIVATION
+  // YÊU CẦU KÍCH HOẠT LẠI
   // ======================
   const handleRequestReactivation = async () => {
     setLoadingRestore(true);
     setReactivateMessage("");
 
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/request-reactivation", {
+      const res = await fetch(`${API_BASE}/api/v1/auth/request-reactivation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -196,20 +192,18 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
       const msg = await res.text();
       setReactivateMessage(msg);
-    } catch (err) {
+    } catch {
       setReactivateMessage("Không thể gửi yêu cầu. Vui lòng thử lại!");
     }
 
     setLoadingRestore(false);
   };
 
-
   // ======================
-  // 🔥 UI COMPONENT
+  // UI
   // ======================
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
-
       {/* BG EFFECT */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -225,9 +219,8 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       </div>
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-
-        {/* LEFT SIDE */}
-<motion.div
+        {/* LEFT */}
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -236,7 +229,10 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                <div className="text-white text-xl tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                <div
+                  className="text-white text-xl tracking-wide"
+                  style={{ fontFamily: "Arial Black, sans-serif" }}
+                >
                   PTIT
                 </div>
               </div>
@@ -248,9 +244,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
               </div>
             </div>
 
-            <h2 className="text-4xl text-gray-900 mt-8">
-              Chào mừng trở lại!
-            </h2>
+            <h2 className="text-4xl text-gray-900 mt-8">Chào mừng trở lại!</h2>
             <p className="text-xl text-gray-600">
               Đăng nhập để quản lý thiết bị IoT và thu thập dữ liệu của bạn
             </p>
@@ -262,25 +256,24 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                 </div>
                 <div>
                   <p className="text-gray-900">Kết nối thiết bị</p>
-                  <p className="text-sm text-gray-600">Quản lý hàng trăm thiết bị IoT</p>
+                  <p className="text-sm text-gray-600">
+                    Quản lý hàng trăm thiết bị IoT
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* RIGHT SIDE (FORM WRAPPER) */}
+        {/* RIGHT SECTION */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
-
-            {/* ============================== */}
-            {/* 🔥 FORM RESET PASSWORD */}
-            {/* ============================== */}
-            {isResetPassword ? (
+            {/* RESET PASSWORD */}
+            {isResetPassword && (
               <>
                 <h3 className="text-2xl text-gray-900 mb-2">Đặt lại mật khẩu</h3>
                 <p className="text-gray-600 mb-6">
@@ -288,10 +281,10 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                 </p>
 
                 <form onSubmit={handleResetSubmit} className="space-y-6">
-
-                  {/* NEW PASSWORD */}
                   <div>
-                    <label className="block text-gray-700 mb-2">Mật khẩu mới</label>
+                    <label className="block text-gray-700 mb-2">
+                      Mật khẩu mới
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
@@ -305,9 +298,10 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                     </div>
                   </div>
 
-                  {/* CONFIRM PASSWORD */}
                   <div>
-                    <label className="block text-gray-700 mb-2">Nhập lại mật khẩu</label>
+                    <label className="block text-gray-700 mb-2">
+                      Nhập lại mật khẩu
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
@@ -342,11 +336,10 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                   </button>
                 </div>
               </>
-            ) : null}
-
+            )}
 
             {/* ============================== */}
-            {/* 🔥 FORM QUÊN MẬT KHẨU */}
+            {/* FORGOT PASSWORD */}
             {/* ============================== */}
             {!isResetPassword && isForgot && (
               <>
@@ -356,7 +349,6 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                 </p>
 
                 <form onSubmit={handleForgotSubmit} className="space-y-6">
-
                   <div>
                     <label className="block text-gray-700 mb-2">Email</label>
                     <div className="relative">
@@ -399,9 +391,8 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
               </>
             )}
 
-
             {/* ============================== */}
-            {/* 🔥 FORM LOGIN */}
+            {/* LOGIN FORM */}
             {/* ============================== */}
             {!isForgot && !isResetPassword && (
               <>
@@ -411,21 +402,27 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                 {locked && (
                   <div className="border border-red-300 bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex gap-3">
                     <AlertTriangle className="w-6 h-6 text-red-600" />
+
                     <div>
                       <p className="font-semibold">Tài khoản của bạn đã bị khóa</p>
-                      <p className="text-sm">Bạn có thể yêu cầu mở khóa qua email đăng ký.</p>
+                      <p className="text-sm">
+                        Bạn có thể yêu cầu mở khóa qua email đăng ký.
+                      </p>
 
                       <button
                         onClick={handleRequestReactivation}
                         disabled={loadingRestore}
-                        className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700
-                          ${loadingRestore ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ${
+                          loadingRestore ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                       >
                         {loadingRestore ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
                       </button>
 
                       {reactivateMessage && (
-                        <p className="mt-3 text-sm text-green-600">{reactivateMessage}</p>
+                        <p className="mt-3 text-sm text-green-600">
+                          {reactivateMessage}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -433,6 +430,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
                 {!locked && (
                   <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* EMAIL */}
                     <div>
                       <label className="block text-gray-700 mb-2">Email</label>
                       <div className="relative">
@@ -448,10 +446,12 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                       </div>
                     </div>
 
+                    {/* PASSWORD */}
                     <div>
                       <label className="block text-gray-700 mb-2">Mật khẩu</label>
                       <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
                         <input
                           type={showPassword ? "text" : "password"}
                           value={password}
@@ -460,6 +460,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                           className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600"
                           required
                         />
+
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -470,6 +471,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                       </div>
                     </div>
 
+                    {/* SUBMIT */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -487,18 +489,20 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                   </form>
                 )}
 
+                {/* REGISTER */}
                 <div className="mt-6 text-center">
                   <p className="text-gray-600">
                     Chưa có tài khoản?
                     <button
                       onClick={() => onNavigate("register")}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 ml-1"
                     >
-                      {" "}Đăng ký ngay
+                      Đăng ký ngay
                     </button>
                   </p>
                 </div>
 
+                {/* FORGOT */}
                 <div className="mt-3 text-center">
                   <button
                     onClick={() => setIsForgot(true)}
@@ -508,6 +512,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                   </button>
                 </div>
 
+                {/* BACK TO LANDING */}
                 <div className="mt-4 text-center">
                   <button
                     onClick={() => onNavigate("landing")}
@@ -518,7 +523,6 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
                 </div>
               </>
             )}
-
           </div>
         </motion.div>
       </div>

@@ -10,6 +10,9 @@ export default function AIPage() {
     const [input, setInput] = useState("");
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+    // Tự động scroll xuống cuối khi có message mới
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -17,14 +20,16 @@ export default function AIPage() {
     async function sendMessage() {
         if (!input.trim()) return;
 
-        const userMsg: ChatMessage = { role: "user", content: input };
+        const question = input;
+
+        // Push tin nhắn user lên UI
+        const userMsg: ChatMessage = { role: "user", content: question };
         setMessages((prev) => [...prev, userMsg]);
 
-        const question = input;
         setInput("");
 
         try {
-            const res = await fetch("http://localhost:8080/api/v1/chat", {
+            const res = await fetch(`${API_BASE}/api/v1/chat`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -45,7 +50,7 @@ export default function AIPage() {
         } catch (err) {
             setMessages((prev) => [
                 ...prev,
-                { role: "bot", content: "❌ Lỗi kết nối tới server!" },
+                { role: "bot", content: "❌ Không thể kết nối server!" },
             ]);
         }
     }
@@ -60,21 +65,20 @@ export default function AIPage() {
                 {messages.map((msg, i) => (
                     <div
                         key={i}
-                        className={`w-full flex ${msg.role === "user"
-                                ? "justify-end"
-                                : "justify-start"
-                            }`}
+                        className={`w-full flex ${
+                            msg.role === "user" ? "justify-end" : "justify-start"
+                        }`}
                     >
                         <div
-                            className={`px-4 py-3 rounded-2xl shadow max-w-[80%] ${msg.role === "user"
+                            className={`px-4 py-3 rounded-2xl shadow max-w-[80%] ${
+                                msg.role === "user"
                                     ? "bg-red-600 text-white"
                                     : "bg-white border border-gray-200"
-                                }`}
+                            }`}
                             style={{ whiteSpace: "pre-wrap" }}
                         >
                             {msg.content}
                         </div>
-
                     </div>
                 ))}
 
