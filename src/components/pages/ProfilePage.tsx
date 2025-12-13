@@ -145,19 +145,6 @@ export default function ProfilePage() {
           <h3 className="text-xl text-gray-900 mb-6">Thông tin cá nhân</h3>
 
           <div className="space-y-6">
-            {/* ID */}
-            <div>
-              <label className="block text-gray-700 mb-2">ID người dùng</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={formData.id}
-                  disabled
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl disabled:bg-gray-50"
-                />
-              </div>
-            </div>
 
             {/* Full Name */}
             <div>

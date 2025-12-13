@@ -235,38 +235,42 @@ app.get('/api/devices', (req, res) => {
   const userId = req.query.user_id;
   const role = req.query.role; // "admin" | "user"
 
-let sql = `
-  SELECT 
-    d.*, 
-    dt.name AS device_type_name,
-    u.full_name AS creator_name,
-    u.email AS creator_email
-  FROM devices d
-  LEFT JOIN device_types dt ON dt.id = d.device_type_id
-  LEFT JOIN users u ON u.id = d.created_by
-`;
+  let sql = `
+    SELECT 
+      d.*, 
+      dt.name AS device_type_name,
+      u.full_name AS creator_name,
+      u.email AS creator_email
+    FROM devices d
+    LEFT JOIN device_types dt ON dt.id = d.device_type_id
+    LEFT JOIN users u ON u.id = d.created_by
+    WHERE d.is_deleted = '0'
+  `;
 
-
-  
   const params = [];
 
-  // Nếu không phải admin → lọc thiết bị theo created_by
-if (role !== "admin") {
-  sql += " WHERE d.created_by = ?";
-  params.push(userId);
-}
+  // Nếu không phải admin → lọc theo user
+  if (role !== "admin") {
+    sql += " AND d.created_by = ?";
+    params.push(userId);
+  }
 
   sql += " ORDER BY d.id DESC";
 
   db.query(sql, params, (err, results) => {
     if (err) {
-      console.error("Lỗi lấy thiết bị:", err);
+      console.error("❌ Lỗi lấy thiết bị:", err);
       return res.status(500).json({ message: "Không thể tải thiết bị." });
     }
 
-    res.json({ devices: results });
+    return res.json({
+      status: "success",
+      total: results.length,   // 👈 TỔNG SỐ THIẾT BỊ
+      devices: results
+    });
   });
 });
+
 
 
 
@@ -398,6 +402,93 @@ async function readJSON(path) {
     return null;
   }
 }
+// ========================== API: đếm tổng dữ liệu trong hồ==========================
+
+app.get("/api/dashboard/datalake/count", async (req, res) => {
+  try {
+    let total = 0;
+
+    const objectsStream = minioClient.listObjects(
+      "thingsboard-data", // đúng bucket
+      "",
+      true
+    );
+    for await (const obj of objectsStream) {
+      const stream = await minioClient.getObject(
+        "thingsboard-data",
+        obj.name
+      );
+      let content = "";
+      for await (const chunk of stream) {
+        content += chunk.toString();
+      }
+
+      // giả sử file là CSV hoặc NDJSON
+      const lines = content
+        .split("\n")
+        .filter(
+          (l) =>
+            l.trim() !== "" &&
+            !l.startsWith("timestamp") // bỏ header CSV
+        );
+
+      total += lines.length;
+    }
+
+    res.json({ totalRecords: total });
+  } catch (err) {
+    console.error("❌ Count datalake error:", err);
+    res.status(500).json({ totalRecords: 0 });
+  }
+});
+// ========================== API: CHART 3 THÁNG GẦN NHẤT ==========================
+app.get("/api/dashboard/datalake/chart", async (req, res) => {
+  try {
+    const { sensor = "temp" } = req.query;
+
+    const now = Date.now();
+    const fromTime = now - 90 * 24 * 60 * 60 * 1000; // 🔥 3 THÁNG
+
+    const normalize = (s) =>
+      String(s || "").toLowerCase().replace(/\s+/g, "");
+
+    const result = [];
+
+    const stream = minioClient.listObjectsV2(
+      "thingsboard-data",
+      "",
+      true
+    );
+
+    for await (const obj of stream) {
+      if (!obj.name.endsWith(".json")) continue;
+
+      const rec = await readJSON(obj.name);
+      if (!rec) continue;
+
+      if (!rec.timestamp || !rec.sensor || rec.value == null) continue;
+      if (normalize(rec.sensor) !== normalize(sensor)) continue;
+
+      const ts = new Date(rec.timestamp).getTime();
+      if (ts < fromTime) continue;
+
+      result.push({
+        time: rec.timestamp,   // ISO time
+        value: Number(rec.value)
+      });
+    }
+
+    // sort theo thời gian
+    result.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    res.json(result);
+  } catch (err) {
+    console.error("❌ datalake chart error:", err);
+    res.status(500).json([]);
+  }
+});
+
+
 // ========================== API: TẠO DATASET SAU KHI LỌC DỮ LIỆU ==========================
 app.get("/api/dataset", async (req, res) => {
   const { unique_identifier, sensor, start, end, province, district, ward } = req.query;

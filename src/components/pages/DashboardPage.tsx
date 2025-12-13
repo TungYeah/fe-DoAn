@@ -1,5 +1,6 @@
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Thermometer,
@@ -11,8 +12,9 @@ import {
   Plus,
   TrendingUp,
   Clock,
-  Wifi,
+  Wifi,FileText,
   WifiOff,
+  CheckCircle, Info, XCircle,
   BarChart3,
   FileDown,
 } from "lucide-react";
@@ -30,40 +32,8 @@ import {
 // ======================
 //  Fake stats for demo
 // ======================
-const userStatsData = [
-  {
-    label: "Thiết bị của tôi",
-    value: "12",
-    change: "+2 mới",
-    trend: "up",
-    icon: Cpu,
-    color: "from-red-500 to-red-600",
-  },
-  {
-    label: "Dữ liệu hôm nay",
-    value: "2,847",
-    change: "+324",
-    trend: "up",
-    icon: Database,
-    color: "from-blue-500 to-blue-600",
-  },
-  {
-    label: "Đang hoạt động",
-    value: "10/12",
-    change: "83%",
-    trend: "up",
-    icon: Power,
-    color: "from-green-500 to-green-600",
-  },
-  {
-    label: "Cảnh báo",
-    value: "3",
-    change: "Mới nhất 5 phút",
-    trend: "warning",
-    icon: AlertTriangle,
-    color: "from-yellow-500 to-yellow-600",
-  },
-];
+
+
 
 // ======================
 //  Demo sensor data
@@ -155,11 +125,272 @@ const recentActivities = [
 //                DASHBOARD PAGE
 // ==========================================
 export default function DashboardPage() {
-  const navigate = useNavigate();
+  const [totalDevices, setTotalDevices] = useState(0);
+const [activeDevices, setActiveDevices] = useState(0);
+const [devices, setDevices] = useState<any[]>([]);
+const [activities, setActivities] = useState<any[]>([]);
+const [totalRecords, setTotalRecords] = useState<number>(0);
+const [chartData, setChartData] = useState<any[]>([]);
+const [selectedMetric, setSelectedMetric] = useState<"temp" | "humidity">("temp");
 
-  const [selectedMetric, setSelectedMetric] = useState<"temp" | "humidity">(
-    "temp"
-  );
+const [chartRange, setChartRange] = useState<"24h" | "7d" | "30d">("24h");
+
+const token = localStorage.getItem("token");
+const email = localStorage.getItem("email");
+const [queryCount, setQueryCount] = useState<number>(0);
+
+const { user } = useAuth();
+const [currentUser, setCurrentUser] = useState<any>(null);
+const CURRENT_USER_ID = user?.id || currentUser?.id;
+const roleList = user?.roles || currentUser?.roles || [];
+const isAdmin = roleList.includes("ROLE_ADMIN");
+
+const userStatsData = [
+{
+  label: "Thiết bị của tôi",
+  value: totalDevices,
+  change: "My Devices",
+  trend: "up",
+  icon: Cpu,
+  color: "from-red-500 to-red-600",
+},
+
+{
+  label: "Tổng dữ liệu",
+  value: totalRecords.toLocaleString(),
+  change: "Data Lake",
+  trend: "up",
+  icon: Database,
+  color: "from-blue-500 to-blue-600",
+},
+
+  {
+    label: "Đang hoạt động",
+    value: `${activeDevices}/${totalDevices}`,
+    change:
+      totalDevices > 0
+        ? `${Math.round((activeDevices / totalDevices) * 100)}%`
+        : "0%",
+    trend: "up",
+    icon: Power,
+    color: "from-green-500 to-green-600",
+  },
+{
+  label: "Truy vấn",
+  value: queryCount,
+  change: "Export Filter",
+  trend: "up",
+  icon: FileText,
+  color: "from-purple-500 to-purple-600",
+},
+
+];
+  const navigate = useNavigate();
+  function timeAgo(dateStr: string) {
+  if (!dateStr) return "—";
+
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${diffSec} giây trước`;
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} phút trước`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay} ngày trước`;
+}
+
+function formatVNDateTime(dateStr: string) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+
+  const pad = (n: number) => (n < 10 ? "0" + n : n);
+
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(
+    d.getSeconds()
+  )} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+useEffect(() => {
+  if (!CURRENT_USER_ID) return;
+
+  fetch(`http://localhost:5000/api/export_filters/${CURRENT_USER_ID}`)
+    .then((res) => res.json())
+    .then((data) => {
+      setQueryCount(Array.isArray(data) ? data.length : 0);
+    })
+    .catch((err) => {
+      console.error("Lỗi load số truy vấn:", err);
+      setQueryCount(0);
+    });
+}, [CURRENT_USER_ID]);
+
+useEffect(() => {
+  fetch(
+    "http://localhost:5000/api/dashboard/datalake/chart?sensor=temp"
+  )
+    .then(res => res.json())
+    .then(data => setChartData(data))
+    .catch(() => setChartData([]));
+}, []);
+useEffect(() => {
+  fetch(
+    `http://localhost:5000/api/dashboard/datalake/chart?sensor=${selectedMetric}`
+  )
+    .then((res) => res.json())
+    .then((data) => setChartData(data))
+    .catch(() => setChartData([]));
+}, [selectedMetric]);
+
+useEffect(() => {
+  if (!CURRENT_USER_ID) return;
+
+  fetch(
+    `http://localhost:5000/api/dashboard/datalake/count`
+  )
+    .then(res => res.json())
+    .then(data => {
+      setTotalRecords(data.totalRecords || 0);
+    })
+    .catch(err => {
+      console.error("Lỗi count datalake:", err);
+      setTotalRecords(0);
+    });
+}, [CURRENT_USER_ID]);
+
+  useEffect(() => {
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      setCurrentUser(data);
+    } catch (err) {
+      console.error("Lỗi lấy current user:", err);
+    }
+  };
+
+  fetchCurrentUser();
+}, []);
+
+useEffect(() => {
+  if (!CURRENT_USER_ID) return;
+
+  const fetchDevices = async () => {
+    try {
+      const role = isAdmin ? "admin" : "user";
+
+      const res = await fetch(
+        `http://localhost:5000/api/devices?user_id=${CURRENT_USER_ID}&role=${role}`
+      );
+
+      const json = await res.json();
+
+      if (json.status === "success") {
+        const list = json.devices || [];
+
+        setDevices(list);
+        setTotalDevices(json.total || list.length);
+
+        const active = list.filter(
+          (d: any) => String(d.flag_status) === "1"
+        ).length;
+
+        setActiveDevices(active);
+      }
+    } catch (err) {
+      console.error("Lỗi load thiết bị dashboard:", err);
+      setDevices([]);
+      setTotalDevices(0);
+      setActiveDevices(0);
+    }
+  };
+
+  fetchDevices();
+}, [CURRENT_USER_ID, isAdmin]);
+
+useEffect(() => {
+  const userId = localStorage.getItem("user_id"); // bạn đang lưu khi login
+  const role = localStorage.getItem("role");      // ADMIN | USER
+
+  if (!userId) return;
+
+  fetch(
+    `http://localhost:5000/api/devices?user_id=${userId}&role=${role === "ADMIN" ? "admin" : "user"}`
+  )
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success") {
+        setDevices(data.devices || []);
+        setTotalDevices(data.total || 0);
+
+        const active = (data.devices || []).filter(
+          (d: any) => String(d.flag_status) === "1"
+        ).length;
+
+        setActiveDevices(active);
+      }
+    })
+    .catch(err => console.error("Lỗi lấy thiết bị:", err));
+}, []);
+useEffect(() => {
+  if (!token || !email) return;
+
+  fetch("http://localhost:8080/api/admin/history?page=0&size=100", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      const list = (data.content || [])
+        // ✅ chỉ lấy log của CHÍNH user
+        .filter((h: any) => h.content?.email === email)
+
+        // ✅ sắp xếp mới nhất trước
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createDate).getTime() -
+            new Date(a.createDate).getTime()
+        )
+
+        // ✅ chỉ lấy 4 hoạt động gần nhất
+        .slice(0, 4);
+
+      setActivities(list);
+    })
+    .catch(err => {
+      console.error("Lỗi load hoạt động dashboard:", err);
+      setActivities([]);
+    });
+}, [token, email]);
+
+function getActivityDotColor(action: string) {
+  switch (action) {
+    case "CREATE":
+      return "bg-green-500";
+    case "UPDATE":
+      return "bg-blue-500";
+    case "DELETE":
+      return "bg-red-500";
+    default:
+      return "bg-yellow-500";
+  }
+}
+
 
   return (
     <div className="space-y-6">
@@ -232,67 +463,90 @@ export default function DashboardPage() {
       {/* ======================= */}
       {/* SENSOR CHART */}
       {/* ======================= */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-6 border shadow-sm"
+      {/* ======================= */}
+{/* SENSOR CHART */}
+{/* ======================= */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="bg-white rounded-2xl p-6 border shadow-sm"
+>
+  <div className="flex items-center justify-between mb-6">
+    <div>
+      <h3 className="text-xl text-gray-900">
+        Dữ liệu cảm biến (3 tháng gần nhất)
+      </h3>
+      <p className="text-sm text-gray-600">
+        Biểu diễn dữ liệu theo thời gian thực
+      </p>
+    </div>
+
+    {/* SWITCH METRIC – giữ UI cũ */}
+    <div className="flex gap-2">
+      <button
+        onClick={() => setSelectedMetric("temp")}
+        className={`px-4 py-2 rounded-xl transition ${
+          selectedMetric === "temp"
+            ? "bg-red-100 text-red-700 border border-red-300"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
       >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl text-gray-900">Dữ liệu cảm biến (24 giờ)</h3>
-            <p className="text-sm text-gray-600">Biểu diễn nhiệt độ và độ ẩm</p>
-          </div>
+        <Thermometer className="w-4 h-4 inline" /> Nhiệt độ
+      </button>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedMetric("temp")}
-              className={`px-4 py-2 rounded-xl ${
-                selectedMetric === "temp"
-                  ? "bg-red-100 text-red-700 border border-red-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <Thermometer className="w-4 h-4 inline" /> Nhiệt độ
-            </button>
+      <button
+        onClick={() => setSelectedMetric("humidity")}
+        className={`px-4 py-2 rounded-xl transition ${
+          selectedMetric === "humidity"
+            ? "bg-blue-100 text-blue-700 border border-blue-300"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Droplets className="w-4 h-4 inline" /> Độ ẩm
+      </button>
+    </div>
+  </div>
 
-            <button
-              onClick={() => setSelectedMetric("humidity")}
-              className={`px-4 py-2 rounded-xl ${
-                selectedMetric === "humidity"
-                  ? "bg-blue-100 text-blue-700 border border-blue-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <Droplets className="w-4 h-4 inline" /> Độ ẩm
-            </button>
-          </div>
-        </div>
+  {/* CHART */}
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart data={chartData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis
+        dataKey="time"
+        tickFormatter={(v) =>
+          new Date(v).toLocaleDateString("vi-VN")
+        }
+      />
+      <YAxis />
+      <Tooltip
+        labelFormatter={(v) =>
+          new Date(v).toLocaleString("vi-VN")
+        }
+      />
+      <Legend />
+      <Line
+        type="monotone"
+        dataKey="value"
+        stroke={selectedMetric === "temp" ? "#ef4444" : "#3b82f6"}
+        strokeWidth={2}
+        dot={false}
+        name={
+          selectedMetric === "temp"
+            ? "Nhiệt độ (°C)"
+            : "Độ ẩm (%)"
+        }
+      />
+    </LineChart>
+  </ResponsiveContainer>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={sensorData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            {selectedMetric === "temp" ? (
-              <Line
-                type="monotone"
-                dataKey="temp"
-                stroke="#ef4444"
-                strokeWidth={2}
-              />
-            ) : (
-              <Line
-                type="monotone"
-                dataKey="humidity"
-                stroke="#3b82f6"
-                strokeWidth={2}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </motion.div>
+  {/* EMPTY STATE */}
+  {chartData.length === 0 && (
+    <p className="text-center text-sm text-gray-400 mt-4">
+      Chưa có dữ liệu cảm biến trong 3 tháng gần đây
+    </p>
+  )}
+</motion.div>
+
 
       {/* ======================= */}
       {/* DEVICES + RECENT ACTIVITY */}
@@ -315,88 +569,106 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {userDevices.map((d, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex justify-between p-4 border rounded-xl hover:shadow"
-              >
-                <div className="flex gap-4 items-center">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      d.status === "online" ? "bg-green-100" : "bg-gray-200"
-                    }`}
-                  >
-                    {d.status === "online" ? (
-                      <Wifi className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <WifiOff className="w-5 h-5 text-gray-500" />
-                    )}
-                  </div>
+{devices
+  .slice()
+  .sort(
+    (a, b) =>
+      new Date(b.create_date).getTime() -
+      new Date(a.create_date).getTime()
+  )
+  .slice(0, 4)
+  .map((d) => (
+  <motion.div
+    key={d.id}
+    className="relative flex justify-between p-4 border rounded-xl hover:shadow"
+  >
+    {/* LEFT */}
+    <div className="flex gap-4 items-center">
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+          String(d.flag_status) === "1"
+            ? "bg-green-100"
+            : "bg-gray-200"
+        }`}
+      >
+        {String(d.flag_status) === "1" ? (
+          <Wifi className="w-5 h-5 text-green-600" />
+        ) : (
+          <WifiOff className="w-5 h-5 text-gray-500" />
+        )}
+      </div>
 
-                  <div>
-                    <p className="text-gray-900">{d.name}</p>
-                    <p className="text-xs text-gray-500">{d.type}</p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {d.lastUpdate}
-                    </p>
-                  </div>
-                </div>
+      <div>
+        <p className="text-gray-900 font-medium">{d.name}</p>
+        <p className="text-xs text-gray-500">{d.device_type_name}</p>
+        <p className="text-xs text-gray-400">
+          ID: {d.unique_identifier}
+        </p>
+      </div>
+    </div>
 
-                <div className="flex gap-4">
-                  {d.temp !== "-" && (
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Nhiệt độ</p>
-                      <p className="text-gray-900">{d.temp}</p>
-                    </div>
-                  )}
-                  {d.humidity !== "-" && (
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Độ ẩm</p>
-                      <p className="text-gray-900">{d.humidity}</p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+    {/* RIGHT – TIME INFO */}
+    <div className="text-right text-xs text-gray-400">
+      <p className="font-medium text-gray-500">
+        {timeAgo(d.create_date)}
+      </p>
+      <p>{formatVNDateTime(d.create_date)}</p>
+    </div>
+  </motion.div>
+))}
+
+
           </div>
         </motion.div>
 
         {/* Recent Activities */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-6 border shadow-sm"
-        >
-          <h3 className="text-xl text-gray-900 mb-6">Hoạt động gần đây</h3>
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="bg-white rounded-2xl p-6 border shadow-sm"
+>
+  <h3 className="text-xl text-gray-900 mb-6">
+    Hoạt động gần đây
+  </h3>
 
-          <div className="space-y-4">
-            {recentActivities.map((a, i) => (
-              <motion.div key={i} className="flex gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full mt-2 ${
-                    a.type === "success"
-                      ? "bg-green-500"
-                      : a.type === "warning"
-                      ? "bg-yellow-500"
-                      : a.type === "info"
-                      ? "bg-blue-500"
-                      : "bg-red-500"
-                  }`}
-                ></div>
+  {activities.length === 0 && (
+    <p className="text-sm text-gray-500">
+      Chưa có hoạt động nào gần đây.
+    </p>
+  )}
 
-                <div>
-                  <p className="text-xs text-gray-500">{a.device}</p>
-                  <p className="text-sm text-gray-900">{a.action}</p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {a.time}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+  <div className="space-y-4">
+    {activities.map((a) => (
+      <div key={a.id} className="flex gap-3">
+        {/* ICON */}
+{/* DOT */}
+<div
+  className={`mt-2 w-2.5 h-2.5 rounded-full ${getActivityDotColor(
+    a.action
+  )}`}
+/>
+
+
+        {/* CONTENT */}
+        <div className="flex-1">
+          <p className="text-sm text-gray-900 font-medium">
+            {a.historyType.replace(/_/g, " ")}
+          </p>
+
+          <p className="text-xs text-gray-600">
+            {a.description || "Không có mô tả"}
+          </p>
+
+          <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+            <Clock className="w-3 h-3" />
+            {timeAgo(a.createDate)}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+</motion.div>
+
       </div>
 
       {/* ======================= */}
