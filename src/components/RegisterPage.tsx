@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Lock, Mail, Eye, EyeOff, User, Building } from "lucide-react";
+import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 
 type RegisterProps = {
   onNavigate: (view: string) => void;
@@ -51,7 +53,9 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
       }
 
       // Không lưu token – backend không trả token khi đăng ký
-      alert(data.message || "Đăng ký thành công. Vui lòng kiểm tra email!");
+toast.success(
+  data.message || "Đăng ký thành công. Vui lòng kiểm tra email!"
+);
 
       setRegisterError("");
       onNavigate("login"); // quay lại màn login

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Mail, Phone, MapPin, Send, Facebook, Github, MessageSquare, Clock } from 'lucide-react';
+import { toast } from "sonner";
 
 interface ContactPageProps {
   onNavigate: (view: string) => void;
@@ -16,7 +17,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
+toast.success("Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.");
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 

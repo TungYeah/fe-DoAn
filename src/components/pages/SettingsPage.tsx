@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { motion } from "motion/react";
 import {
   Lock,
@@ -99,18 +100,17 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
-      alert("Cập nhật thành công!");
-      setToastMessage("Cập nhật thành công!");
-      setTimeout(() => window.location.reload(), 800);
+toast.success("Cập nhật thành công!");
+      setTimeout(() => window.location.reload(), 2500);
     } else {
-      alert("❌ Cập nhật thất bại!");
+toast.error("Cập nhật thất bại!");
     }
   };
 
   // =========================== CHANGE PASSWORD
   const handleChangePassword = async () => {
     if (passwordData.new !== passwordData.confirm) {
-      alert("Mật khẩu xác nhận không khớp!");
+toast.warning("Mật khẩu xác nhận không khớp!");
       return;
     }
 
@@ -133,13 +133,12 @@ export default function SettingsPage() {
     );
 
     if (res.ok) {
-      alert("Đổi mật khẩu thành công!");
-      setToastMessage("Đổi mật khẩu thành công!");
+toast.success("Đổi mật khẩu thành công!");
       setPasswordData({ current: "", new: "", confirm: "" });
-      setTimeout(() => window.location.reload(), 800);
+      setTimeout(() => window.location.reload(), 2500);
     } else {
       const err = await res.json();
-      alert("Lỗi: " + err.message);
+toast.error("Lỗi: " + err.message);
     }
   };
 
@@ -182,16 +181,15 @@ export default function SettingsPage() {
             : "/847969.png",
       });
 
-      alert("Ảnh đại diện đã thay đổi!");
-      setToastMessage("Ảnh đại diện đã thay đổi!");
-      setTimeout(() => window.location.reload(), 800);
+toast.success("Ảnh đại diện đã thay đổi!");
+      setTimeout(() => window.location.reload(), 2500);
     }
   };
 
 // =========================== KHÓA ACCOUNT 
 const handleDeleteAccount = async (password) => {
   if (!password || !password.trim()) {
-    alert("Vui lòng nhập mật khẩu!");
+toast.warning("Vui lòng nhập mật khẩu!");
     return;
   }
 
@@ -210,16 +208,15 @@ const handleDeleteAccount = async (password) => {
   setDeleteLoading(false);
 
   if (res.ok) {
-    alert("Tài khoản đã bị vô hiệu hóa!");
-    setToastMessage("Tài khoản đã bị vô hiệu hóa!");
+toast.warning("Tài khoản đã bị vô hiệu hóa!");
     localStorage.removeItem("token");
 
     setTimeout(() => {
       window.location.href = "/login";
-    }, 1500);
+    }, 2500);
   } else {
     const err = await res.json();
-    alert("❌ " + err.message);
+toast.error(err.message || "Có lỗi xảy ra");
   }
 };
 

@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Modal } from "../ui/modal";
@@ -119,7 +120,7 @@ export default function UsersPage() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Chưa đăng nhập hoặc hết phiên đăng nhập");
+      toast.error("Chưa đăng nhập hoặc hết phiên đăng nhập");
       return;
     }
 
@@ -128,7 +129,7 @@ export default function UsersPage() {
 
     // Nếu không thay đổi gì thì thôi
     if (currentIsAdmin === wantAdmin) {
-      alert("Vai trò không thay đổi");
+      toast.info("Vai trò không thay đổi");
       setIsChangeRoleModalOpen(false);
       return;
     }
@@ -183,14 +184,14 @@ export default function UsersPage() {
         prev && prev.id === data.id ? { ...prev, role: mainRole } : prev
       );
 
-      alert(
+      toast.success(
         wantAdmin
           ? "Đã gán quyền Admin cho người dùng"
           : "Đã bỏ quyền Admin, người dùng trở lại quyền User"
       );
       setIsChangeRoleModalOpen(false);
     } catch (e: any) {
-      alert(e.message || "Có lỗi xảy ra khi cập nhật vai trò");
+      toast.error(e.message || "Có lỗi xảy ra khi cập nhật vai trò");
     } finally {
       setChangingRole(false);
     }
@@ -205,7 +206,7 @@ export default function UsersPage() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
+      toast.error("Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
       return;
     }
 
@@ -285,12 +286,16 @@ export default function UsersPage() {
 
       // Thông báo
       if (newStatus === "active") {
-        alert(`Đã Kích hoạt tài khoản: ${data.fullName || selectedUser.name}`);
+        toast.success(
+          `Đã kích hoạt tài khoản: ${data.fullName || selectedUser.name}`
+        );
       } else if (locked) {
-        alert(`Đã chặn tài khoản: ${data.fullName || selectedUser.name}`);
+        toast.warning(
+          `Đã chặn tài khoản: ${data.fullName || selectedUser.name}`
+        );
       } else {
         // Trường hợp chỉ deactivated = true
-        alert(
+        toast.info(
           `Tài khoản hiện không hoạt động: ${newStatusLabel} (${
             data.fullName || selectedUser.name
           })`
@@ -299,7 +304,9 @@ export default function UsersPage() {
 
       setIsToggleStatusModalOpen(false);
     } catch (e: any) {
-      alert(e.message || "Có lỗi xảy ra khi cập nhật trạng thái tài khoản");
+      toast.error(
+        e.message || "Có lỗi xảy ra khi cập nhật trạng thái tài khoản"
+      );
     } finally {
       setTogglingStatus(false);
     }
@@ -358,10 +365,10 @@ export default function UsersPage() {
         )
       );
 
-      alert("Cập nhật người dùng thành công!");
+      toast.success("Cập nhật người dùng thành công!");
       setIsEditModalOpen(false);
     } catch (e: any) {
-      alert(e.message || "Có lỗi xảy ra khi cập nhật");
+      toast.error(e.message || "Có lỗi xảy ra khi cập nhật");
     } finally {
       setSavingEdit(false);
     }
@@ -544,7 +551,7 @@ export default function UsersPage() {
   }, [searchTerm, selectedRole]);
 
   const handleExport = (format: "csv" | "excel" | "pdf") => {
-    alert(`Đang xuất danh sách user dạng ${format.toUpperCase()}...`);
+    toast.info(`Đang xuất danh sách user dạng ${format.toUpperCase()}...`);
   };
 
   return (

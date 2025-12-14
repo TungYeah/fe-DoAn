@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { toast } from "sonner"; // Giả sử bạn dùng sonner hoặc thư viện toast nào đó
+import { toast } from "sonner"; 
 
 // Đổi URL trỏ về Spring Boot
 const API_URL = "http://localhost:8080/api/v1/iot/device-types";
@@ -57,6 +57,28 @@ export default function DeviceTypesPage() {
   const [perPage, setPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+const validateDeviceType = (data: {
+  name: string;
+  manufacturer: string;
+  category: string;
+}) => {
+  if (!data.name.trim()) {
+    toast.warning("Vui lòng nhập tên loại thiết bị");
+    return false;
+  }
+
+  if (!data.manufacturer.trim()) {
+    toast.warning("Vui lòng nhập hãng sản xuất");
+    return false;
+  }
+
+  if (!data.category.trim()) {
+    toast.warning("Vui lòng nhập danh mục thiết bị");
+    return false;
+  }
+
+  return true;
+};
 
   // ================= FETCH ==================
   const loadDeviceTypes = async () => {
@@ -88,49 +110,51 @@ export default function DeviceTypesPage() {
   }, [page, perPage]); 
 
   // ============== ADD (SỬ DỤNG SPRING BOOT) =================
-  const handleAddType = async () => {
-    // Validate cơ bản phía FE
-    if (!newType.name.trim()) return toast.warning("Tên loại thiết bị không được trống");
+const handleAddType = async () => {
+  if (!validateDeviceType(newType)) return;
 
-    try {
-      await axios.post(API_URL, newType, getAuthHeaders());
-      
-      toast.success("Thêm loại thiết bị thành công!");
-      setIsAddOpen(false);
-      setNewType({
-        name: "",
-manufacturer: "",
-        description: "",
-        category: "",
-      });
-      loadDeviceTypes(); // Tải lại danh sách
-    } catch (err: any) {
-      console.error(err);
-      // Xử lý lỗi trả về từ Spring Boot (GlobalExceptionHandler)
-      if (err.response && err.response.data) {
-          // Nếu backend trả về message lỗi cụ thể (ví dụ: tên trùng)
-          const message = err.response.data.message || "Lỗi thêm loại thiết bị!";
-          toast.error(message);
-      } else {
-          toast.error("Lỗi kết nối đến máy chủ!");
-      }
-    }
-  };
+  try {
+    await axios.post(API_URL, newType, getAuthHeaders());
+
+    toast.success("Thêm loại thiết bị thành công!");
+    setIsAddOpen(false);
+    setNewType({
+      name: "",
+      manufacturer: "",
+      description: "",
+      category: "",
+    });
+    loadDeviceTypes();
+  } catch (err: any) {
+    const message =
+      err.response?.data?.message || "Lỗi thêm loại thiết bị!";
+    toast.error(message);
+  }
+};
+
 
   // ============== EDIT =================
-  const handleEditType = async () => {
-    if (!selectedType) return;
+const handleEditType = async () => {
+  if (!selectedType) return;
 
-    try {
-      await axios.put(`${API_URL}/${selectedType.id}`, selectedType, getAuthHeaders());
-      toast.success("Cập nhật thành công!");
-      setIsEditOpen(false);
-      loadDeviceTypes();
-    } catch (err: any) {
-        const message = err.response?.data?.message || "Lỗi cập nhật!";
-        toast.error(message);
-    }
-  };
+  if (!validateDeviceType(selectedType)) return;
+
+  try {
+    await axios.put(
+      `${API_URL}/${selectedType.id}`,
+      selectedType,
+      getAuthHeaders()
+    );
+    toast.success("Cập nhật loại thiết bị thành công!");
+    setIsEditOpen(false);
+    loadDeviceTypes();
+  } catch (err: any) {
+    const message =
+      err.response?.data?.message || "Lỗi cập nhật!";
+    toast.error(message);
+  }
+};
+
 
   // ============== DELETE ==============
   const handleDeleteType = async () => {
@@ -386,7 +410,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Hãng sản xuất</label>
+<label className="text-sm font-medium text-gray-700">
+  Hãng sản xuất <span className="text-red-500">*</span>
+</label>
             <input
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.manufacturer}
@@ -398,7 +424,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Danh mục</label>
+<label className="text-sm font-medium text-gray-700">
+  Danh mục <span className="text-red-500">*</span>
+</label>
             <input
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.category}
@@ -410,7 +438,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Mô tả</label>
+<label className="text-sm font-medium text-gray-700">
+  Mô tả <span className="text-red-500">*</span>
+</label>
             <textarea
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.description}

@@ -1,5 +1,6 @@
 import React from "react";
 import ForbiddenPage from "./components/pages/ForbiddenPage";
+import { Toaster } from "sonner";
 
 import {
   BrowserRouter,
@@ -71,6 +72,12 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+          <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        duration={3000}
+      />
       <Routes>
         {/* LANDING PAGE */}
         <Route path="/" element={<LandingPageWrapper />} />

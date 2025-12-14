@@ -40,6 +40,28 @@ const [totalRecords, setTotalRecords] = useState(0);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProp, setSelectedProp] = useState<any>(null);
+const validateProperty = (data: {
+  name: string;
+  unit: string;
+  dataType: string;
+}) => {
+  if (!data.name.trim()) {
+    toast.warning("Vui lòng nhập tên thuộc tính");
+    return false;
+  }
+
+  if (!data.unit.trim()) {
+    toast.warning("Vui lòng nhập đơn vị đo");
+    return false;
+  }
+
+  if (!data.dataType) {
+    toast.warning("Vui lòng chọn kiểu dữ liệu");
+    return false;
+  }
+
+  return true;
+};
 
   // form add
   const [newProp, setNewProp] = useState({
@@ -73,34 +95,40 @@ useEffect(() => {
 }, [page, perPage]);
 
   // ================= CRUD =================
-  const handleAddProp = async () => {
-    if (!newProp.name.trim()) {
-      toast.warning("Tên thuộc tính không được trống");
-      return;
-    }
+const handleAddProp = async () => {
+  if (!validateProperty(newProp)) return;
 
-    try {
-      await axios.post(API_URL, newProp, getAuthHeaders());
-      toast.success("Thêm thuộc tính thành công");
-      setIsAddOpen(false);
-      setNewProp({ name: "", unit: "", dataType: "NUMERIC" });
-      loadProperties();
-    } catch (e: any) {
-      toast.error(e.response?.data?.message || "Lỗi thêm thuộc tính");
-    }
-  };
+  try {
+    await axios.post(API_URL, newProp, getAuthHeaders());
+    toast.success("Thêm thuộc tính thành công");
+    setIsAddOpen(false);
+    setNewProp({ name: "", unit: "", dataType: "NUMERIC" });
+    loadProperties();
+  } catch (e: any) {
+    toast.error(e.response?.data?.message || "Lỗi thêm thuộc tính");
+  }
+};
 
-  const handleEditProp = async () => {
-    if (!selectedProp) return;
-    try {
-      await axios.put(`${API_URL}/${selectedProp.id}`, selectedProp, getAuthHeaders());
-      toast.success("Cập nhật thành công");
-      setIsEditOpen(false);
-      loadProperties();
-    } catch (e: any) {
-      toast.error(e.response?.data?.message || "Lỗi cập nhật");
-    }
-  };
+
+const handleEditProp = async () => {
+  if (!selectedProp) return;
+
+  if (!validateProperty(selectedProp)) return;
+
+  try {
+    await axios.put(
+      `${API_URL}/${selectedProp.id}`,
+      selectedProp,
+      getAuthHeaders()
+    );
+    toast.success("Cập nhật thuộc tính thành công");
+    setIsEditOpen(false);
+    loadProperties();
+  } catch (e: any) {
+    toast.error(e.response?.data?.message || "Lỗi cập nhật");
+  }
+};
+
 
   const handleDeleteProp = async () => {
     try {
@@ -314,7 +342,9 @@ onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Đơn vị đo</label>
+<label className="text-sm font-medium text-gray-700">
+  Đơn vị đo <span className="text-red-500">*</span>
+</label>
             <input
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 outline-none"
               placeholder="VD: °C, %, ppm..."
@@ -323,7 +353,9 @@ onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
 />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Kiểu dữ liệu</label>
+<label className="text-sm font-medium text-gray-700">
+  Kiểu dữ liệu <span className="text-red-500">*</span>
+</label>
             <select
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 outline-none bg-white"
               value={newProp.dataType}
@@ -354,7 +386,9 @@ onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
         {selectedProp && (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Tên thuộc tính</label>
+<label className="text-sm font-medium">
+  Tên thuộc tính <span className="text-red-500">*</span>
+</label>
               <input
                 className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={selectedProp.name}
@@ -362,7 +396,9 @@ onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Đơn vị đo</label>
+<label className="text-sm font-medium">
+  Đơn vị đo <span className="text-red-500">*</span>
+</label>
               <input
                 className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={selectedProp.unit}
@@ -370,7 +406,9 @@ onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Kiểu dữ liệu</label>
+<label className="text-sm font-medium text-gray-700">
+  Kiểu dữ liệu <span className="text-red-500">*</span>
+</label>
               <select
                 className="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
                 value={selectedProp.dataType}

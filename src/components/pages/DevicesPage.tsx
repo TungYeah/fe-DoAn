@@ -1,7 +1,8 @@
 import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner@2.0.3";
+import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import {
   Search,
   Plus,
@@ -102,27 +103,54 @@ export default function DevicesPage() {
     unit: "",
     dataType: "NUMERIC",
   });
+const [allDevices, setAllDevices] = useState<any[]>([]);
 
   // Pagination
-  const [page, setPage] = useState(0);
-  const [perPage] = useState(10);
-  const [totalElements, setTotalElements] = useState(0);
+const [page, setPage] = useState(0);
+const [perPage, setPerPage] = useState(10);
+const [totalPages, setTotalPages] = useState(0);
+const [totalElements, setTotalElements] = useState(0);
 
   // ================= LOAD MOCK DATA ==================
   const loadDevices = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/devices/all`, {
-        params: { page, size: perPage },
+      const res = await axios.get(`${API_BASE}/devices`, {
+        params: {
+          page,
+          size: perPage,
+        },
         ...getAuthHeaders(),
       });
 
-      setDevices(res.data.content || []);
-      setTotalElements(res.data.totalElements || 0);
+setDevices(res.data.content || []);
+setTotalElements(res.data.totalElements || 0);
+setTotalPages(res.data.totalPages || 0);
+
     } catch (err) {
       console.error(err);
       toast.error("Lỗi tải danh sách thiết bị");
     }
   };
+const loadAllDevices = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/devices`, {
+      params: {
+        size: 1000, // hoặc rất lớn
+      },
+      ...getAuthHeaders(),
+    });
+
+    setAllDevices(res.data.content || []);
+  } catch (err) {
+    toast.error("Lỗi tải toàn bộ thiết bị");
+  }
+};
+///Gọi loadAllDevices khi vào tab overview
+useEffect(() => {
+  if (activeTab === "overview") {
+    loadAllDevices();
+  }
+}, [activeTab]);
 
   const loadMetadata = async () => {
     try {
@@ -298,46 +326,91 @@ export default function DevicesPage() {
 
     setIsEditOpen(true);
   };
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast.warning("Vui lòng nhập tên thiết bị");
+      return false;
+    }
+
+    if (!formData.uniqueIdentifier.trim()) {
+      toast.warning("Vui lòng nhập mã định danh thiết bị");
+      return false;
+    }
+
+    if (!formData.deviceTypeId) {
+      toast.warning("Vui lòng chọn loại thiết bị");
+      return false;
+    }
+
+    if (!formData.status) {
+      toast.warning("Vui lòng chọn trạng thái thiết bị");
+      return false;
+    }
+
+    // ===== ĐỊA CHỈ =====
+    if (!selectedProvince) {
+      toast.warning("Vui lòng chọn tỉnh / thành phố");
+      return false;
+    }
+
+    if (!selectedDistrict) {
+      toast.warning("Vui lòng chọn quận / huyện");
+      return false;
+    }
+
+    if (!selectedWard) {
+      toast.warning("Vui lòng chọn xã / phường");
+      return false;
+    }
+
+    // ===== SENSOR =====
+    if (formData.propertyIds.length === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 cảm biến");
+      return false;
+    }
+
+    if (!formData.primaryPropertyId) {
+      toast.warning("Vui lòng chọn cảm biến chính (Dashboard)");
+      return false;
+    }
+
+    if (
+      formData.thresholdWarning === "" ||
+      formData.thresholdWarning === null
+    ) {
+      toast.warning("Vui lòng nhập ngưỡng cảnh báo (Warning)");
+      return false;
+    }
+
+    if (
+      formData.thresholdCritical === "" ||
+      formData.thresholdCritical === null
+    ) {
+      toast.warning("Vui lòng nhập ngưỡng nguy hiểm (Critical)");
+      return false;
+    }
+
+    return true;
+  };
 
   // Submit Device (Add/Edit)
   const handleSubmitDevice = async (isEdit: boolean) => {
-    if (
-      !formData.name ||
-      !formData.uniqueIdentifier ||
-      !formData.deviceTypeId
-    ) {
-      return toast.warning("Vui lòng điền các thông tin bắt buộc (*)");
-    }
+    if (!validateForm()) return;
 
     try {
-      const provinceName = selectedProvince?.name || "";
-      const districtName = selectedDistrict?.name || "";
-      const wardName = selectedWard?.name || "";
+      const provinceName = selectedProvince!.name;
+      const districtName = selectedDistrict!.name;
+      const wardName = selectedWard!.name;
 
       const payload = {
         ...formData,
-
-        province: provinceName || null,
-        district: districtName || null,
-        ward: wardName || null,
-
-        location: [wardName, districtName, provinceName]
-          .filter(Boolean)
-          .join(", "),
-
-        thresholdWarning:
-          formData.thresholdWarning !== ""
-            ? Number(formData.thresholdWarning)
-            : null,
-        thresholdCritical:
-          formData.thresholdCritical !== ""
-            ? Number(formData.thresholdCritical)
-            : null,
-        primaryPropertyId: formData.propertyIds.includes(
-          formData.primaryPropertyId
-        )
-          ? formData.primaryPropertyId
-          : null,
+        province: provinceName,
+        district: districtName,
+        ward: wardName,
+        location: `${wardName}, ${districtName}, ${provinceName}`,
+        thresholdWarning: Number(formData.thresholdWarning),
+        thresholdCritical: Number(formData.thresholdCritical),
+        primaryPropertyId: formData.primaryPropertyId,
       };
 
       if (isEdit && selectedDevice) {
@@ -429,11 +502,23 @@ export default function DevicesPage() {
     });
   };
 
-  const filteredDevices = devices.filter(
-    (d) =>
-      d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredDevices =
+  activeTab === "overview"
+    ? allDevices.filter(
+        (d) =>
+          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          d.uniqueIdentifier
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+      )
+    : devices.filter(
+        (d) =>
+          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          d.uniqueIdentifier
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+      );
+
   const getStatus = (d: any) =>
     d.status ||
     (d.flagStatus === 1
@@ -762,7 +847,31 @@ export default function DevicesPage() {
       {activeTab === "details" && (
         <>
           {/* TABLE */}
+          
           <div className="rounded-2xl border bg-white overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 text-sm text-gray-700 bg-white">
+  <div className="flex items-center gap-2">
+    <span>Hiển thị mỗi trang:</span>
+    <select
+      value={perPage}
+      onChange={(e) => {
+        setPerPage(Number(e.target.value));
+        setPage(0); // ⚠️ reset về trang đầu
+      }}
+      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+    >
+      <option value={5}>5</option>
+      <option value={10}>10</option>
+      <option value={20}>20</option>
+      <option value={50}>50</option>
+    </select>
+  </div>
+
+  <p>
+    Tổng <b>{totalElements}</b> thiết bị
+  </p>
+</div>
+
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
@@ -912,31 +1021,37 @@ export default function DevicesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                      <button
+                      <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg hover:bg-green-50 text-green-700"
                         onClick={() => {
                           setSelectedDevice(dev);
                           setIsViewOpen(true);
                         }}
-                        className="p-2 hover:bg-blue-50 text-blue-600 rounded transition-colors"
                       >
-                        <Activity className="w-4 h-4" />
-                      </button>
+                        <Eye className="w-4 h-4" />
+                      </motion.button>
 
-                      <button
+                      <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg hover:bg-blue-50 text-blue-700"
                         onClick={() => openEdit(dev)}
-                        className="p-2 hover:bg-blue-50 text-blue-600 rounded transition-colors"
                       >
                         <Edit className="w-4 h-4" />
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg hover:bg-red-50 text-red-700"
                         onClick={() => {
                           setSelectedDevice(dev);
                           setIsDeleteOpen(true);
                         }}
-                        className="p-2 hover:bg-red-50 text-red-600 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </motion.button>
                     </TableCell>
                   </motion.tr>
                 ))}
@@ -954,34 +1069,62 @@ export default function DevicesPage() {
             </Table>
 
             <div className="flex justify-between items-center px-6 py-4 text-sm border-t bg-white">
-              <p>
-                Tổng: <b>{totalElements}</b> thiết bị
-              </p>
-              <div className="flex gap-2">
-                <button
-                  disabled={page === 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className={`px-3 py-1 rounded border transition-all ${
-                    page === 0
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  Trước
-                </button>
-                <button
-                  disabled={devices.length < perPage}
-                  onClick={() => setPage((p) => p + 1)}
-                  className={`px-3 py-1 rounded border transition-all ${
-                    devices.length < perPage
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  Sau
-                </button>
-              </div>
-            </div>
+  <p>
+    Trang {page + 1}/{totalPages}
+  </p>
+
+  <div className="flex items-center gap-1">
+    {/* TRƯỚC */}
+    <button
+      disabled={page === 0}
+      onClick={() => setPage((p) => Math.max(0, p - 1))}
+      className={`px-3 py-1 rounded-md border ${
+        page === 0
+          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-50"
+      }`}
+    >
+      Trước
+    </button>
+
+    {/* SỐ TRANG (tối đa 5) */}
+    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+      let pNum = i;
+      if (page > 2) pNum = page - 2 + i;
+      if (pNum >= totalPages) return null;
+
+      return (
+        <button
+          key={pNum}
+          onClick={() => setPage(pNum)}
+          className={`px-3 py-1 rounded-md border ${
+            page === pNum
+              ? "bg-red-600 text-white border-red-600"
+              : "bg-white hover:bg-gray-50"
+          }`}
+        >
+          {pNum + 1}
+        </button>
+      );
+    })}
+
+    {/* SAU */}
+    <button
+      disabled={page >= totalPages - 1}
+      onClick={() =>
+        setPage((p) => Math.min(totalPages - 1, p + 1))
+      }
+      className={`px-3 py-1 rounded-md border ${
+        page >= totalPages - 1
+          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-50"
+      }`}
+    >
+      Sau
+    </button>
+  </div>
+</div>
+
           </div>
         </>
       )}
@@ -1345,7 +1488,7 @@ export default function DevicesPage() {
                 </span>
               </div>
               {/* ===== ĐỊA CHỈ (NGAY DƯỚI HEADER) ===== */}
-              <div className="ml-2 mt-1 text-xs text-gray-500 flex items-center gap-1.5">
+              <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 p-2 rounded">
                 <span>📍 </span>
                 <span>
                   {[
@@ -1371,7 +1514,7 @@ export default function DevicesPage() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(selectedDevice.id);
-                      alert("Đã copy ID");
+                      toast.success("Đã copy ID");
                     }}
                     className="p-2 rounded-lg border hover:bg-gray-100 text-gray-700"
                     title="Copy ID"
@@ -1393,9 +1536,7 @@ export default function DevicesPage() {
               <div className="p-4 border rounded-xl bg-white">
                 <p className="text-xs text-gray-500 mb-1">Tạo bởi</p>
                 <p className="text-sm text-gray-900">
-                  {selectedDevice.createdByName
-                    ? `${selectedDevice.createdByName} (${selectedDevice.createdByEmail})`
-                    : "Không xác định"}
+                  {selectedDevice.createdBy || "Không xác định"}
                 </p>
               </div>
 

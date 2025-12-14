@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
+
 import {
   History,
   Search,
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { Modal } from "../ui/modal";
 import { Description } from "@radix-ui/react-dialog";
+import { toast } from "sonner";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -216,7 +218,7 @@ export default function HistoryPage() {
       setPage(1);
     } catch (e: any) {
       console.error(e);
-      alert(e.message || "Không tải được lịch sử");
+toast.error(e.message || "Không tải được lịch sử");
     } finally {
       setLoading(false);
     }
@@ -276,7 +278,7 @@ export default function HistoryPage() {
   const currentHistory = filtered.slice(startIndex, startIndex + perPage);
 
   const handleExport = (format: "csv" | "excel" | "json") => {
-    alert(`Đang xuất lịch sử dạng ${format.toUpperCase()} (demo)…`);
+toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
   };
 
   const handleViewDetails = (item: HistoryItem) => {
