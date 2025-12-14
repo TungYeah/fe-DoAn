@@ -18,6 +18,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./components/pages/DashboardPage";
 import UsersPage from "./components/pages/UsersPage";
 import DevicesPage from "./components/pages/DevicesPage";
+import PropertiesPage from "./components/pages/PropertiesPage";
 import DeviceTypesPage from "./components/pages/DeviceTypesPage";
 import HistoryPage from "./components/pages/HistoryPage";
 import ImportDataPage from "./components/pages/ImportDataPage";
@@ -201,6 +202,7 @@ function DashboardRoutes() {
         <Route path="charts" element={<ChartsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="devices" element={<DevicesPage />} />
+
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="chat" element={<ChatPage />} />
@@ -230,6 +232,13 @@ function DashboardRoutes() {
           element={
             <AdminRoute>
               <DeviceTypesPage />
+            </AdminRoute>
+          }
+        /><Route
+          path="properties"
+          element={
+            <AdminRoute>
+              <PropertiesPage />
             </AdminRoute>
           }
         />

@@ -11,6 +11,10 @@ import {
   AlertCircle,
   Check,
   ChevronDown,
+  PlusCircle,
+  Edit,
+  Trash,
+  Trash2Icon,
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -140,13 +144,13 @@ export default function NotificationsPage() {
   ) => {
     switch (type) {
       case "success":
-        return <CheckCircle className="w-6 h-6 text-green-600" />;
+        return <PlusCircle className="w-6 h-6 text-green-600" />;
       case "error":
-        return <XCircle className="w-6 h-6 text-red-600" />;
+        return <Trash2 className="w-6 h-6 text-red-600" />;
       case "warning":
         return <AlertCircle className="w-6 h-6 text-yellow-600" />;
       default:
-        return <Info className="w-6 h-6 text-blue-600" />;
+        return <Edit className="w-6 h-6 text-blue-600" />;
     }
   };
   const getNotificationType = (action: string) => {

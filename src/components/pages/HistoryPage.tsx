@@ -14,6 +14,7 @@ import {
   Activity,
   Shield,
   Database,
+  Trash2,
   Edit,
   Plus,
   Ban,
@@ -25,6 +26,7 @@ import {
   ShieldAlert,
   ShieldBan,
   ShieldCheck,
+  PlusCircle,
 } from "lucide-react";
 import { Modal } from "../ui/modal";
 import { Description } from "@radix-ui/react-dialog";
@@ -104,7 +106,7 @@ export default function HistoryPage() {
 
   const getActionIcon = (a: string) =>
     a === "CREATE" ? (
-      <Plus className="w-3 h-3" />
+      <PlusCircle className="w-3 h-3" />
     ) : a === "UPDATE" ? (
       <Edit className="w-3 h-3" />
     ) : a === "DELETE" ? (
@@ -640,9 +642,9 @@ export default function HistoryPage() {
                       <td className="px-4 py-3">
                         {item.action === "CREATE" && (
                           <div className="flex items-center gap-1.5">
-                            <Plus className="w-3.5 h-3.5 text-green-600" />
+                            <PlusCircle className="w-3.5 h-3.5 text-green-600" />
                             <span className="text-xs text-green-600">
-                              CREATE
+                               CREATE
                             </span>
                           </div>
                         )}
@@ -872,7 +874,7 @@ export default function HistoryPage() {
 
            {selectedHistory.action === "CREATE" && (
         <div className="flex items-center gap-1.5">
-          <Plus className="w-3.5 h-3.5 text-green-600" />
+          <PlusCircle className="w-3.5 h-3.5 text-green-600" />
           <span className="text-xs font-medium text-green-700">CREATE</span>
         </div>
       )}

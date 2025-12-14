@@ -21,7 +21,13 @@ import {
   History,
   ListCheck,
   ListCollapse,
+  TableProperties,
+  Layers2,
+  SlidersHorizontal,
+  Tag,
+  ListTree,
 } from "lucide-react";
+import { Layer } from "recharts";
 
 type DashboardLayoutProps = {
   currentPage: string;
@@ -119,7 +125,9 @@ const menuItems = [
   // ADMIN ONLY
   { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
   { id: "devices", label: "Quản lý thiết bị", icon: Cpu},
-  { id: "device-types", label: "Quản lý loại thiết bị", icon: ListCollapse, adminOnly: true },
+  { id: "device-types", label: "Quản lý loại thiết bị", icon: Layers2, adminOnly: true },
+    { id: "properties", label: "Quản lý thuộc tính", icon: ListTree, adminOnly: true },
+
   { id: "revenue", label: "Doanh thu", icon: DollarSign, adminOnly: true },
 
 
