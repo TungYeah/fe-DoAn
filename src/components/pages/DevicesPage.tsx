@@ -103,13 +103,13 @@ export default function DevicesPage() {
     unit: "",
     dataType: "NUMERIC",
   });
-const [allDevices, setAllDevices] = useState<any[]>([]);
+  const [allDevices, setAllDevices] = useState<any[]>([]);
 
   // Pagination
-const [page, setPage] = useState(0);
-const [perPage, setPerPage] = useState(10);
-const [totalPages, setTotalPages] = useState(0);
-const [totalElements, setTotalElements] = useState(0);
+  const [page, setPage] = useState(0);
+  const [perPage, setPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // ================= LOAD MOCK DATA ==================
   const loadDevices = async () => {
@@ -122,35 +122,34 @@ const [totalElements, setTotalElements] = useState(0);
         ...getAuthHeaders(),
       });
 
-setDevices(res.data.content || []);
-setTotalElements(res.data.totalElements || 0);
-setTotalPages(res.data.totalPages || 0);
-
+      setDevices(res.data.content || []);
+      setTotalElements(res.data.totalElements || 0);
+      setTotalPages(res.data.totalPages || 0);
     } catch (err) {
       console.error(err);
       toast.error("Lỗi tải danh sách thiết bị");
     }
   };
-const loadAllDevices = async () => {
-  try {
-    const res = await axios.get(`${API_BASE}/devices`, {
-      params: {
-        size: 1000, // hoặc rất lớn
-      },
-      ...getAuthHeaders(),
-    });
+  const loadAllDevices = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/devices`, {
+        params: {
+          size: 1000, // hoặc rất lớn
+        },
+        ...getAuthHeaders(),
+      });
 
-    setAllDevices(res.data.content || []);
-  } catch (err) {
-    toast.error("Lỗi tải toàn bộ thiết bị");
-  }
-};
-///Gọi loadAllDevices khi vào tab overview
-useEffect(() => {
-  if (activeTab === "overview") {
-    loadAllDevices();
-  }
-}, [activeTab]);
+      setAllDevices(res.data.content || []);
+    } catch (err) {
+      toast.error("Lỗi tải toàn bộ thiết bị");
+    }
+  };
+  ///Gọi loadAllDevices khi vào tab overview
+  useEffect(() => {
+    if (activeTab === "overview") {
+      loadAllDevices();
+    }
+  }, [activeTab]);
 
   const loadMetadata = async () => {
     try {
@@ -502,22 +501,18 @@ useEffect(() => {
     });
   };
 
-const filteredDevices =
-  activeTab === "overview"
-    ? allDevices.filter(
-        (d) =>
-          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.uniqueIdentifier
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      )
-    : devices.filter(
-        (d) =>
-          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.uniqueIdentifier
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
+  const filteredDevices =
+    activeTab === "overview"
+      ? allDevices.filter(
+          (d) =>
+            d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : devices.filter(
+          (d) =>
+            d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
   const getStatus = (d: any) =>
     d.status ||
@@ -847,30 +842,30 @@ const filteredDevices =
       {activeTab === "details" && (
         <>
           {/* TABLE */}
-          
+
           <div className="rounded-2xl border bg-white overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 text-sm text-gray-700 bg-white">
-  <div className="flex items-center gap-2">
-    <span>Hiển thị mỗi trang:</span>
-    <select
-      value={perPage}
-      onChange={(e) => {
-        setPerPage(Number(e.target.value));
-        setPage(0); // ⚠️ reset về trang đầu
-      }}
-      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
-    >
-      <option value={5}>5</option>
-      <option value={10}>10</option>
-      <option value={20}>20</option>
-      <option value={50}>50</option>
-    </select>
-  </div>
+              <div className="flex items-center gap-2">
+                <span>Hiển thị mỗi trang:</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setPage(0); // ⚠️ reset về trang đầu
+                  }}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
 
-  <p>
-    Tổng <b>{totalElements}</b> thiết bị
-  </p>
-</div>
+              <p>
+                Tổng <b>{totalElements}</b> thiết bị
+              </p>
+            </div>
 
             <Table>
               <TableHeader className="bg-gray-50">
@@ -878,6 +873,8 @@ const filteredDevices =
                   <TableHead className="px-6 py-4">Thiết bị</TableHead>
                   <TableHead>Loại</TableHead>
                   <TableHead>Trạng thái</TableHead>
+                  <TableHead>Người tạo</TableHead>
+
                   <TableHead>Cảm biến (Properties)</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
@@ -920,6 +917,7 @@ const filteredDevices =
                         </span>
                       </strong>
                     </TableCell>
+                    <TableCell> {dev.createdBy || "Không xác định"}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {dev.sensors?.map((s: any) => {
@@ -1022,9 +1020,9 @@ const filteredDevices =
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-green-50 text-green-700"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg hover:bg-green-50 text-green-700"
                         onClick={() => {
                           setSelectedDevice(dev);
                           setIsViewOpen(true);
@@ -1034,17 +1032,17 @@ const filteredDevices =
                       </motion.button>
 
                       <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-blue-50 text-blue-700"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg hover:bg-blue-50 text-blue-700"
                         onClick={() => openEdit(dev)}
                       >
                         <Edit className="w-4 h-4" />
                       </motion.button>
                       <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-red-50 text-red-700"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg hover:bg-red-50 text-red-700"
                         onClick={() => {
                           setSelectedDevice(dev);
                           setIsDeleteOpen(true);
@@ -1069,62 +1067,61 @@ const filteredDevices =
             </Table>
 
             <div className="flex justify-between items-center px-6 py-4 text-sm border-t bg-white">
-  <p>
-    Trang {page + 1}/{totalPages}
-  </p>
+              <p>
+                Trang {page + 1}/{totalPages}
+              </p>
 
-  <div className="flex items-center gap-1">
-    {/* TRƯỚC */}
-    <button
-      disabled={page === 0}
-      onClick={() => setPage((p) => Math.max(0, p - 1))}
-      className={`px-3 py-1 rounded-md border ${
-        page === 0
-          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "bg-white hover:bg-gray-50"
-      }`}
-    >
-      Trước
-    </button>
+              <div className="flex items-center gap-1">
+                {/* TRƯỚC */}
+                <button
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  className={`px-3 py-1 rounded-md border ${
+                    page === 0
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  Trước
+                </button>
 
-    {/* SỐ TRANG (tối đa 5) */}
-    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-      let pNum = i;
-      if (page > 2) pNum = page - 2 + i;
-      if (pNum >= totalPages) return null;
+                {/* SỐ TRANG (tối đa 5) */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pNum = i;
+                  if (page > 2) pNum = page - 2 + i;
+                  if (pNum >= totalPages) return null;
 
-      return (
-        <button
-          key={pNum}
-          onClick={() => setPage(pNum)}
-          className={`px-3 py-1 rounded-md border ${
-            page === pNum
-              ? "bg-red-600 text-white border-red-600"
-              : "bg-white hover:bg-gray-50"
-          }`}
-        >
-          {pNum + 1}
-        </button>
-      );
-    })}
+                  return (
+                    <button
+                      key={pNum}
+                      onClick={() => setPage(pNum)}
+                      className={`px-3 py-1 rounded-md border ${
+                        page === pNum
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      {pNum + 1}
+                    </button>
+                  );
+                })}
 
-    {/* SAU */}
-    <button
-      disabled={page >= totalPages - 1}
-      onClick={() =>
-        setPage((p) => Math.min(totalPages - 1, p + 1))
-      }
-      className={`px-3 py-1 rounded-md border ${
-        page >= totalPages - 1
-          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "bg-white hover:bg-gray-50"
-      }`}
-    >
-      Sau
-    </button>
-  </div>
-</div>
-
+                {/* SAU */}
+                <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() =>
+                    setPage((p) => Math.min(totalPages - 1, p + 1))
+                  }
+                  className={`px-3 py-1 rounded-md border ${
+                    page >= totalPages - 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
           </div>
         </>
       )}

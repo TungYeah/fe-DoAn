@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const [selectedMetric, setSelectedMetric] = useState<"temp" | "humidity">(
     "temp"
   );
-
+  const [animatedTotalRecords, setAnimatedTotalRecords] = useState(0);
   const [chartRange, setChartRange] = useState<"24h" | "7d" | "30d">("24h");
 
   const token = localStorage.getItem("token");
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
     {
       label: "Tổng dữ liệu",
-      value: totalRecords.toLocaleString(),
+      value: animatedTotalRecords.toLocaleString(),
       change: "Data Lake",
       trend: "up",
       icon: Database,
@@ -178,6 +178,35 @@ export default function DashboardPage() {
         setTotalRecords(0);
       });
   }, [CURRENT_USER_ID]);
+  useEffect(() => {
+    let start = 0;
+    const end = totalRecords;
+
+    if (end === 0) {
+      setAnimatedTotalRecords(0);
+      return;
+    }
+
+    const duration = 800; // ms
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // easeOutCubic cho mượt
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedTotalRecords(Math.floor(ease * end));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [totalRecords]);
+
   useEffect(() => {
     const fetchDashboardDevices = async () => {
       try {
@@ -375,9 +404,17 @@ export default function DashboardPage() {
                   {stat.change}
                 </span>
               </div>
-
               <p className="text-gray-600 text-sm">{stat.label}</p>
-              <p className="text-3xl text-gray-900">{stat.value}</p>
+              <p className="text-3xl text-gray-900">
+                <motion.span
+                  key={animatedTotalRecords}
+                  initial={{ scale: 0.95, opacity: 0.6 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {stat.value}
+                </motion.span>
+              </p>{" "}
             </motion.div>
           );
         })}
@@ -528,7 +565,7 @@ export default function DashboardPage() {
                         </p>
 
                         <p className="text-sm text-gray-400 break-all">
-                          ID: {d.uniqueIdentifier || d.id}
+                          UNIQUE ID: {d.uniqueIdentifier || d.id}
                         </p>
                         <p className="text-xs text-gray-400 break-all">
                           {d.description || "Không có mô tả"}

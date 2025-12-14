@@ -19,31 +19,65 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [registerError, setRegisterError] = useState("");
+
+  // kiểm tra đkien
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.fullName.trim() || formData.fullName.length < 3) {
+      newErrors.fullName = "Họ tên phải có ít nhất 3 ký tự";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Email không hợp lệ";
+    }
+
+    if (!formData.organization) {
+      newErrors.organization = "Vui lòng chọn khoa / đơn vị";
+    }
+
+    if (formData.password.length < 8) {
+      newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+    }
+
+    if (!/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      newErrors.password = "Mật khẩu phải chứa cả chữ và số";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // =====================
   // SUBMIT REGISTER
   // =====================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      setRegisterError("Mật khẩu và xác nhận mật khẩu không khớp!");
+    if (!validateForm()) {
       return;
-    } 
-
+    }
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          unit: formData.organization, // ENUM CNTT / DTVT
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:8080/api/v1/auth/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            email: formData.email,
+            password: formData.password,
+            unit: formData.organization, // ENUM CNTT / DTVT
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -53,13 +87,12 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
       }
 
       // Không lưu token – backend không trả token khi đăng ký
-toast.success(
-  data.message || "Đăng ký thành công. Vui lòng kiểm tra email!"
-);
+      toast.success(
+        data.message || "Đăng ký thành công. Vui lòng kiểm tra email!"
+      );
 
       setRegisterError("");
       onNavigate("login"); // quay lại màn login
-
     } catch (error) {
       console.error(error);
       setRegisterError("Không thể kết nối tới server!");
@@ -68,7 +101,6 @@ toast.success(
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-6">
-
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -84,9 +116,8 @@ toast.success(
       </div>
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        
         {/* Left side giữ nguyên nếu muốn */}
-<motion.div
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -95,7 +126,10 @@ toast.success(
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 bg-gradient-to-br from-red-700 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                <div className="text-white text-xl tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+                <div
+                  className="text-white text-xl tracking-wide"
+                  style={{ fontFamily: "Arial Black, sans-serif" }}
+                >
                   PTIT
                 </div>
               </div>
@@ -144,14 +178,12 @@ toast.success(
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-red-100">
-            
             <div className="mb-8">
               <h3 className="text-2xl text-gray-900 mb-2">Đăng ký tài khoản</h3>
               <p className="text-gray-600">Điền thông tin để tạo tài khoản</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-
               {/* Full name */}
               <div>
                 <label className="block text-gray-700 mb-2">Họ và tên</label>
@@ -160,12 +192,17 @@ toast.success(
                   <input
                     type="text"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
                     placeholder="Nguyễn Văn A"
                     className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl"
                     required
                   />
                 </div>
+                {errors.fullName && (
+                  <p className="text-sm text-red-600 mt-1">{errors.fullName}</p>
+                )}
               </div>
 
               {/* Email */}
@@ -176,23 +213,32 @@ toast.success(
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="email@example.com"
                     className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl"
                     required
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-sm text-red-600 mt-1">{errors.email}</p>
+                )}
               </div>
 
               {/* Organization */}
               <div>
-                <label className="block text-gray-700 mb-2">Đơn vị / Khoa</label>
+                <label className="block text-gray-700 mb-2">
+                  Đơn vị / Khoa
+                </label>
                 <div className="relative">
                   <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
 
                   <select
                     value={formData.organization}
-                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, organization: e.target.value })
+                    }
                     className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl bg-white"
                     required
                   >
@@ -201,6 +247,11 @@ toast.success(
                     <option value="DTVT">Khoa Điện Tử Viễn Thông</option>
                   </select>
                 </div>
+                {errors.organization && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.organization}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -211,7 +262,9 @@ toast.success(
                   <input
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     placeholder="••••••••"
                     className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl"
                     required
@@ -224,22 +277,37 @@ toast.success(
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600 mt-1">{errors.password}</p>
+                )}
               </div>
 
               {/* Confirm password */}
               <div>
-                <label className="block text-gray-700 mb-2">Xác nhận mật khẩu</label>
+                <label className="block text-gray-700 mb-2">
+                  Xác nhận mật khẩu
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     placeholder="••••••••"
                     className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl"
                     required
                   />
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Error */}
@@ -264,14 +332,21 @@ toast.success(
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Đã có tài khoản?
-                <button onClick={() => onNavigate("login")} className="text-red-600 hover:text-red-700">
-                  {" "}Đăng nhập
+                <button
+                  onClick={() => onNavigate("login")}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  {" "}
+                  Đăng nhập
                 </button>
               </p>
             </div>
 
             <div className="mt-4 text-center">
-              <button onClick={() => onNavigate("landing")} className="text-sm text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => onNavigate("landing")}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
                 ← Quay lại trang chủ
               </button>
             </div>
