@@ -1,3 +1,8 @@
+import {
+  HISTORY_TYPE_MAP,
+  ACTION_MAP,
+  HISTORY_DESCRIPTION_MAP,
+} from "@/utils/historyMaps";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
@@ -58,6 +63,17 @@ export default function DashboardPage() {
   const CURRENT_USER_ID = user?.id || currentUser?.id;
   const roleList = user?.roles || currentUser?.roles || [];
   const isAdmin = roleList.includes("ROLE_ADMIN");
+  // =========================
+  // TRANSLATE HELPERS
+  // =========================
+  const translateHistoryType = (key?: string) =>
+    (key && HISTORY_TYPE_MAP[key]) || key || "Hoạt động";
+
+  const translateAction = (key?: string) =>
+    (key && ACTION_MAP[key]) || key || "Hành động";
+
+  const translateDescription = (key?: string) =>
+    (key && HISTORY_DESCRIPTION_MAP[key]) || key || "Không có mô tả";
 
   const userStatsData = [
     {
@@ -613,11 +629,11 @@ export default function DashboardPage() {
                 {/* CONTENT */}
                 <div className="flex-1">
                   <p className="text-sm text-gray-900 font-medium">
-                    {a.historyType?.replace(/_/g, " ") || "HOẠT ĐỘNG"}
+                    {translateHistoryType(a.historyType)}
                   </p>
 
                   <p className="text-xs text-gray-600">
-                    {a.description || "Không có mô tả"}
+                    {translateDescription(a.description)} #{a.identify.slice(0, 12)}…
                   </p>
 
                   <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">

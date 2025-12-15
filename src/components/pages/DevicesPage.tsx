@@ -80,6 +80,10 @@ export default function DevicesPage() {
   const [isQuickAddPropOpen, setIsQuickAddPropOpen] = useState(false);
 
   const [selectedDevice, setSelectedDevice] = useState<any>(null);
+const reloadDevices = async () => {
+  await loadDevices();      // cho tab details
+  await loadAllDevices();   // cho tab overview
+};
 
   // Form State cho Device
   const [formData, setFormData] = useState({
@@ -426,7 +430,7 @@ export default function DevicesPage() {
         setIsAddOpen(false);
       }
 
-      loadDevices();
+await reloadDevices();
       resetForm();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Có lỗi xảy ra");
@@ -469,7 +473,7 @@ export default function DevicesPage() {
       );
       toast.success("Đã xóa thiết bị");
       setIsDeleteOpen(false);
-      loadDevices();
+await reloadDevices();
     } catch {
       toast.error("Xóa thất bại");
     }

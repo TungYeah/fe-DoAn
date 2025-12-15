@@ -24,6 +24,8 @@ import DeviceTypesPage from "./components/pages/DeviceTypesPage";
 import HistoryPage from "./components/pages/HistoryPage";
 import ImportDataPage from "./components/pages/ImportDataPage";
 import QueryPage from "./components/pages/QueryPage";
+import QueryPage1 from "./components/pages/QueryPage1";
+
 import RevenuePage from "./components/pages/RevenuePage";
 import ChartsPage from "./components/pages/ChartsPage";
 import ProfilePage from "./components/pages/ProfilePage";
@@ -206,6 +208,8 @@ function DashboardRoutes() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="query" element={<QueryPage />} />
+                <Route path="query1" element={<QueryPage1 />} />
+
         <Route path="charts" element={<ChartsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="devices" element={<DevicesPage />} />

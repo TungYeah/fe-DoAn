@@ -1,3 +1,9 @@
+import {
+  HISTORY_TYPE_MAP,
+  ACTION_MAP,
+  HISTORY_DESCRIPTION_MAP,
+} from "@/utils/historyMaps";
+
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -73,6 +79,7 @@ export default function NotificationsPage() {
           historyType: h.historyType ?? "",
           description: h.description ?? "",
           createdBy: h.createdBy ?? "",
+          identify: h.identify ?? "",
           createDate: h.createDate,
           read: false,
         }))
@@ -182,6 +189,14 @@ export default function NotificationsPage() {
     ) : (
       <Info className="text-gray-600 w-6 h-6" />
     );
+  const translateHistoryType = (key: string) =>
+    HISTORY_TYPE_MAP[key] || key || "Không xác định";
+
+  const translateAction = (key: string) =>
+    ACTION_MAP[key] || key || "Hành động";
+
+  const translateDescription = (desc: string) =>
+    HISTORY_DESCRIPTION_MAP[desc] || desc || "Không có mô tả";
 
   // =========================
   // RENDER
@@ -189,10 +204,12 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-       <motion.div
-              initial={{ opacity: 0, y: -15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }} className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between"
+      >
         <div>
           <h1 className="text-3xl text-gray-900 mb-2">Thông báo</h1>
           <p className="text-gray-600">
@@ -200,15 +217,15 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={loadNotifications}
-            className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          >
-            <RefreshCcw className="w-5 h-5" />
-            Làm mới
-          </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={loadNotifications}
+          className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+        >
+          <RefreshCcw className="w-5 h-5" />
+          Làm mới
+        </motion.button>
       </motion.div>
 
       {/* =========================
@@ -343,113 +360,111 @@ export default function NotificationsPage() {
       </div>
 
       {/* LIST */}
-{/* LIST */} 
-<div className="space-y-4">
-  {loading && <p className="text-center">Đang tải...</p>}
+      {/* LIST */}
+      <div className="space-y-4">
+        {loading && <p className="text-center">Đang tải...</p>}
 
-  {!loading && filtered.length === 0 && (
-    <div className="bg-white border rounded-xl p-10 text-center">
-      <Bell className="w-16 h-16 mx-auto text-gray-400" />
-      <p className="text-gray-600 mt-3">Không có thông báo</p>
-    </div>
-  )}
-
-  {!loading &&
-    filtered.slice(0, visible).map((n, idx) => {
-      const type = getNotificationType(n.action);
-
-      return (
-        <motion.div
-          key={n.id}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: idx * 0.03 }}
-          className={`relative flex gap-4 p-4 rounded-xl bg-white border hover:shadow-md ${
-            type === "success"
-              ? "border-green-200"
-              : type === "warning"
-              ? "border-yellow-200"
-              : type === "error"
-              ? "border-red-200"
-              : "border-blue-200"
-          }`}
-        >
-          {/* TIME AGO – góc phải */}
-          <div className="absolute right-4 top-3 text-sm text-gray-500 flex gap-2 items-center">
-            <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-            {timeAgo(n.createDate)}
+        {!loading && filtered.length === 0 && (
+          <div className="bg-white border rounded-xl p-10 text-center">
+            <Bell className="w-16 h-16 mx-auto text-gray-400" />
+            <p className="text-gray-600 mt-3">Không có thông báo</p>
           </div>
+        )}
 
-          {/* ICON – có màu */}
-          <div
-            className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${
-              type === "success"
-                ? "bg-green-100 text-green-600"
-                : type === "warning"
-                ? "bg-yellow-100 text-yellow-600"
-                : type === "error"
-                ? "bg-red-100 text-red-600"
-                : "bg-blue-100 text-blue-600"
-            }`}
-          >
-            {getNotificationIcon(type)}
-          </div>
+        {!loading &&
+          filtered.slice(0, visible).map((n, idx) => {
+            const type = getNotificationType(n.action);
 
-          {/* CONTENT */}
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-lg">
-              {n.historyType.replace(/_/g, " ")}
-            </h3>
-
-            <p className="text-gray-800 mt-1 font-medium">
-              Người thực hiện:{" "}
-              <span className="text-blue-700">{n.createdBy}</span>
-            </p>
-
-            <p className="text-gray-700 mt-1">
-              {n.description || "Không có mô tả"}
-            </p>
-
-            {/* ACTION BUTTONS */}
-            <div className="flex gap-3 mt-3">
-              {!n.read && (
-                <button
-                  onClick={() => markAsRead(n.id)}
-                  className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1"
-                >
-                  <Check className="w-4 h-4" /> Đánh dấu đã đọc
-                </button>
-              )}
-
-              <button
-                onClick={() => deleteNotification(n.id)}
-                className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1"
+            return (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                className={`relative flex gap-4 p-4 rounded-xl bg-white border hover:shadow-md ${
+                  type === "success"
+                    ? "border-green-200"
+                    : type === "warning"
+                    ? "border-yellow-200"
+                    : type === "error"
+                    ? "border-red-200"
+                    : "border-blue-200"
+                }`}
               >
-                <Trash2 className="w-4 h-4" /> Xóa
-              </button>
-            </div>
+                {/* TIME AGO – góc phải */}
+                <div className="absolute right-4 top-3 text-sm text-gray-500 flex gap-2 items-center">
+                  <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+                  {timeAgo(n.createDate)}
+                </div>
+
+                {/* ICON – có màu */}
+                <div
+                  className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${
+                    type === "success"
+                      ? "bg-green-100 text-green-600"
+                      : type === "warning"
+                      ? "bg-yellow-100 text-yellow-600"
+                      : type === "error"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  {getNotificationIcon(type)}
+                </div>
+
+                {/* CONTENT */}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-lg">
+                    {translateHistoryType(n.historyType)}
+                  </h3>
+
+                  <p className="text-gray-800 mt-1 font-medium">
+                    Người thực hiện:{" "}
+                    <span className="text-blue-700">{n.createdBy}</span>
+                  </p>
+
+                  <p className="text-gray-700 mt-1">
+                    {translateDescription(n.description)} #{n.identify}
+                  </p>
+
+                  {/* ACTION BUTTONS */}
+                  <div className="flex gap-3 mt-3">
+                    {!n.read && (
+                      <button
+                        onClick={() => markAsRead(n.id)}
+                        className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1"
+                      >
+                        <Check className="w-4 h-4" /> Đánh dấu đã đọc
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => deleteNotification(n.id)}
+                      className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1"
+                    >
+                      <Trash2 className="w-4 h-4" /> Xóa
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+
+        {/* NÚT XEM THÊM */}
+        {!loading && visible < filtered.length && (
+          <div className="flex justify-center mt-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setVisible((v) => v + 10)}
+              className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-600 text-red rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            >
+              <ChevronDown className="w-5 h-5" />
+              Xem thêm
+            </motion.button>
           </div>
-        </motion.div>
-      );
-    })}
-
-  {/* NÚT XEM THÊM */}
-  {!loading && visible < filtered.length && (
-    <div className="flex justify-center mt-4">
-
-                <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-        onClick={() => setVisible((v) => v + 10)}
-            className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-600 text-red rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          >
-            <ChevronDown className="w-5 h-5" />
-            Xem thêm
-          </motion.button>
-    </div>
-  )}
-</div>
-
+        )}
+      </div>
     </div>
   );
 }

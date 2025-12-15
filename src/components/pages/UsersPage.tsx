@@ -90,16 +90,19 @@ export default function UsersPage() {
   const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false); /// block
   const [togglingStatus, setTogglingStatus] = useState(false);
 
+  const [deviceCountMap, setDeviceCountMap] = useState<Record<string, number>>(
+    {}
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   // Phân trang
- // Pagination (BE)
-const [page, setPage] = useState(0); // ⚠️ backend bắt đầu từ 0
-const [size, setSize] = useState(10);
+  // Pagination (BE)
+  const [page, setPage] = useState(0); // ⚠️ backend bắt đầu từ 0
+  const [size, setSize] = useState(10);
 
-const [totalElements, setTotalElements] = useState(0);
-const [totalPages, setTotalPages] = useState(0);
-
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -379,83 +382,107 @@ const [totalPages, setTotalPages] = useState(0);
     }
   };
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  const fetchUsers = async () => {
-    try {
-      setLoadingUsers(true);
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/admin/users?page=${page}&size=${size}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/admin/users?page=${page}&size=${size}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (!res.ok) throw new Error("Fetch users failed");
+        if (!res.ok) throw new Error("Fetch users failed");
 
-      const data = await res.json();
+        const data = await res.json();
 
-      const mappedUsers: UserItem[] = (data.content || []).map((u: any) => {
-        const joinDate = u.createdAt
-          ? new Date(u.createdAt).toLocaleString("vi-VN")
-          : "";
+        const mappedUsers: UserItem[] = (data.content || []).map((u: any) => {
+          const joinDate = u.createdAt
+            ? new Date(u.createdAt).toLocaleString("vi-VN")
+            : "";
 
-        const isLocked = u.locked === true || u.locked === 1;
-        const isDeactivated = u.deactivated === true || u.deactivated === 1;
+          const isLocked = u.locked === true || u.locked === 1;
+          const isDeactivated = u.deactivated === true || u.deactivated === 1;
 
-        let status: "active" | "inactive" = "active";
-        let statusLabel = "Hoạt động";
+          let status: "active" | "inactive" = "active";
+          let statusLabel = "Hoạt động";
 
-        if (isLocked || isDeactivated) {
-          status = "inactive";
-          statusLabel = isLocked
-            ? "Bị Admin chặn"
-            : "Người dùng khóa tài khoản";
-        }
+          if (isLocked || isDeactivated) {
+            status = "inactive";
+            statusLabel = isLocked
+              ? "Bị Admin chặn"
+              : "Người dùng khóa tài khoản";
+          }
 
-        return {
-          id: u.id,
-          name: u.fullName ?? "No name",
-          email: u.email,
-          role: u.roles?.includes("ROLE_ADMIN")
-            ? "ROLE_ADMIN"
-            : "ROLE_USER",
-          unit: u.unit ?? "Không rõ",
+          return {
+            id: u.id,
+            name: u.fullName ?? "No name",
+            email: u.email,
+            role: u.roles?.includes("ROLE_ADMIN") ? "ROLE_ADMIN" : "ROLE_USER",
+            unit: u.unit ?? "Không rõ",
 
-          status,
-          statusLabel,
-          locked: isLocked,
-          deactivated: isDeactivated,
+            status,
+            statusLabel,
+            locked: isLocked,
+            deactivated: isDeactivated,
 
-          devices: u.devicesCount ?? 0,
-          joinDate,
-          enabled: u.enabled ?? null,
-          activationDate: u.enabled ? joinDate : "Chưa kích hoạt",
-          lastActive: u.lastActive
-            ? new Date(u.lastActive).toLocaleString("vi-VN")
-            : "Chưa ghi nhận",
-        };
+            devices: u.devicesCount ?? 0,
+            joinDate,
+            enabled: u.enabled ?? null,
+            activationDate: u.enabled ? joinDate : "Chưa kích hoạt",
+            lastActive: u.lastActive
+              ? new Date(u.lastActive).toLocaleString("vi-VN")
+              : "Chưa ghi nhận",
+          };
+        });
+
+        setUsers(mappedUsers);
+        setTotalElements(data.totalElements);
+        setTotalPages(data.totalPages);
+      } catch (e) {
+        toast.error("Không tải được danh sách người dùng");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, [page, size]);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("http://localhost:8080/api/v1/iot/devices/all?page=0&size=10000", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const list = data.content || [];
+        const map: Record<string, number> = {};
+
+        list.forEach((d: any) => {
+          const email = d.createdBy;
+          if (!email) return;
+          map[email] = (map[email] || 0) + 1;
+        });
+
+        setDeviceCountMap(map);
+      })
+      .catch((err) => {
+        console.error("Lỗi load devices:", err);
+        setDeviceCountMap({});
       });
-
-      setUsers(mappedUsers);
-      setTotalElements(data.totalElements);
-      setTotalPages(data.totalPages);
-    } catch (e) {
-      toast.error("Không tải được danh sách người dùng");
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
-  fetchUsers();
-}, [page, size]);
-
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -504,7 +531,7 @@ useEffect(() => {
   // mỗi lần đổi search / role thì về trang 1
   useEffect(() => {
     setPage(0);
-}, [searchTerm, selectedRole, size]);
+  }, [searchTerm, selectedRole, size]);
 
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     toast.info(`Đang xuất danh sách user dạng ${format.toUpperCase()}...`);
@@ -781,9 +808,9 @@ useEffect(() => {
 
                   {/* Thiết bị */}
                   <td className="px-6 py-4">
-                    <span className="text-gray-900">
-                      {user.devices} thiết bị
-                    </span>
+                    <p className="text-sm text-gray-900">
+                      {deviceCountMap[user.email] || 0} thiết bị
+                    </p>
                   </td>
 
                   {/* Ngày tham gia */}
@@ -793,7 +820,7 @@ useEffect(() => {
 
                   {/* Ngày kích hoạt */}
                   <td className="px-6 py-4 text-gray-600">
-  {user.activationDate}
+                    {user.activationDate}
                   </td>
 
                   {/* Thao tác */}
@@ -855,78 +882,76 @@ useEffect(() => {
         </div>
 
         {/* Pagination */}
-{totalPages > 1 && (
-  <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
-    <p>
-      Trang {page + 1} / {totalPages} — Tổng {totalElements} người dùng
-    </p>
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
+            <p>
+              Trang {page + 1} / {totalPages} — Tổng {totalElements} người dùng
+            </p>
 
-    <div className="flex items-center gap-1">
-      {/* Prev */}
-      <button
-        disabled={page === 0}
-        onClick={() => setPage((p) => Math.max(0, p - 1))}
-        className="px-3 py-1 rounded-md border disabled:opacity-40"
-      >
-        Trước
-      </button>
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="px-3 py-1 rounded-md border disabled:opacity-40"
+              >
+                Trước
+              </button>
 
-      {/* Page numbers + ... */}
-      {(() => {
-        const arr: (number | string)[] = [];
+              {/* Page numbers + ... */}
+              {(() => {
+                const arr: (number | string)[] = [];
 
-        if (totalPages <= 5) {
-          // ít trang → hiển thị hết
-          for (let i = 0; i < totalPages; i++) arr.push(i);
-        } else {
-          arr.push(0); // trang đầu
+                if (totalPages <= 5) {
+                  // ít trang → hiển thị hết
+                  for (let i = 0; i < totalPages; i++) arr.push(i);
+                } else {
+                  arr.push(0); // trang đầu
 
-          if (page > 2) arr.push("...");
+                  if (page > 2) arr.push("...");
 
-          const middle = [page - 1, page, page + 1].filter(
-            (p) => p > 0 && p < totalPages - 1
-          );
-          arr.push(...middle);
+                  const middle = [page - 1, page, page + 1].filter(
+                    (p) => p > 0 && p < totalPages - 1
+                  );
+                  arr.push(...middle);
 
-          if (page < totalPages - 3) arr.push("...");
+                  if (page < totalPages - 3) arr.push("...");
 
-          arr.push(totalPages - 1); // trang cuối
-        }
+                  arr.push(totalPages - 1); // trang cuối
+                }
 
-        return arr.map((p, i) =>
-          p === "..." ? (
-            <span key={i} className="px-2 text-gray-400">
-              ...
-            </span>
-          ) : (
-            <button
-              key={i}
-              onClick={() => setPage(p as number)}
-              className={`px-3 py-1 rounded-md border ${
-                p === page
-                  ? "bg-red-600 text-white border-red-600"
-                  : "bg-white hover:bg-gray-50"
-              }`}
-            >
-              {(p as number) + 1}
-            </button>
-          )
-        );
-      })()}
+                return arr.map((p, i) =>
+                  p === "..." ? (
+                    <span key={i} className="px-2 text-gray-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => setPage(p as number)}
+                      className={`px-3 py-1 rounded-md border ${
+                        p === page
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      {(p as number) + 1}
+                    </button>
+                  )
+                );
+              })()}
 
-      {/* Next */}
-      <button
-        disabled={page + 1 >= totalPages}
-        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-        className="px-3 py-1 rounded-md border disabled:opacity-40"
-      >
-        Sau
-      </button>
-    </div>
-  </div>
-)}
-
-
+              {/* Next */}
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                className="px-3 py-1 rounded-md border disabled:opacity-40"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/*  modal xem chi tiết  */}

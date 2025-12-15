@@ -1,3 +1,8 @@
+import {
+  HISTORY_TYPE_MAP,
+  ACTION_MAP,
+  HISTORY_DESCRIPTION_MAP,
+} from "@/utils/historyMaps";
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
@@ -117,16 +122,33 @@ export default function HistoryPage() {
       <Activity className="w-3 h-3" />
     );
 
-  const getTypeColor = (t: string) =>
-    t === "USER_MANAGEMENT"
-      ? "bg-purple-100 text-purple-700"
-      : t === "DEVICE_MANAGEMENT"
-      ? "bg-orange-100 text-orange-700"
-      : t === "PROFILE_UPDATE"
-      ? "bg-cyan-100 text-cyan-700"
-      : t === "SETTINGS"
-      ? "bg-pink-100 text-pink-700"
-      : "bg-gray-100 text-gray-700";
+const getTypeColor = (t: string) => {
+  switch (t) {
+    case "USER_MANAGEMENT":
+      return "bg-purple-100 text-purple-700";
+
+    case "DEVICE_MANAGEMENT":
+      return "bg-blue-100 text-blue-700";
+
+    case "PROPERTY_MANAGEMENT":
+      return "bg-gray-100 text-gray-700";
+
+    case "DEVICE_TYPE_MANAGEMENT":
+      return "bg-red-100 text-red-700";
+
+    case "AUTH":
+      return "bg-indigo-100 text-indigo-700";
+
+    case "SYSTEM":
+      return "bg-slate-100 text-slate-700";
+
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+};
+
+
+
 
   const getDateParts = (iso?: string) => {
     if (!iso) return { date: "", time: "" };
@@ -157,6 +179,18 @@ export default function HistoryPage() {
     deletes: history.filter((h) => h.action === "DELETE").length,
     today: history.filter((h) => isToday(h.createDate)).length,
   };
+  // ============================
+  // TRANSLATE HELPERS
+  // ============================
+
+  const translateHistoryType = (key?: string) =>
+    (key && HISTORY_TYPE_MAP[key]) || key || "Không xác định";
+
+  const translateAction = (key?: string) =>
+    (key && ACTION_MAP[key]) || key || "Hành động";
+
+  const translateDescription = (desc?: string) =>
+    (desc && HISTORY_DESCRIPTION_MAP[desc]) || desc || "Không có mô tả";
 
   // ============================
   // load data
@@ -218,7 +252,7 @@ export default function HistoryPage() {
       setPage(1);
     } catch (e: any) {
       console.error(e);
-toast.error(e.message || "Không tải được lịch sử");
+      toast.error(e.message || "Không tải được lịch sử");
     } finally {
       setLoading(false);
     }
@@ -278,7 +312,7 @@ toast.error(e.message || "Không tải được lịch sử");
   const currentHistory = filtered.slice(startIndex, startIndex + perPage);
 
   const handleExport = (format: "csv" | "excel" | "json") => {
-toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
+    toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
   };
 
   const handleViewDetails = (item: HistoryItem) => {
@@ -646,7 +680,7 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                           <div className="flex items-center gap-1.5">
                             <PlusCircle className="w-3.5 h-3.5 text-green-600" />
                             <span className="text-xs text-green-600">
-                               CREATE
+                              {translateAction(item.action)}
                             </span>
                           </div>
                         )}
@@ -655,7 +689,7 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                           <div className="flex items-center gap-1.5">
                             <Edit className="w-3.5 h-3.5 text-blue-600" />
                             <span className="text-xs text-blue-600">
-                              UPDATE
+                              {translateAction(item.action)}
                             </span>
                           </div>
                         )}
@@ -663,7 +697,9 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                         {item.action === "DELETE" && (
                           <div className="flex items-center gap-1.5">
                             <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                            <span className="text-xs text-red-600">DELETE</span>
+                            <span className="text-xs text-red-600">
+                              {translateAction(item.action)}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -671,26 +707,22 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                       {/* type */}
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                          className={`px-3 py-2 rounded-full text-xs font-medium ${getTypeColor(
                             item.historyType
                           )}`}
                         >
-                          {item.historyType
-                            ? item.historyType.replace(/_/g, " ")
-                            : "Không rõ"}
+                          {translateHistoryType(item.historyType)}
                         </span>
                       </td>
                       {/* created by */}
                       <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-
-                      <UserCircle className="w-3.5 h-3.5 text-gray-400" />
+                        <div className="flex items-center gap-2">
+                          <UserCircle className="w-3.5 h-3.5 text-gray-400" />
 
                           <span className="text-xs text-gray-900">
-                          {item.createdBy || "—"}
-                        </span>
-                                                </div>
-
+                            {item.createdBy || "—"}
+                          </span>
+                        </div>
                       </td>
                       {/* identify */}
                       <td className="px-4 py-3">
@@ -706,11 +738,10 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                         <div className="flex items-center gap-2">
                           <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
                           <span className="text-xs text-gray-900">
-                            {item.description || "—"}
+                            {translateDescription(item.description)}
                           </span>
                         </div>
                       </td>
-
 
                       {/* status */}
                       <td className="px-4 py-3">
@@ -739,10 +770,9 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
                           )}
                         </div>
                       </td>
-                         <td className="px-4 py-3">
+                      <td className="px-4 py-3">
                         <span className="text-xs text-gray-600">
                           v{item.version}
-
                         </span>
                       </td>
                       {/* actions */}
@@ -841,178 +871,196 @@ toast.info(`Đang xuất lịch sử dụng ${format.toUpperCase()} (demo)…`);
       </motion.div>
 
       {/* MODAL VIEW DETAILS */}
-     <Modal
-  isOpen={isViewModalOpen}
-  onClose={() => setIsViewModalOpen(false)}
-  title="Chi tiết bản ghi lịch sử"
-  subtitle="Xem thông tin đầy đủ về hành động này"
-  icon={<History className="w-5 h-5 text-white" />}
->
-  {selectedHistory && (
-<div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-
-      {/* ===================== ROW 1: ID + Version ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 mb-1">ID Bản ghi</p>
-          <p className="text-sm font-mono text-gray-900 break-all">
-            {selectedHistory.id}
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 mb-1">Version</p>
-          <span className="inline-block px-3 py-1 rounded-full bg-gray-200 text-gray-800 text-xs">
-            v{selectedHistory.version}
-          </span>
-        </div>
-      </div>
-
-      {/* ===================== ROW 2: Action + Type ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Hành động */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 mb-1">Hành động</p>
-
-           {selectedHistory.action === "CREATE" && (
-        <div className="flex items-center gap-1.5">
-          <PlusCircle className="w-3.5 h-3.5 text-green-600" />
-          <span className="text-xs font-medium text-green-700">CREATE</span>
-        </div>
-      )}
-
-              {selectedHistory.action === "UPDATE" && (
-        <div className="flex items-center gap-1.5">
-          <Edit className="w-3.5 h-3.5 text-blue-600" />
-          <span className="text-xs font-medium text-blue-700">UPDATE</span>
-        </div>
-      )}
-
-
-          {selectedHistory.action === "DELETE" && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
-              <Trash2 className="w-3.5 h-3.5 text-red-600" />
-              <span className="text-xs font-medium text-red-700">DELETE</span>
-            </div>
-          )}
-        </div>
-
-        {/* Loại */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 mb-1">Loại</p>
-          <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-            {selectedHistory.historyType?.replace(/_/g, " ") || "Không rõ"}
-          </span>
-        </div>
-      </div>
-
-      {/* ===================== ROW 3: Time ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <Clock className="w-4 h-4 text-gray-500" /> Thời gian tạo
-          </p>
-          <p className="text-sm text-gray-900">{selectedHistory.createDate}</p>
-        </div>
-
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <Clock className="w-4 h-4 text-gray-500" /> Cập nhật lần cuối
-          </p>
-          <p className="text-sm text-gray-900">
-            {selectedHistory.lastUpdateDate || "—"}
-          </p>
-        </div>
-      </div>
-
-      {/* ===================== ROW 4: CreatedBy + UpdatedBy ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <User className="w-4 h-4 text-gray-500" /> Người thực hiện
-          </p>
-          <p className="text-sm text-gray-900">{selectedHistory.createdBy}</p>
-        </div>
-
-        <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
-            <User className="w-4 h-4 text-gray-500" /> Đối tượng định danh
-          </p>
-          <p className="text-sm text-gray-900">
-            {selectedHistory.identify || "—"}
-          </p>
-        </div>
-      </div>
-
-      {/* ===================== Định danh ===================== */}
-      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50">
-        <p className="text-[12px] text-blue-700 font-semibold mb-1 flex items-center gap-1">
-          <ShieldCheck className="w-4 h-4 text-blue-700" /> Hành động
-        </p>
-        <p className="text-sm text-blue-900">{selectedHistory.description}</p>
-      </div>
-
-      {/* ===================== Trạng thái ===================== */}
-      <div
-        className={`p-4 rounded-xl border ${
-          selectedHistory.isDeleted
-            ? "bg-red-50 border-red-200"
-            : selectedHistory.flagStatus === 1
-            ? "bg-green-50 border-green-200"
-            : "bg-yellow-50 border-yellow-200"
-        }`}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Chi tiết bản ghi lịch sử"
+        subtitle="Xem thông tin đầy đủ về hành động này"
+        icon={<History className="w-5 h-5 text-white" />}
       >
-        <div className="flex items-center gap-2">
-          {selectedHistory.isDeleted ? (
-            <>
-              <Ban className="w-4 h-4 text-red-600" />
-              <span className="text-sm text-red-700">Bản ghi đã bị xóa</span>
-            </>
-          ) : selectedHistory.flagStatus === 1 ? (
-            <>
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-700">Bản ghi đang hoạt động</span>
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm text-yellow-700">Không hoạt động</span>
-            </>
-          )}
-        </div>
-      </div>
+        {selectedHistory && (
+          <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+            {/* ===================== ROW 1: ID + Version ===================== */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 mb-1">ID Bản ghi</p>
+                <p className="text-sm font-mono text-gray-900 break-all">
+                  {selectedHistory.id}
+                </p>
+              </div>
 
-      {/* ===================== JSON Content ===================== */}
-      <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-        <p className="text-[12px] text-gray-600 font-medium flex items-center gap-2 mb-2">
-          <FileText className="w-4 h-4 text-gray-600" /> Nội dung (JSON)
-        </p>
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 mb-1">Version</p>
+                <span className="inline-block px-3 py-1 rounded-full bg-gray-200 text-gray-800 text-xs">
+                  v{selectedHistory.version}
+                </span>
+              </div>
+            </div>
 
-        <pre className="text-xs bg-white p-4 border border-gray-300 rounded-lg max-h-60 overflow-auto text-gray-800">
-          {JSON.stringify(parseContent(selectedHistory.content), null, 2)}
-        </pre>
-      </div>
+            {/* ===================== ROW 2: Action + Type ===================== */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Hành động */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 mb-1">Hành động</p>
 
-      {/* ===================== Footer ===================== */}
-      <div className="flex justify-end gap-3 pt-1">
-        <button
-          onClick={() => setIsViewModalOpen(false)}
-          className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm"
-        >
-          Đóng
-        </button>
+                {selectedHistory.action === "CREATE" && (
+                  <div className="flex items-center gap-1.5">
+                    <PlusCircle className="w-3.5 h-3.5 text-green-600" />
+                    <span className="text-xs font-medium text-green-700">
+                      CREATE
+                    </span>
+                  </div>
+                )}
 
-        <button
-          onClick={() => navigator.clipboard.writeText(selectedHistory.id)}
-          className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm shadow-sm"
-        >
-          Copy ID
-        </button>
-      </div>
-    </div>
-  )}
-</Modal>
+                {selectedHistory.action === "UPDATE" && (
+                  <div className="flex items-center gap-1.5">
+                    <Edit className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-700">
+                      UPDATE
+                    </span>
+                  </div>
+                )}
 
+                {selectedHistory.action === "DELETE" && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    <span className="text-xs font-medium text-red-700">
+                      DELETE
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Loại */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 mb-1">Loại</p>
+                <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                  {selectedHistory.historyType?.replace(/_/g, " ") ||
+                    "Không rõ"}
+                </span>
+              </div>
+            </div>
+
+            {/* ===================== ROW 3: Time ===================== */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
+                  <Clock className="w-4 h-4 text-gray-500" /> Thời gian tạo
+                </p>
+                <p className="text-sm text-gray-900">
+                  {selectedHistory.createDate}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
+                  <Clock className="w-4 h-4 text-gray-500" /> Cập nhật lần cuối
+                </p>
+                <p className="text-sm text-gray-900">
+                  {selectedHistory.lastUpdateDate || "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* ===================== ROW 4: CreatedBy + UpdatedBy ===================== */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
+                  <User className="w-4 h-4 text-gray-500" /> Người thực hiện
+                </p>
+                <p className="text-sm text-gray-900">
+                  {selectedHistory.createdBy}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <p className="text-[12px] text-gray-500 flex items-center gap-1 mb-1">
+                  <User className="w-4 h-4 text-gray-500" /> Đối tượng định danh
+                </p>
+                <p className="text-sm text-gray-900">
+                  {selectedHistory.identify || "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* ===================== Định danh ===================== */}
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50">
+              <p className="text-[12px] text-blue-700 font-semibold mb-1 flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4 text-blue-700" /> Hành động
+              </p>
+              <p className="text-sm text-blue-900">
+                {selectedHistory.description}
+              </p>
+            </div>
+
+            {/* ===================== Trạng thái ===================== */}
+            <div
+              className={`p-4 rounded-xl border ${
+                selectedHistory.isDeleted
+                  ? "bg-red-50 border-red-200"
+                  : selectedHistory.flagStatus === 1
+                  ? "bg-green-50 border-green-200"
+                  : "bg-yellow-50 border-yellow-200"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {selectedHistory.isDeleted ? (
+                  <>
+                    <Ban className="w-4 h-4 text-red-600" />
+                    <span className="text-sm text-red-700">
+                      Bản ghi đã bị xóa
+                    </span>
+                  </>
+                ) : selectedHistory.flagStatus === 1 ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-700">
+                      Bản ghi đang hoạt động
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-700">
+                      Không hoạt động
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* ===================== JSON Content ===================== */}
+            <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+              <p className="text-[12px] text-gray-600 font-medium flex items-center gap-2 mb-2">
+                <FileText className="w-4 h-4 text-gray-600" /> Nội dung (JSON)
+              </p>
+
+              <pre className="text-xs bg-white p-4 border border-gray-300 rounded-lg max-h-60 overflow-auto text-gray-800">
+                {JSON.stringify(parseContent(selectedHistory.content), null, 2)}
+              </pre>
+            </div>
+
+            {/* ===================== Footer ===================== */}
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm"
+              >
+                Đóng
+              </button>
+
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(selectedHistory.id)
+                }
+                className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm shadow-sm"
+              >
+                Copy ID
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
