@@ -11,6 +11,7 @@ export const HISTORY_TYPE_MAP: Record<string, string> = {
   SYSTEM: "Hệ thống",
 };
 
+
 export const ACTION_MAP: Record<string, string> = {
   CREATE: "Tạo mới",
   UPDATE: "Cập nhật",
@@ -65,3 +66,24 @@ export const HISTORY_DESCRIPTION_MAP: Record<string, string> = {
   "Update a sensor": "Cập nhật cảm biến",
   "Delete a sensor": "Xóa cảm biến",
 };
+export function translateHistoryDescription(raw?: string): string {
+  if (!raw) return "";
+
+  // ===== IMPORT USER FROM EXCEL (SỐ ĐỘNG) =====
+  const importUserMatch = raw.match(
+    /^Imported\s+(\d+)\s+users?\s+from\s+Excel\s+file$/i
+  );
+
+  if (importUserMatch) {
+    const count = Number(importUserMatch[1]);
+    return `Nhập ${count} người dùng từ file Excel`;
+  }
+
+  // ===== MAP TĨNH =====
+  if (HISTORY_DESCRIPTION_MAP[raw]) {
+    return HISTORY_DESCRIPTION_MAP[raw];
+  }
+
+  // ===== FALLBACK =====
+  return raw;
+}

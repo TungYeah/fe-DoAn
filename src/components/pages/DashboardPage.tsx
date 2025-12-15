@@ -2,7 +2,10 @@ import {
   HISTORY_TYPE_MAP,
   ACTION_MAP,
   HISTORY_DESCRIPTION_MAP,
+  translateHistoryDescription,
 } from "@/utils/historyMaps";
+import { countDataLake } from "@/utils/dataLake";
+
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
@@ -63,6 +66,25 @@ export default function DashboardPage() {
   const CURRENT_USER_ID = user?.id || currentUser?.id;
   const roleList = user?.roles || currentUser?.roles || [];
   const isAdmin = roleList.includes("ROLE_ADMIN");
+  const createCountPayload = () => {
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(toDate.getDate() - 30);
+
+    return {
+      deviceTypeId: null,
+      propertyIds: null,
+      fromDate: fromDate.toISOString().slice(0, 10),
+      toDate: toDate.toISOString().slice(0, 10),
+      fromTime: "00:00:00",
+      toTime: "23:59:59",
+      province: null,
+      district: null,
+      ward: null,
+      specificLocation: null,
+    };
+  };
+
   // =========================
   // TRANSLATE HELPERS
   // =========================
@@ -86,7 +108,7 @@ export default function DashboardPage() {
     },
 
     {
-      label: "Tổng dữ liệu",
+      label: "Tổng dữ liệu 30d gần đây",
       value: animatedTotalRecords.toLocaleString(),
       change: "Data Lake",
       trend: "up",
@@ -152,48 +174,97 @@ export default function DashboardPage() {
       d.getSeconds()
     )} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   }
-  useEffect(() => {
-    if (!CURRENT_USER_ID) return;
+async function fetchChartFromDataLake(
+  sensor: "temp" | "humidity"
+): Promise<any[]> {
+  const payload = {
+    deviceTypeId: null,
+    propertyIds: null,
+    fromDate: new Date(Date.now() - 30 * 86400000)
+      .toISOString()
+      .slice(0, 10),
+    toDate: new Date().toISOString().slice(0, 10),
+    fromTime: "00:00:00",
+    toTime: "23:59:59",
+    province: null,
+    district: null,
+    ward: null,
+    specificLocation: null,
+  };
 
-    fetch(`http://localhost:5000/api/export_filters/${CURRENT_USER_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setQueryCount(Array.isArray(data) ? data.length : 0);
-      })
-      .catch((err) => {
-        console.error("Lỗi load số truy vấn:", err);
-        setQueryCount(0);
-      });
-  }, [CURRENT_USER_ID]);
+  const res = await fetch(
+    "http://localhost:8080/api/v1/data-query/lake",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/dashboard/datalake/chart?sensor=temp")
-      .then((res) => res.json())
-      .then((data) => setChartData(data))
-      .catch(() => setChartData([]));
-  }, []);
-  useEffect(() => {
-    fetch(
-      `http://localhost:5000/api/dashboard/datalake/chart?sensor=${selectedMetric}`
+  const raw = await res.json();
+  if (!Array.isArray(raw)) return [];
+
+  // 🔥 map sensor → propertyName
+  const propertyMap: Record<string, string> = {
+    temp: "temperature",
+    humidity: "humidity",
+  };
+
+  const targetProperty = propertyMap[sensor];
+
+  return raw
+    .filter(
+      (r) =>
+        r.propertyName === targetProperty &&
+        r.timestamp &&
+        r.value !== undefined
     )
-      .then((res) => res.json())
-      .then((data) => setChartData(data))
-      .catch(() => setChartData([]));
-  }, [selectedMetric]);
+    .map((r) => ({
+      time: r.timestamp,
+      value: Number(r.value),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(a.time).getTime() - new Date(b.time).getTime()
+    );
+}
+
 
   useEffect(() => {
-    if (!CURRENT_USER_ID) return;
-
-    fetch(`http://localhost:5000/api/dashboard/datalake/count`)
-      .then((res) => res.json())
-      .then((data) => {
-        setTotalRecords(data.totalRecords || 0);
-      })
-      .catch((err) => {
-        console.error("Lỗi count datalake:", err);
+    const fetchDataLakeCount = async () => {
+      try {
+        const count = await countDataLake(createCountPayload());
+        console.log("✅ DATA LAKE COUNT =", count);
+        setTotalRecords(Number(count) || 0);
+      } catch (err) {
+        console.error("❌ Count Data Lake failed:", err);
         setTotalRecords(0);
-      });
-  }, [CURRENT_USER_ID]);
+      }
+    };
+
+    fetchDataLakeCount();
+  }, []);
+
+
+
+useEffect(() => {
+  fetchChartFromDataLake(selectedMetric)
+    .then((data) => {
+      console.log("📊 Chart data:", data);
+      setChartData(data);
+    })
+    .catch((err) => {
+      console.error("❌ Chart error:", err);
+      setChartData([]);
+    });
+}, [selectedMetric]);
+
+
+
+
   useEffect(() => {
     let start = 0;
     const end = totalRecords;
@@ -289,32 +360,7 @@ export default function DashboardPage() {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    const userId = localStorage.getItem("user_id"); // bạn đang lưu khi login
-    const role = localStorage.getItem("role"); // ADMIN | USER
 
-    if (!userId) return;
-
-    fetch(
-      `http://localhost:5000/api/devices?user_id=${userId}&role=${
-        role === "ADMIN" ? "admin" : "user"
-      }`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setDevices(data.devices || []);
-          setTotalDevices(data.total || 0);
-
-          const active = (data.devices || []).filter(
-            (d: any) => String(d.flag_status) === "1"
-          ).length;
-
-          setActiveDevices(active);
-        }
-      })
-      .catch((err) => console.error("Lỗi lấy thiết bị:", err));
-  }, []);
   useEffect(() => {
     if (!token || !email) return;
 
@@ -633,7 +679,8 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="text-xs text-gray-600">
-                    {translateDescription(a.description)} #{a.identify.slice(0, 12)}…
+                    {translateHistoryDescription(a.description)} #
+                    {a.identify.slice(0, 12)}…
                   </p>
 
                   <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">

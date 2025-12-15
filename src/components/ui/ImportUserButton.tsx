@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import axios from "axios";
-import { FileSpreadsheet, Loader2, Download, FileDown } from "lucide-react"; // Thêm icon FileDown
+import { FileSpreadsheet, Loader2, Download, FileDown, Upload } from "lucide-react"; // Thêm icon FileDown
 
 const API_BASE = "http://localhost:8080/api/v1";
 
@@ -72,41 +72,51 @@ export default function ImportUserButton({ onSuccess }: ImportUserButtonProps) {
     document.body.removeChild(link);
   };
 
-  return (
-    <div className="flex gap-2 items-center">
-      {/* Input ẩn */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".xlsx, .xls"
-        className="hidden"
-      />
+return (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleFileChange}
+      accept=".xlsx, .xls"
+      className="hidden"
+    />
 
-      {/* Nút Import Chính */}
-      <button
-        onClick={() => fileInputRef.current?.click()}
-disabled={loading}
-        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50 active:scale-95"
-      >
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileSpreadsheet className="w-5 h-5" />}
-        {loading ? "Đang xử lý..." : "Import Excel (.xlsx)"}
-      </button>
+    {/* Nút Import (BÊN TRÁI) */}
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={loading}
+      className="
+        flex items-center gap-2
+        bg-red-600 hover:bg-red-700
+        text-white px-4 py-2.5
+        rounded-lg text-sm font-medium
+        transition-all shadow-sm
+        disabled:opacity-60 disabled:cursor-not-allowed
+        active:scale-95
+      "
+    >
+      {loading ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <Upload className="w-4 h-4" />
+      )}
+      {loading ? "Đang xử lý..." : "Chọn file Excel"}
+    </button>
+              </div>
 
-      {/* Nút Tải Mẫu (Đã được Style lại) */}
-      <button 
-        onClick={downloadTemplate}
-        className="
-            group flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 text-xs font-semibold
-            hover:border-green-200 hover:bg-green-50 hover:text-green-700
-            transition-all duration-200 shadow-sm hover:shadow-md active:scale-95
-        "
-        title="Tải file mẫu về máy"
-      >
-        <FileDown className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
-        Tải mẫu chuẩn (CSV)
-      </button>
-    </div>
-  );
+    {/* Nút Tải template (BÊN PHẢI) */}
+    <button
+      onClick={downloadTemplate}
+                      className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-2"
+
+    >
+      <Download className="w-4 h-4" />
+      Tải template
+    </button>
+  </div>
+);
+
 }
-.

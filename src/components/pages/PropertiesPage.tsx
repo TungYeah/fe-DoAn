@@ -224,52 +224,74 @@ const displayList = properties.filter((p) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-{displayList.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="px-6 py-4 font-medium flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-blue-500" />
-                  {p.name}
-                </TableCell>
-                                <TableCell className="px-6 py-4">
-                  <span className="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-700">
-                    {p.unit || "N/A"}
-                  </span>
-                </TableCell>
-                              <TableCell className="px-6 py-4">
-                  <span className="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-700">
-                    {p.dataType || "N/A"}
-                  </span>
-                </TableCell>
-                <TableCell className="px-6 py-4 text-right space-x-2">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-green-50 text-green-600"
-                    onClick={() => { setSelectedProp(p); setIsViewOpen(true); }}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </motion.button>
+{displayList.map((p, idx) => (
+  <motion.tr
+    key={p.id}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{
+      duration: 0.25,
+      delay: Math.min(0.03 * idx, 0.3),
+    }}
+    className="hover:bg-gray-50 transition-all cursor-pointer"
+  >
+    <TableCell className="px-6 py-4 font-medium flex items-center gap-2">
+      <Activity className="w-4 h-4 text-blue-500" />
+      {p.name}
+    </TableCell>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-blue-50 text-blue-600"
-                    onClick={() => { setSelectedProp({ ...p }); setIsEditOpen(true); }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </motion.button>
+    <TableCell className="px-6 py-4">
+      <span className="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-700">
+        {p.unit || "N/A"}
+      </span>
+    </TableCell>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-lg hover:bg-red-50 text-red-600"
-onClick={() => { setSelectedProp(p); setIsDeleteOpen(true); }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </motion.button>
-                </TableCell>
-              </TableRow>
-            ))}
+    <TableCell className="px-6 py-4">
+      <span className="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-700">
+        {p.dataType || "N/A"}
+      </span>
+    </TableCell>
+
+    <TableCell className="px-6 py-4 text-right space-x-2">
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="p-2 rounded-lg hover:bg-green-50 text-green-600"
+        onClick={() => {
+          setSelectedProp(p);
+          setIsViewOpen(true);
+        }}
+      >
+        <Eye className="w-4 h-4" />
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="p-2 rounded-lg hover:bg-blue-50 text-blue-600"
+        onClick={() => {
+          setSelectedProp({ ...p });
+          setIsEditOpen(true);
+        }}
+      >
+        <Edit className="w-4 h-4" />
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="p-2 rounded-lg hover:bg-red-50 text-red-600"
+        onClick={() => {
+          setSelectedProp(p);
+          setIsDeleteOpen(true);
+        }}
+      >
+        <Trash2 className="w-4 h-4" />
+      </motion.button>
+    </TableCell>
+  </motion.tr>
+))}
+
 
 {displayList.length === 0 && (
   <TableRow>

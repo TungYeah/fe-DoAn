@@ -1,7 +1,8 @@
 import {
   HISTORY_TYPE_MAP,
   ACTION_MAP,
-  HISTORY_DESCRIPTION_MAP,
+  HISTORY_DESCRIPTION_MAP,  translateHistoryDescription,
+
 } from "@/utils/historyMaps";
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
@@ -115,7 +116,7 @@ export default function HistoryPage() {
     a === "CREATE" ? (
       <PlusCircle className="w-3 h-3" />
     ) : a === "UPDATE" ? (
-      <Edit className="w-3 h-3" />
+      <RefreshCcw className="w-3 h-3" />
     ) : a === "DELETE" ? (
       <Trash2 className="w-3 h-3" />
     ) : (
@@ -403,7 +404,7 @@ const getTypeColor = (t: string) => {
           className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
         >
           <div className="p-3 bg-blue-50 rounded-lg">
-            <Edit className="w-5 h-5 text-blue-600" />
+            <RefreshCcw className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <p className="text-sm text-gray-600">Cập nhật</p>
@@ -687,7 +688,7 @@ const getTypeColor = (t: string) => {
 
                         {item.action === "UPDATE" && (
                           <div className="flex items-center gap-1.5">
-                            <Edit className="w-3.5 h-3.5 text-blue-600" />
+                            <RefreshCcw className="w-3.5 h-3.5 text-blue-600" />
                             <span className="text-xs text-blue-600">
                               {translateAction(item.action)}
                             </span>
@@ -738,7 +739,7 @@ const getTypeColor = (t: string) => {
                         <div className="flex items-center gap-2">
                           <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
                           <span className="text-xs text-gray-900">
-                            {translateDescription(item.description)}
+                            {translateHistoryDescription(item.description)}
                           </span>
                         </div>
                       </td>
@@ -914,7 +915,7 @@ const getTypeColor = (t: string) => {
 
                 {selectedHistory.action === "UPDATE" && (
                   <div className="flex items-center gap-1.5">
-                    <Edit className="w-3.5 h-3.5 text-blue-600" />
+                    <RefreshCcw className="w-3.5 h-3.5 text-blue-600" />
                     <span className="text-xs font-medium text-blue-700">
                       UPDATE
                     </span>

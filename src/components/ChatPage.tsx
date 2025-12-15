@@ -145,7 +145,20 @@ type ReplyProps = {
   addStickerToReply: (s: string) => void;
   showEmojiPicker: string | null;
   setShowEmojiPicker: React.Dispatch<React.SetStateAction<string | null>>;
+lockedUsers?: Record<string, boolean>;
+
+  /* ✅ ADMIN */
+  isAdmin: boolean;
+  onToggleHideComment: (
+    commentId: string,
+    nextHidden: boolean
+  ) => Promise<void>;
+  onToggleLockCommenting: (
+    email: string,
+    lock: boolean
+  ) => Promise<void>;
 };
+
 
 /* ======================================================
    COMPONENT: Sticker Bar (Emoji Picker)
@@ -399,7 +412,13 @@ function CommentItemRecursive({
 
         <div className="flex-1 min-w-0">
           {/* Comment Bubble */}
-          <div className="bg-gradient-to-br from-gray-50 to-white px-4 py-3 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+<div
+  className={`px-4 py-3 rounded-2xl shadow-sm border transition-shadow ${
+    comment.hidden
+      ? "bg-red-50 border-red-300"
+      : "bg-gradient-to-br from-gray-50 to-white border-gray-200 hover:shadow-md"
+  }`}
+>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-gray-900">{displayName}</span>
               {props.formatDate(comment) && (
@@ -409,21 +428,86 @@ function CommentItemRecursive({
                 </span>
               )}
             </div>
-            <p className="text-gray-700 break-words whitespace-pre-wrap">{comment.content}</p>
+{/* COMMENT CONTENT */}
+{comment.hidden ? (
+  props.isAdmin ? (
+    <p className="text-gray-700 break-words whitespace-pre-wrap">
+      {comment.content}
+    </p>
+  ) : (
+    <p className="italic text-gray-400">
+      Bình luận đã bị ẩn bởi quản trị viên
+    </p>
+  )
+) : (
+  <p className="text-gray-700 break-words whitespace-pre-wrap">
+    {comment.content}
+  </p>
+)}
+
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4 mt-2 ml-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={startReply}
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
-              type="button"
-            >
-              <Reply className="w-3.5 h-3.5" />
-              Trả lời
-            </motion.button>
+{(!comment.hidden || props.isAdmin) &&
+ !props.lockedUsers?.[comment.userEmail || ""] && (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={startReply}
+    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+    type="button"
+  >
+    <Reply className="w-3.5 h-3.5" />
+    Trả lời
+  </motion.button>
+)}
+
+{props.isAdmin && (
+  <div className="flex items-center gap-2">
+    {/* Hide / Unhide */}
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() =>
+        props.onToggleHideComment(comment.id, !comment.hidden)
+      }
+      className={`text-sm flex items-center gap-1.5 px-2 py-1 rounded-lg ${
+        comment.hidden
+          ? "text-green-600 hover:bg-green-50"
+          : "text-red-600 hover:bg-red-50"
+      }`}
+      type="button"
+    >
+      {comment.hidden ? "Hiện" : "Ẩn"}
+    </motion.button>
+
+    {/* Block user */}
+    {props.isAdmin && comment.userEmail && (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={() =>
+      props.onToggleLockCommenting(
+        comment.userEmail!,
+        !props.lockedUsers?.[comment.userEmail!]
+      )
+    }
+    className={`text-sm px-2 py-1 rounded-lg ${
+      props.lockedUsers?.[comment.userEmail!]
+        ? "text-green-600 hover:bg-green-50"
+        : "text-orange-600 hover:bg-orange-50"
+    }`}
+    type="button"
+  >
+    {props.lockedUsers?.[comment.userEmail!]
+      ? "Bỏ chặn"
+      : "Chặn bình luận"}
+  </motion.button>
+)}
+
+  </div>
+)}
 
             {comment.replyCount > 0 && (
               <motion.button
@@ -513,6 +597,13 @@ export default function CommentsPage() {
 
   const token = localStorage.getItem("token");
 
+
+const role = localStorage.getItem("role") || "";
+const isAdmin = role.includes("ADMIN");
+const [lockedUsers, setLockedUsers] = useState<Record<string, boolean>>({});
+
+const currentUserEmail = localStorage.getItem("email") || "";
+
   // =============== UTIL ===============
   const authHeaders = () => ({
     "Content-Type": "application/json",
@@ -548,15 +639,23 @@ export default function CommentsPage() {
         await new Promise(resolve => setTimeout(resolve, 800));
         setTopComments(MOCK_COMMENTS);
       } else {
-        const res = await fetch(
-          `${API_BASE}/api/v1/comments/toplevel?page=0&size=20`,
-          { headers: authHeaders() }
-        );
+const url = isAdmin
+  ? `${API_BASE}/api/v1/comments/toplevel?page=0&size=20&includeHidden=true`
+  : `${API_BASE}/api/v1/comments/toplevel?page=0&size=20`;
+
+const res = await fetch(url, {
+  headers: authHeaders(),
+});
+
 
         const data = await res.json();
         const list: Comment[] = data.content ?? [];
 
         setTopComments(list);
+        console.log("IS ADMIN:", isAdmin);
+console.log("TOP COMMENTS:", list);
+
+
       }
     } catch (error) {
       console.error("Error loading comments:", error);
@@ -617,6 +716,71 @@ export default function CommentsPage() {
       setPosting(false);
     }
   };
+const handleToggleHideComment = async (
+  commentId: string,
+  nextHidden: boolean
+) => {
+  try {
+    const endpoint = nextHidden
+      ? `/api/v1/admin/comments/${commentId}/hide`
+      : `/api/v1/admin/comments/${commentId}/unhide`;
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+
+    if (!res.ok) throw new Error("Toggle hide failed");
+
+    // ✅ Update UI ngay (top-level)
+    setTopComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId ? { ...c, hidden: nextHidden } : c
+      )
+    );
+
+    // ✅ Update UI ngay (reply)
+    setReplies((prev) => {
+      const copy = { ...prev };
+      Object.keys(copy).forEach((key) => {
+        copy[key] = copy[key].map((c) =>
+          c.id === commentId ? { ...c, hidden: nextHidden } : c
+        );
+      });
+      return copy;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const handleToggleLockCommenting = async (
+  email: string,
+  lock: boolean
+) => {
+  try {
+    const endpoint = lock
+      ? `/api/v1/admin/users/${encodeURIComponent(email)}/lock-commenting`
+      : `/api/v1/admin/users/${encodeURIComponent(email)}/unlock-commenting`;
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+
+    if (!res.ok) throw new Error("Lock/unlock failed");
+
+    // ✅ cập nhật UI ngay
+    setLockedUsers((prev) => ({
+      ...prev,
+      [email]: lock,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+
 
   // =============== POST REPLY ===============
   const handlePostReply = async (parentId: string) => {
@@ -714,12 +878,28 @@ export default function CommentsPage() {
   const totalReplies = topComments.reduce((acc, c) => acc + c.replyCount, 0);
 
   // =============== FILTERED COMMENTS ===============
-  const filteredComments = topComments.filter(
-    (c) =>
-      c.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.userFullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.userEmail || "").toLowerCase().includes(searchTerm.toLowerCase())
+const filteredComments = topComments.filter((c) => {
+  const keyword = searchTerm.toLowerCase();
+
+  // ✅ ADMIN: luôn thấy comment kể cả bị ẩn
+  if (isAdmin) {
+    return (
+      (c.content ?? "").toLowerCase().includes(keyword) ||
+      (c.userFullName ?? "").toLowerCase().includes(keyword) ||
+      (c.userEmail ?? "").toLowerCase().includes(keyword)
+    );
+  }
+
+  // ✅ USER thường: KHÔNG thấy comment bị ẩn
+  if (c.hidden) return false;
+
+  return (
+    (c.content ?? "").toLowerCase().includes(keyword) ||
+    (c.userFullName ?? "").toLowerCase().includes(keyword) ||
+    (c.userEmail ?? "").toLowerCase().includes(keyword)
   );
+});
+
 const replyRate = totalComments > 0 
   ? (totalReplies / totalComments) * 100 
   : 0;
@@ -919,28 +1099,37 @@ const replyRate = totalComments > 0
         {/* Comments List */}
         <div className="space-y-6">
           {filteredComments.map((c) => (
-            <CommentItemRecursive
-              key={c.id}
-              comment={c}
-              isTopLevel={true}
-              replies={replies}
-              expanded={expanded}
-              loadingReply={loadingReply}
-              setReplies={setReplies}
-              setExpanded={setExpanded}
-              setLoadingReply={setLoadingReply}
-              replyTo={replyTo}
-              setReplyTo={setReplyTo}
-              setReplyContent={setReplyContent}
-              handlePostReply={handlePostReply}
-              replyContent={replyContent}
-              posting={posting}
-              formatDate={formatDate}
-              authHeaders={authHeaders}
-              addStickerToReply={addStickerToReply}
-              showEmojiPicker={showEmojiPicker}
-              setShowEmojiPicker={setShowEmojiPicker}
-            />
+           <CommentItemRecursive
+  key={c.id}
+  comment={c}
+  isTopLevel={true}
+
+  replies={replies}
+  expanded={expanded}
+  loadingReply={loadingReply}
+  setReplies={setReplies}
+  setExpanded={setExpanded}
+  setLoadingReply={setLoadingReply}
+  replyTo={replyTo}
+  setReplyTo={setReplyTo}
+  setReplyContent={setReplyContent}
+  handlePostReply={handlePostReply}
+  replyContent={replyContent}
+  posting={posting}
+  formatDate={formatDate}
+  authHeaders={authHeaders}
+  addStickerToReply={addStickerToReply}
+  showEmojiPicker={showEmojiPicker}
+  setShowEmojiPicker={setShowEmojiPicker}
+
+  /* ADMIN */
+  isAdmin={isAdmin}
+  lockedUsers={lockedUsers}          // ✅ THÊM
+  onToggleHideComment={handleToggleHideComment}
+  onToggleLockCommenting={handleToggleLockCommenting}
+/>
+
+
           ))}
         </div>
       </div>

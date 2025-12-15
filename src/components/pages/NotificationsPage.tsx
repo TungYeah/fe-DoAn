@@ -1,7 +1,8 @@
 import {
   HISTORY_TYPE_MAP,
   ACTION_MAP,
-  HISTORY_DESCRIPTION_MAP,
+  HISTORY_DESCRIPTION_MAP,  translateHistoryDescription,
+
 } from "@/utils/historyMaps";
 
 import React, { useEffect, useState } from "react";
@@ -21,6 +22,8 @@ import {
   Edit,
   Trash,
   Trash2Icon,
+  Users,
+  Calendar,
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -157,7 +160,7 @@ export default function NotificationsPage() {
       case "warning":
         return <AlertCircle className="w-6 h-6 text-yellow-600" />;
       default:
-        return <Edit className="w-6 h-6 text-blue-600" />;
+        return <RefreshCcw className="w-6 h-6 text-blue-600" />;
     }
   };
   const getNotificationType = (action: string) => {
@@ -231,84 +234,110 @@ export default function NotificationsPage() {
       {/* =========================
           STATS BOXES
       ========================= */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Tổng thông báo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-600 mb-1">Tổng thông báo</p>
-          <p className="text-2xl text-gray-900">
-            {loading ? "…" : filtered.length.toLocaleString("vi-VN")}
-          </p>
-        </motion.div>
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  {/* Tổng thông báo */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay: 0.1 }}
+    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+  >
+    <div className="p-3 bg-gray-100 rounded-lg">
+      <Bell className="w-5 h-5 text-gray-600" />
+    </div>
+    <div>
+      <p className="text-sm text-gray-600">Tổng thông báo</p>
+      <p className="text-xl font-semibold text-gray-900">
+        {loading ? "…" : filtered.length.toLocaleString("vi-VN")}
+      </p>
+    </div>
+  </motion.div>
 
-        {/* Thông báo hôm nay */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-600 mb-1">Hôm nay</p>
-          <p className="text-2xl text-blue-600">
-            {loading ? "…" : today.toLocaleString("vi-VN")}
-          </p>
-        </motion.div>
+  {/* Thông báo hôm nay */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay: 0.1 }}
+    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+  >
+    <div className="p-3 bg-blue-50 rounded-lg">
+      <Calendar className="w-5 h-5 text-blue-600" />
+    </div>
+    <div>
+      <p className="text-sm text-blue-600">Hôm nay</p>
+      <p className="text-xl font-semibold text-blue-600">
+        {loading ? "…" : today.toLocaleString("vi-VN")}
+      </p>
+    </div>
+  </motion.div>
 
-        {/* Tạo mới */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-600 mb-1">Tạo mới</p>
-          <p className="text-2xl text-green-600">
-            {loading
-              ? "…"
-              : notifications
-                  .filter((n) => n.action === "CREATE")
-                  .length.toLocaleString("vi-VN")}
-          </p>
-        </motion.div>
+  {/* Tạo mới */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay: 0.1 }}
+    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+  >
+    <div className="p-3 bg-green-50 rounded-lg">
+      <PlusCircle className="w-5 h-5 text-green-600" />
+    </div>
+    <div>
+      <p className="text-sm text-green-600">Tạo mới</p>
+      <p className="text-xl font-semibold text-green-600">
+        {loading
+          ? "…"
+          : notifications
+              .filter((n) => n.action === "CREATE")
+              .length.toLocaleString("vi-VN")}
+      </p>
+    </div>
+  </motion.div>
 
-        {/* Cập nhật */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-600 mb-1">Cập nhật</p>
-          <p className="text-2xl text-orange-600">
-            {loading
-              ? "…"
-              : notifications
-                  .filter((n) => n.action === "UPDATE")
-                  .length.toLocaleString("vi-VN")}
-          </p>
-        </motion.div>
+  {/* Cập nhật */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay: 0.1 }}
+    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+  >
+    <div className="p-3 bg-gray-50 rounded-lg">
+      <RefreshCcw className="w-5 h-5 text-orange-600" />
+    </div>
+    <div>
+      <p className="text-sm text-orange-600">Cập nhật</p>
+      <p className="text-xl font-semibold text-orange-600">
+        {loading
+          ? "…"
+          : notifications
+              .filter((n) => n.action === "UPDATE")
+              .length.toLocaleString("vi-VN")}
+      </p>
+    </div>
+  </motion.div>
 
-        {/* Xóa */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-600 mb-1">Đã xóa</p>
-          <p className="text-2xl text-red-600">
-            {loading
-              ? "…"
-              : notifications
-                  .filter((n) => n.action === "DELETE")
-                  .length.toLocaleString("vi-VN")}
-          </p>
-        </motion.div>
-      </div>
+  {/* Đã xóa */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay: 0.1 }}
+    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+  >
+    <div className="p-3 bg-red-50 rounded-lg">
+      <Trash2 className="w-5 h-5 text-red-600" />
+    </div>
+    <div>
+      <p className="text-sm text-red-600">Đã xóa</p>
+      <p className="text-xl font-semibold text-red-600">
+        {loading
+          ? "…"
+          : notifications
+              .filter((n) => n.action === "DELETE")
+              .length.toLocaleString("vi-VN")}
+      </p>
+    </div>
+  </motion.div>
+</div>
+
 
       {/* FILTER BAR */}
       <div className="flex gap-3 items-center bg-white p-4 rounded-xl border shadow-sm">
@@ -424,7 +453,7 @@ export default function NotificationsPage() {
                   </p>
 
                   <p className="text-gray-700 mt-1">
-                    {translateDescription(n.description)} #{n.identify}
+                    {translateHistoryDescription(n.description)} #{n.identify}
                   </p>
 
                   {/* ACTION BUTTONS */}
