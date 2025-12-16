@@ -8,6 +8,8 @@ import {
   X,
   Users,
   TrendingUp,
+  Eye,
+  EyeOff,
   Clock,
   ChevronDown,
   ChevronUp,
@@ -33,7 +35,8 @@ const USE_MOCK_DATA = false;
 const MOCK_COMMENTS: Comment[] = [
   {
     id: "1",
-    content: "Hệ thống IoT Platform đã hoạt động rất tốt! Cảm ơn team đã phát triển. 👍",
+    content:
+      "Hệ thống IoT Platform đã hoạt động rất tốt! Cảm ơn team đã phát triển. 👍",
     hidden: false,
     parentId: null,
     replyCount: 2,
@@ -133,7 +136,9 @@ type ReplyProps = {
   loadingReply: Record<string, boolean>;
   setReplies: React.Dispatch<React.SetStateAction<ReplyMap>>;
   setExpanded: React.Dispatch<React.SetStateAction<BooleanMap>>;
-  setLoadingReply: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setLoadingReply: React.Dispatch<
+    React.SetStateAction<Record<string, boolean>>
+  >;
   replyTo: string | null;
   setReplyTo: React.Dispatch<React.SetStateAction<string | null>>;
   setReplyContent: React.Dispatch<React.SetStateAction<string>>;
@@ -145,26 +150,26 @@ type ReplyProps = {
   addStickerToReply: (s: string) => void;
   showEmojiPicker: string | null;
   setShowEmojiPicker: React.Dispatch<React.SetStateAction<string | null>>;
-lockedUsers?: Record<string, boolean>;
-
+  lockedUsers?: Record<string, boolean>;
+  currentUserEmail?: string; // ✅ THÊM
   /* ✅ ADMIN */
   isAdmin: boolean;
   onToggleHideComment: (
     commentId: string,
     nextHidden: boolean
   ) => Promise<void>;
-  onToggleLockCommenting: (
-    email: string,
-    lock: boolean
-  ) => Promise<void>;
+  onToggleLockCommenting: (email: string, lock: boolean) => Promise<void>;
 };
-
 
 /* ======================================================
    COMPONENT: Sticker Bar (Emoji Picker)
 ====================================================== */
-const StickerBar = ({ onPick, show, onToggle }: { 
-  onPick: (s: string) => void; 
+const StickerBar = ({
+  onPick,
+  show,
+  onToggle,
+}: {
+  onPick: (s: string) => void;
   show: boolean;
   onToggle: () => void;
 }) => (
@@ -247,8 +252,8 @@ function ReplyBox({
         />
 
         <div className="flex items-center justify-between mt-2">
-          <StickerBar 
-            onPick={onPickEmoji} 
+          <StickerBar
+            onPick={onPickEmoji}
             show={showEmojiPicker}
             onToggle={onToggleEmoji}
           />
@@ -295,11 +300,13 @@ function CommentItemRecursive({
   comment: Comment;
   isTopLevel: boolean;
 } & ReplyProps) {
-  const displayName =
-    comment.userFullName ||
-    comment.userEmail ||
-    comment.createdBy ||
-    "Ẩn danh";
+const displayName =
+  comment.userEmail ||
+  comment.userFullName ||
+  comment.createdBy ||
+  "Người dùng không xác định";
+
+  const authorEmail = comment.userEmail || comment.createdBy;
 
   const avatarLetter = displayName.charAt(0).toUpperCase();
   const isExpanded = props.expanded[comment.id];
@@ -319,8 +326,8 @@ function CommentItemRecursive({
 
       if (USE_MOCK_DATA) {
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         const mockReplies = MOCK_REPLIES[comment.id] || [];
         props.setReplies((prev) => ({
           ...prev,
@@ -398,7 +405,9 @@ function CommentItemRecursive({
       {/* Main Comment Content */}
       <div className={`flex gap-3 ${!isTopLevel ? "ml-2" : ""}`}>
         {/* Avatar */}
-        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarGradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
+        <div
+          className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarGradient} flex items-center justify-center flex-shrink-0 shadow-md`}
+        >
           {comment.userAvatar ? (
             <img
               src={comment.userAvatar}
@@ -412,13 +421,13 @@ function CommentItemRecursive({
 
         <div className="flex-1 min-w-0">
           {/* Comment Bubble */}
-<div
-  className={`px-4 py-3 rounded-2xl shadow-sm border transition-shadow ${
-    comment.hidden
-      ? "bg-red-50 border-red-300"
-      : "bg-gradient-to-br from-gray-50 to-white border-gray-200 hover:shadow-md"
-  }`}
->
+          <div
+            className={`px-4 py-3 rounded-2xl shadow-sm border transition-shadow ${
+              comment.hidden
+                ? "bg-red-50 border-red-300"
+                : "bg-gradient-to-br from-gray-50 to-white border-gray-200 hover:shadow-md"
+            }`}
+          >
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-gray-900">{displayName}</span>
               {props.formatDate(comment) && (
@@ -428,17 +437,11 @@ function CommentItemRecursive({
                 </span>
               )}
             </div>
-{/* COMMENT CONTENT */}
+            {/* COMMENT CONTENT */}
 {comment.hidden ? (
-  props.isAdmin ? (
-    <p className="text-gray-700 break-words whitespace-pre-wrap">
-      {comment.content}
-    </p>
-  ) : (
-    <p className="italic text-gray-400">
-      Bình luận đã bị ẩn bởi quản trị viên
-    </p>
-  )
+  <p className="italic text-gray-400">
+    Bình luận đã bị ẩn bởi quản trị viên
+  </p>
 ) : (
   <p className="text-gray-700 break-words whitespace-pre-wrap">
     {comment.content}
@@ -449,65 +452,69 @@ function CommentItemRecursive({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4 mt-2 ml-2">
-{(!comment.hidden || props.isAdmin) &&
- !props.lockedUsers?.[comment.userEmail || ""] && (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={startReply}
-    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
-    type="button"
-  >
-    <Reply className="w-3.5 h-3.5" />
-    Trả lời
-  </motion.button>
-)}
+            {(!comment.hidden || props.isAdmin) &&
+              !props.lockedUsers?.[props.currentUserEmail || ""] && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startReply}
+                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                  type="button"
+                >
+                  <Reply className="w-3.5 h-3.5" />
+                  Trả lời
+                </motion.button>
+              )}
 
-{props.isAdmin && (
-  <div className="flex items-center gap-2">
-    {/* Hide / Unhide */}
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() =>
-        props.onToggleHideComment(comment.id, !comment.hidden)
-      }
-      className={`text-sm flex items-center gap-1.5 px-2 py-1 rounded-lg ${
-        comment.hidden
-          ? "text-green-600 hover:bg-green-50"
-          : "text-red-600 hover:bg-red-50"
-      }`}
-      type="button"
-    >
-      {comment.hidden ? "Hiện" : "Ẩn"}
-    </motion.button>
-
-    {/* Block user */}
-    {props.isAdmin && comment.userEmail && (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={() =>
-      props.onToggleLockCommenting(
-        comment.userEmail!,
-        !props.lockedUsers?.[comment.userEmail!]
-      )
-    }
-    className={`text-sm px-2 py-1 rounded-lg ${
-      props.lockedUsers?.[comment.userEmail!]
-        ? "text-green-600 hover:bg-green-50"
-        : "text-orange-600 hover:bg-orange-50"
-    }`}
-    type="button"
-  >
-    {props.lockedUsers?.[comment.userEmail!]
-      ? "Bỏ chặn"
-      : "Chặn bình luận"}
-  </motion.button>
-)}
-
-  </div>
-)}
+            {props.isAdmin && authorEmail && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() =>
+                  props.onToggleLockCommenting(
+                    authorEmail,
+                    !props.lockedUsers?.[authorEmail]
+                  )
+                }
+                className={`text-sm px-2 py-1 rounded-lg ${
+                  props.lockedUsers?.[authorEmail]
+                    ? "text-green-600 hover:bg-green-50"
+                    : "text-orange-600 hover:bg-orange-50"
+                }`}
+                type="button"
+              >
+                {props.lockedUsers?.[authorEmail]
+                  ? "Bỏ chặn"
+                  : "Chặn bình luận"}
+              </motion.button>
+            )}
+            {props.isAdmin && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() =>
+                  props.onToggleHideComment(comment.id, !comment.hidden)
+                }
+                className={`text-sm px-2 py-1 rounded-lg flex items-center gap-1.5 ${
+                  comment.hidden
+                    ? "text-green-600 hover:bg-green-50"
+                    : "text-red-600 hover:bg-red-50"
+                }`}
+                type="button"
+              >
+                {comment.hidden ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    Bỏ ẩn
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5" />
+                    Ẩn bình luận
+                  </>
+                )}
+              </motion.button>
+            )}
 
             {comment.replyCount > 0 && (
               <motion.button
@@ -537,7 +544,7 @@ function CommentItemRecursive({
 
       {/* Reply Input */}
       <AnimatePresence>
-        {isReplying && (
+        {isReplying && !props.lockedUsers?.[props.currentUserEmail || ""] && (
           <ReplyBox
             value={props.replyContent}
             onChange={props.setReplyContent}
@@ -546,7 +553,9 @@ function CommentItemRecursive({
             disabled={props.posting || !props.replyContent.trim()}
             showEmojiPicker={showReplyEmoji}
             onToggleEmoji={() =>
-              props.setShowEmojiPicker(showReplyEmoji ? null : `reply-${comment.id}`)
+              props.setShowEmojiPicker(
+                showReplyEmoji ? null : `reply-${comment.id}`
+              )
             }
             onPickEmoji={props.addStickerToReply}
           />
@@ -578,6 +587,43 @@ function CommentItemRecursive({
 }
 
 export default function CommentsPage() {
+  const LOCKED_CACHE_KEY = "lockedUsersCache";
+const HIDDEN_COMMENT_KEY = "hiddenComments";
+
+const saveHiddenId = (id: string) => {
+  const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+  const list: string[] = raw ? JSON.parse(raw) : [];
+  if (!list.includes(id)) {
+    list.push(id);
+    localStorage.setItem(HIDDEN_COMMENT_KEY, JSON.stringify(list));
+  }
+};
+
+const removeHiddenId = (id: string) => {
+  const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+  const list: string[] = raw ? JSON.parse(raw) : [];
+  localStorage.setItem(
+    HIDDEN_COMMENT_KEY,
+    JSON.stringify(list.filter((x) => x !== id))
+  );
+};
+
+
+
+
+// khi render
+
+
+  const setLockedUsersAndCache = (
+    updater: (prev: Record<string, boolean>) => Record<string, boolean>
+  ) => {
+    setLockedUsers((prev) => {
+      const next = updater(prev);
+      localStorage.setItem(LOCKED_CACHE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const [topComments, setTopComments] = useState<Comment[]>([]);
   const [replies, setReplies] = useState<ReplyMap>({});
   const [expanded, setExpanded] = useState<BooleanMap>({});
@@ -597,12 +643,11 @@ export default function CommentsPage() {
 
   const token = localStorage.getItem("token");
 
-
-const role = localStorage.getItem("role") || "";
-const isAdmin = role.includes("ADMIN");
-const [lockedUsers, setLockedUsers] = useState<Record<string, boolean>>({});
-const currentUserEmail = localStorage.getItem("email") || "";
-
+  const role = localStorage.getItem("role") || "";
+  const isAdmin = role.includes("ADMIN");
+  const [lockedUsers, setLockedUsers] = useState<Record<string, boolean>>({});
+  const currentUserEmail = localStorage.getItem("email") || "";
+  const isCurrentUserLocked = !!lockedUsers[currentUserEmail];
 
   // =============== UTIL ===============
   const authHeaders = () => ({
@@ -636,26 +681,42 @@ const currentUserEmail = localStorage.getItem("email") || "";
 
       if (USE_MOCK_DATA) {
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, 800));
         setTopComments(MOCK_COMMENTS);
       } else {
-const url = isAdmin
-  ? `${API_BASE}/api/v1/comments/toplevel?page=0&size=20&includeHidden=true`
-  : `${API_BASE}/api/v1/comments/toplevel?page=0&size=20`;
+        const url = isAdmin
+          ? `${API_BASE}/api/v1/comments/toplevel?page=0&size=20&includeHidden=true`
+          : `${API_BASE}/api/v1/comments/toplevel?page=0&size=20`;
 
-const res = await fetch(url, {
-  headers: authHeaders(),
-});
-
+        const res = await fetch(url, {
+          headers: authHeaders(),
+        });
 
         const data = await res.json();
         const list: Comment[] = data.content ?? [];
 
-        setTopComments(list);
+
+// 👉 FE-only placeholder cho hidden comment
+const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+const hiddenIds: string[] = raw ? JSON.parse(raw) : [];
+
+const placeholders: Comment[] = hiddenIds
+  .filter((id) => !list.some((c) => c.id === id))
+  .map((id) => ({
+    id,
+    content: "",
+    hidden: true,
+    parentId: null,
+    replyCount: 0,
+  }));
+
+setTopComments(
+  [...placeholders, ...list].sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+  )
+);
         console.log("IS ADMIN:", isAdmin);
-console.log("TOP COMMENTS:", list);
-
-
+        console.log("TOP COMMENTS:", list);
       }
     } catch (error) {
       console.error("Error loading comments:", error);
@@ -665,8 +726,27 @@ console.log("TOP COMMENTS:", list);
       setLoadingTop(false);
     }
   };
+  useEffect(() => {
+    if (isCurrentUserLocked) {
+      setReplyTo(null);
+      setReplyContent("");
+      setShowEmojiPicker(null);
+    }
+  }, [isCurrentUserLocked]);
 
   useEffect(() => {
+    // 1️⃣ Load locked users từ localStorage
+    try {
+      const raw = localStorage.getItem(LOCKED_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setLockedUsers(parsed);
+      }
+    } catch (e) {
+      console.error("Cannot load lockedUsers cache", e);
+    }
+
+    // 2️⃣ Load comment như cũ
     loadTopComments();
   }, []);
 
@@ -679,8 +759,8 @@ console.log("TOP COMMENTS:", list);
 
       if (USE_MOCK_DATA) {
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         const newComment: Comment = {
           id: `mock-${Date.now()}`,
           content: mainContent.trim(),
@@ -692,7 +772,7 @@ console.log("TOP COMMENTS:", list);
           userEmail: "you@ptit.edu.vn",
           userFullName: "Bạn",
         };
-        
+
         setTopComments((prev) => [newComment, ...prev]);
       } else {
         const res = await fetch(`${API_BASE}/api/v1/comments`, {
@@ -732,55 +812,47 @@ const handleToggleHideComment = async (
 
     if (!res.ok) throw new Error("Toggle hide failed");
 
-    // ✅ Update UI ngay (top-level)
+    // ✅ LƯU CACHE
+    if (nextHidden) saveHiddenId(commentId);
+    else removeHiddenId(commentId);
+
+    // ✅ UPDATE UI NGAY (KHỎI CHỜ RELOAD)
     setTopComments((prev) =>
       prev.map((c) =>
         c.id === commentId ? { ...c, hidden: nextHidden } : c
       )
     );
 
-    // ✅ Update UI ngay (reply)
-    setReplies((prev) => {
-      const copy = { ...prev };
-      Object.keys(copy).forEach((key) => {
-        copy[key] = copy[key].map((c) =>
-          c.id === commentId ? { ...c, hidden: nextHidden } : c
-        );
+    // ✅ QUAN TRỌNG: reload lại list từ BE + cache
+    await loadTopComments();
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+
+  const handleToggleLockCommenting = async (email: string, lock: boolean) => {
+    try {
+      const endpoint = lock
+        ? `/api/v1/admin/users/${encodeURIComponent(email)}/lock-commenting`
+        : `/api/v1/admin/users/${encodeURIComponent(email)}/unlock-commenting`;
+
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: authHeaders(),
       });
-      return copy;
-    });
-  } catch (e) {
-    console.error(e);
-  }
-};
 
-const handleToggleLockCommenting = async (
-  email: string,
-  lock: boolean
-) => {
-  try {
-    const endpoint = lock
-      ? `/api/v1/admin/users/${encodeURIComponent(email)}/lock-commenting`
-      : `/api/v1/admin/users/${encodeURIComponent(email)}/unlock-commenting`;
+      if (!res.ok) throw new Error("Lock/unlock failed");
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: "POST",
-      headers: authHeaders(),
-    });
-
-    if (!res.ok) throw new Error("Lock/unlock failed");
-
-    // ✅ cập nhật UI ngay
-    setLockedUsers((prev) => ({
-      ...prev,
-      [email]: lock,
-    }));
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-
+      // ✅ Update UI + localStorage
+      setLockedUsersAndCache((prev) => ({
+        ...prev,
+        [email]: lock,
+      }));
+    } catch (e) {
+      console.error("Lock commenting error:", e);
+    }
+  };
 
   // =============== POST REPLY ===============
   const handlePostReply = async (parentId: string) => {
@@ -791,8 +863,8 @@ const handleToggleLockCommenting = async (
 
       if (USE_MOCK_DATA) {
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         const newReply: Comment = {
           id: `mock-reply-${Date.now()}`,
           content: replyContent.trim(),
@@ -804,7 +876,7 @@ const handleToggleLockCommenting = async (
           userEmail: "you@ptit.edu.vn",
           userFullName: "Bạn",
         };
-        
+
         setReplies((prev) => ({
           ...prev,
           [parentId]: [...(prev[parentId] ?? []), newReply],
@@ -881,7 +953,7 @@ const handleToggleLockCommenting = async (
 const filteredComments = topComments.filter((c) => {
   const keyword = searchTerm.toLowerCase();
 
-  // ✅ ADMIN: luôn thấy comment kể cả bị ẩn
+  // ADMIN: luôn thấy, kể cả hidden
   if (isAdmin) {
     return (
       (c.content ?? "").toLowerCase().includes(keyword) ||
@@ -890,19 +962,19 @@ const filteredComments = topComments.filter((c) => {
     );
   }
 
-  // ✅ USER thường: KHÔNG thấy comment bị ẩn
-  if (c.hidden) return false;
-
+  // USER thường:
+  // 👉 KHÔNG lọc hidden ở đây
+  // 👉 render sẽ xử lý hidden
   return (
     (c.content ?? "").toLowerCase().includes(keyword) ||
     (c.userFullName ?? "").toLowerCase().includes(keyword) ||
-    (c.userEmail ?? "").toLowerCase().includes(keyword)
+    (c.userEmail ?? "").toLowerCase().includes(keyword) ||
+    c.hidden // ✅ BẮT BUỘC: để placeholder còn render
   );
 });
 
-const replyRate = totalComments > 0 
-  ? (totalReplies / totalComments) * 100 
-  : 0;
+  const replyRate =
+    totalComments > 0 ? (totalReplies / totalComments) * 100 : 0;
 
   // =================== RENDER ===================
   return (
@@ -931,9 +1003,9 @@ const replyRate = totalComments > 0
           {/* Stats */}
           <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mb-6">
             <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               whileHover={{ scale: 1.02 }}
               className="p-4 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-700 rounded-2xl shadow-xl"
             >
@@ -949,9 +1021,9 @@ const replyRate = totalComments > 0
             </motion.div>
 
             <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               whileHover={{ scale: 1.02 }}
               className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-700 rounded-2xl shadow-xl"
             >
@@ -967,9 +1039,9 @@ const replyRate = totalComments > 0
             </motion.div>
 
             <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               whileHover={{ scale: 1.02 }}
               className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-700 rounded-2xl shadow-xl"
             >
@@ -983,23 +1055,25 @@ const replyRate = totalComments > 0
                 </div>
               </div>
             </motion.div>
-              <motion.div
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-700 rounded-2xl shadow-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                    <Percent className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-blue-600">Tỉ lệ phản hồi</p>
-                    <p className="text-2xl text-blue-900">{replyRate.toFixed(1)}%</p>
-                  </div>
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              whileHover={{ scale: 1.02 }}
+              className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-700 rounded-2xl shadow-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Percent className="w-5 h-5 text-white" />
                 </div>
-              </motion.div>
+                <div>
+                  <p className="text-sm text-blue-600">Tỉ lệ phản hồi</p>
+                  <p className="text-2xl text-blue-900">
+                    {replyRate.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           {/* Search */}
@@ -1015,53 +1089,75 @@ const replyRate = totalComments > 0
           </div>
         </motion.div>
 
-        {/* Main Comment Input */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border-2 border-red-100 p-6 mb-8 shadow-lg"
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-700 to-red-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
-              <MessageSquare className="w-6 h-6 text-white" />
-            </div>
+        {isCurrentUserLocked ? (
+          /* 🚫 USER BỊ CHẶN */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border-2 border-red-300 rounded-2xl p-6 mb-8 shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                <X className="w-6 h-6 text-white" />
+              </div>
 
-            <div className="flex-1">
-              <textarea
-                value={mainContent}
-                onChange={(e) => setMainContent(e.target.value)}
-                placeholder="Hãy bình luận có văn hóa..."
-                className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 rounded-xl outline-none transition-all resize-none"
-                rows={3}
-              />
-
-              <div className="flex items-center justify-between mt-3">
-                <StickerBar
-                  onPick={addStickerToMain}
-                  show={showMainEmoji}
-                  onToggle={() => setShowMainEmoji(!showMainEmoji)}
-                />
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePostMain}
-                  disabled={posting || !mainContent.trim()}
-                  className={`px-6 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl flex items-center gap-2 shadow-md transition-all ${
-                    posting || !mainContent.trim()
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:shadow-lg"
-                  }`}
-                  type="button"
-                >
-                  <Send className="w-4 h-4" />
-                  {posting ? "Đang gửi..." : "Gửi bình luận"}
-                </motion.button>
+              <div>
+                <p className="text-red-700 font-semibold text-lg">
+                  Bạn đã bị chặn comment
+                </p>
+                <p className="text-red-500 text-sm">
+                  Vui lòng liên hệ quản trị viên nếu bạn nghĩ đây là nhầm lẫn.
+                </p>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border-2 border-red-100 p-6 mb-8 shadow-lg"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-700 to-red-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </div>
 
+              <div className="flex-1">
+                <textarea
+                  value={mainContent}
+                  onChange={(e) => setMainContent(e.target.value)}
+                  placeholder="Hãy bình luận có văn hóa..."
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 rounded-xl outline-none transition-all resize-none"
+                  rows={3}
+                />
+
+                <div className="flex items-center justify-between mt-3">
+                  <StickerBar
+                    onPick={addStickerToMain}
+                    show={showMainEmoji}
+                    onToggle={() => setShowMainEmoji(!showMainEmoji)}
+                  />
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handlePostMain}
+                    disabled={posting || !mainContent.trim()}
+                    className={`px-6 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl flex items-center gap-2 shadow-md transition-all ${
+                      posting || !mainContent.trim()
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:shadow-lg"
+                    }`}
+                    type="button"
+                  >
+                    <Send className="w-4 h-4" />
+                    {posting ? "Đang gửi..." : "Gửi bình luận"}
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         {/* Comments List Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl text-gray-900">
@@ -1087,7 +1183,9 @@ const replyRate = totalComments > 0
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageSquare className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-xl text-gray-900 mb-2">Chưa có bình luận nào</h3>
+            <h3 className="text-xl text-gray-900 mb-2">
+              Chưa có bình luận nào
+            </h3>
             <p className="text-gray-600">
               {searchTerm
                 ? "Không tìm thấy bình luận nào khớp với từ khóa"
@@ -1099,37 +1197,34 @@ const replyRate = totalComments > 0
         {/* Comments List */}
         <div className="space-y-6">
           {filteredComments.map((c) => (
-           <CommentItemRecursive
-  key={c.id}
-  comment={c}
-  isTopLevel={true}
-
-  replies={replies}
-  expanded={expanded}
-  loadingReply={loadingReply}
-  setReplies={setReplies}
-  setExpanded={setExpanded}
-  setLoadingReply={setLoadingReply}
-  replyTo={replyTo}
-  setReplyTo={setReplyTo}
-  setReplyContent={setReplyContent}
-  handlePostReply={handlePostReply}
-  replyContent={replyContent}
-  posting={posting}
-  formatDate={formatDate}
-  authHeaders={authHeaders}
-  addStickerToReply={addStickerToReply}
-  showEmojiPicker={showEmojiPicker}
-  setShowEmojiPicker={setShowEmojiPicker}
-
-  /* ADMIN */
-  isAdmin={isAdmin}
-  lockedUsers={lockedUsers}          // ✅ THÊM
-  onToggleHideComment={handleToggleHideComment}
-  onToggleLockCommenting={handleToggleLockCommenting}
-/>
-
-
+            <CommentItemRecursive
+              key={c.id}
+              comment={c}
+              isTopLevel={true}
+              replies={replies}
+              expanded={expanded}
+              loadingReply={loadingReply}
+              setReplies={setReplies}
+              setExpanded={setExpanded}
+              setLoadingReply={setLoadingReply}
+              replyTo={replyTo}
+              setReplyTo={setReplyTo}
+              setReplyContent={setReplyContent}
+              handlePostReply={handlePostReply}
+              replyContent={replyContent}
+              posting={posting}
+              formatDate={formatDate}
+              authHeaders={authHeaders}
+              addStickerToReply={addStickerToReply}
+              showEmojiPicker={showEmojiPicker}
+              setShowEmojiPicker={setShowEmojiPicker}
+              /* ADMIN */
+              isAdmin={isAdmin}
+              lockedUsers={lockedUsers}
+              currentUserEmail={currentUserEmail} // ✅ THÊM
+              onToggleHideComment={handleToggleHideComment}
+              onToggleLockCommenting={handleToggleLockCommenting}
+            />
           ))}
         </div>
       </div>
