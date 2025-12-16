@@ -1,3 +1,6 @@
+import { MultiSelectDropdown } from "@/components/ui/MultiSelectDropdown";
+import { toast } from "sonner";
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import axios from "axios";
@@ -205,7 +208,7 @@ export default function QueryPage2() {
 
   // 3. Handle Search
   const handleQuery = async () => {
-    if (!dates.from || !dates.to) return alert("Vui lòng chọn khoảng ngày!");
+    if (!dates.from || !dates.to) return toast.warning("Vui lòng chọn khoảng ngày!");
 
     setLoading(true);
     try {
@@ -217,7 +220,7 @@ export default function QueryPage2() {
       setShowResults(true);
     } catch (err) {
       console.error(err);
-      alert("Không tìm thấy dữ liệu phù hợp!");
+      toast.warning("Không tìm thấy dữ liệu phù hợp!");
     } finally {
       setLoading(false);
     }
@@ -225,7 +228,7 @@ export default function QueryPage2() {
 
   // 4. Export CSV & Save History
   const handleExportCSV = async () => {
-    if (pivotedData.length === 0) return alert("Không có dữ liệu để xuất!");
+    if (pivotedData.length === 0) return toast.warning("Không có dữ liệu để xuất!");
 
     // --- A. Tạo file CSV ---
     const headers = [
@@ -312,7 +315,7 @@ export default function QueryPage2() {
       setShowResults(true);
     } catch (e) {
       console.error("Lỗi khôi phục lịch sử", e);
-      alert("Dữ liệu lịch sử bị lỗi!");
+      toast.warning("Dữ liệu lịch sử bị lỗi!");
     } finally {
       setLoading(false);
     }
@@ -523,7 +526,7 @@ export default function QueryPage2() {
           </div>
         </div>
 
-        {/* ===== ROW 4: LOẠI CẢM BIẾN (PROPERTIES) ===== */}
+        {/* ===== ROW 4: LOẠI CẢM BIẾN (PROPERTIES) bảng chứa tooneg hợp
         <div className="mb-4">
           <label className="block text-gray-700 mb-2 flex items-center gap-2">
             <Layers className="w-4 h-4 text-gray-500" />
@@ -553,6 +556,29 @@ export default function QueryPage2() {
                 </label>
               ))}
             </div>
+          </div>
+        </div> ===== */}
+        {/* ===== ROW 4: LOẠI CẢM BIẾN (DROPDOWN) ===== */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-gray-500" />
+              Loại cảm biến (Properties)
+            </label>
+
+            <MultiSelectDropdown
+              options={properties}
+              selectedIds={selectedProperties}
+              onToggle={(id) => {
+                setSelectedProperties((prev) =>
+                  prev.includes(id)
+                    ? prev.filter((x) => x !== id)
+                    : [...prev, id]
+                );
+              }}
+              placeholder="Chọn các thuộc tính cảm biến..."
+              emptyMessage="Chưa có thuộc tính nào"
+            />
           </div>
         </div>
 

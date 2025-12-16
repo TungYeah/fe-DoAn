@@ -84,6 +84,32 @@ export default function DashboardPage() {
       specificLocation: null,
     };
   };
+const fetchQueryCount = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const res = await fetch(
+      "http://localhost:8080/api/v1/data-query/history",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Fetch query history failed");
+
+    const list = await res.json();
+
+    // ✅ API trả về history của user → đếm thẳng
+    setQueryCount(Array.isArray(list) ? list.length : 0);
+  } catch (err) {
+    console.error("❌ Fetch query count error:", err);
+    setQueryCount(0);
+  }
+};
+
 
   // =========================
   // TRANSLATE HELPERS
@@ -223,6 +249,9 @@ export default function DashboardPage() {
       }))
       .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
   }
+useEffect(() => {
+  fetchQueryCount();
+}, []);
 
   useEffect(() => {
     const fetchDataLakeCount = async () => {
