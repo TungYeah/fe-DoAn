@@ -50,6 +50,16 @@ export default function DevicesPage() {
       },
     };
   };
+
+  // ================== DEVICE CODE INPUT RULE ==================
+  const normalizeDeviceCode = (value: string) => {
+    return value
+      .normalize("NFD") // tách dấu tiếng Việt
+      .replace(/[\u0300-\u036f]/g, "") // xoá dấu
+      .replace(/[^a-zA-Z0-9_-]/g, "") // CHỈ cho A-Z, 0-9, - _
+      .toUpperCase(); // VIẾT HOA
+  };
+
   // ===== LOCATION STATE =====
   const [provinces, setProvinces] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
@@ -80,10 +90,10 @@ export default function DevicesPage() {
   const [isQuickAddPropOpen, setIsQuickAddPropOpen] = useState(false);
 
   const [selectedDevice, setSelectedDevice] = useState<any>(null);
-const reloadDevices = async () => {
-  await loadDevices();      // cho tab details
-  await loadAllDevices();   // cho tab overview
-};
+  const reloadDevices = async () => {
+    await loadDevices(); // cho tab details
+    await loadAllDevices(); // cho tab overview
+  };
 
   // Form State cho Device
   const [formData, setFormData] = useState({
@@ -430,7 +440,7 @@ const reloadDevices = async () => {
         setIsAddOpen(false);
       }
 
-await reloadDevices();
+      await reloadDevices();
       resetForm();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Có lỗi xảy ra");
@@ -473,7 +483,7 @@ await reloadDevices();
       );
       toast.success("Đã xóa thiết bị");
       setIsDeleteOpen(false);
-await reloadDevices();
+      await reloadDevices();
     } catch {
       toast.error("Xóa thất bại");
     }
@@ -1186,13 +1196,18 @@ await reloadDevices();
                 Mã định danh (Unique ID) <span className="text-red-500">*</span>
               </label>
               <input
-                className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
+                className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none font-mono"
                 value={formData.uniqueIdentifier}
-                onChange={(e) =>
-                  setFormData({ ...formData, uniqueIdentifier: e.target.value })
-                }
-                placeholder="VD: ESP32-MAC-ADDRESS"
+                onChange={(e) => {
+                  const normalized = normalizeDeviceCode(e.target.value);
+                  setFormData({ ...formData, uniqueIdentifier: normalized });
+                }}
+                placeholder="VD: ESP32_GATEWAY-01"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Chỉ cho phép A–Z, 0–9, dấu <b>-</b> hoặc <b>_</b>. Không khoảng
+                trắng.
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700">

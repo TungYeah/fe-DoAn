@@ -601,8 +601,8 @@ export default function CommentsPage() {
 const role = localStorage.getItem("role") || "";
 const isAdmin = role.includes("ADMIN");
 const [lockedUsers, setLockedUsers] = useState<Record<string, boolean>>({});
-
 const currentUserEmail = localStorage.getItem("email") || "";
+
 
   // =============== UTIL ===============
   const authHeaders = () => ({

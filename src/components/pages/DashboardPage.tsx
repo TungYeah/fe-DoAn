@@ -174,64 +174,55 @@ export default function DashboardPage() {
       d.getSeconds()
     )} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   }
-async function fetchChartFromDataLake(
-  sensor: "temp" | "humidity"
-): Promise<any[]> {
-  const payload = {
-    deviceTypeId: null,
-    propertyIds: null,
-    fromDate: new Date(Date.now() - 30 * 86400000)
-      .toISOString()
-      .slice(0, 10),
-    toDate: new Date().toISOString().slice(0, 10),
-    fromTime: "00:00:00",
-    toTime: "23:59:59",
-    province: null,
-    district: null,
-    ward: null,
-    specificLocation: null,
-  };
+  async function fetchChartFromDataLake(
+    sensor: "temp" | "humidity"
+  ): Promise<any[]> {
+    const payload = {
+      deviceTypeId: null,
+      propertyIds: null,
+      fromDate: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10),
+      toDate: new Date().toISOString().slice(0, 10),
+      fromTime: "00:00:00",
+      toTime: "23:59:59",
+      province: null,
+      district: null,
+      ward: null,
+      specificLocation: null,
+    };
 
-  const res = await fetch(
-    "http://localhost:8080/api/v1/data-query/lake",
-    {
+    const res = await fetch("http://localhost:8080/api/v1/data-query/lake", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(payload),
-    }
-  );
+    });
 
-  const raw = await res.json();
-  if (!Array.isArray(raw)) return [];
+    const raw = await res.json();
+    if (!Array.isArray(raw)) return [];
 
-  // 🔥 map sensor → propertyName
-  const propertyMap: Record<string, string> = {
-    temp: "temperature",
-    humidity: "humidity",
-  };
+    // 🔥 map sensor → propertyName
+    const propertyMap: Record<string, string> = {
+      temp: "temperature",
+      humidity: "humidity",
+    };
 
-  const targetProperty = propertyMap[sensor];
+    const targetProperty = propertyMap[sensor];
 
-  return raw
-    .filter(
-      (r) =>
-        r.propertyName === targetProperty &&
-        r.timestamp &&
-        r.value !== undefined
-    )
-    .map((r) => ({
-      time: r.timestamp,
-      value: Number(r.value),
-    }))
-    .sort(
-      (a, b) =>
-        new Date(a.time).getTime() - new Date(b.time).getTime()
-    );
-}
-
+    return raw
+      .filter(
+        (r) =>
+          r.propertyName === targetProperty &&
+          r.timestamp &&
+          r.value !== undefined
+      )
+      .map((r) => ({
+        time: r.timestamp,
+        value: Number(r.value),
+      }))
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  }
 
   useEffect(() => {
     const fetchDataLakeCount = async () => {
@@ -248,22 +239,17 @@ async function fetchChartFromDataLake(
     fetchDataLakeCount();
   }, []);
 
-
-
-useEffect(() => {
-  fetchChartFromDataLake(selectedMetric)
-    .then((data) => {
-      console.log("📊 Chart data:", data);
-      setChartData(data);
-    })
-    .catch((err) => {
-      console.error("❌ Chart error:", err);
-      setChartData([]);
-    });
-}, [selectedMetric]);
-
-
-
+  useEffect(() => {
+    fetchChartFromDataLake(selectedMetric)
+      .then((data) => {
+        console.log("📊 Chart data:", data);
+        setChartData(data);
+      })
+      .catch((err) => {
+        console.error("❌ Chart error:", err);
+        setChartData([]);
+      });
+  }, [selectedMetric]);
 
   useEffect(() => {
     let start = 0;
@@ -359,7 +345,6 @@ useEffect(() => {
 
     fetchCurrentUser();
   }, []);
-
 
   useEffect(() => {
     if (!token || !email) return;
@@ -482,12 +467,7 @@ useEffect(() => {
         })}
       </div>
 
-      {/* ======================= */}
       {/* SENSOR CHART */}
-      {/* ======================= */}
-      {/* ======================= */}
-      {/* SENSOR CHART */}
-      {/* ======================= */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -495,11 +475,9 @@ useEffect(() => {
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl text-gray-900">
-              Dữ liệu cảm biến (3 tháng gần nhất)
-            </h3>
+            <h3 className="text-xl text-gray-900">Dữ liệu cảm biến</h3>
             <p className="text-sm text-gray-600">
-              Biểu diễn dữ liệu theo thời gian thực
+              Dữ liệu từ các cảm biến trong 30d qua
             </p>
           </div>
 
@@ -556,7 +534,7 @@ useEffect(() => {
         {/* EMPTY STATE */}
         {chartData.length === 0 && (
           <p className="text-center text-sm text-gray-400 mt-4">
-            Chưa có dữ liệu cảm biến trong 3 tháng gần đây
+            Chưa có dữ liệu cảm biến trong 30d gần đây
           </p>
         )}
       </motion.div>
@@ -569,16 +547,18 @@ useEffect(() => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.5 }}
           className="bg-white rounded-2xl p-6 border shadow-sm lg:col-span-2"
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl text-gray-900">Thiết bị của tôi</h3>
-            <button
-              onClick={() => navigate("/dashboard/devices")}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
             >
               Xem tất cả <TrendingUp className="w-4 h-4" />
-            </button>
+            </motion.button>
           </div>
 
           <div className="space-y-3">
@@ -602,7 +582,11 @@ useEffect(() => {
                 return (
                   <motion.div
                     key={d.id}
-                    className="relative flex justify-between p-4 border rounded-xl hover:shadow"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25 }}
+                    whileHover={{ x: 5, y: -2 }}
+                    className="relative flex justify-between p-4 border rounded-xl hover:shadow-md transition-all"
                   >
                     {/* LEFT */}
                     <div className="flex gap-4 items-center">
