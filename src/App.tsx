@@ -24,7 +24,7 @@ import DeviceTypesPage from "./components/pages/DeviceTypesPage";
 import HistoryPage from "./components/pages/HistoryPage";
 import ImportDataPage from "./components/pages/ImportDataPage";
 import QueryPage from "./components/pages/QueryPage";
-import QueryPage1 from "./components/pages/QueryPage1";
+import QueryPage1 from "./components/pages/QueryPage2";
 
 import RevenuePage from "./components/pages/RevenuePage";
 import ChartsPage from "./components/pages/ChartsPage";
