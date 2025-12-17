@@ -180,53 +180,54 @@ export default function DevicesPage() {
     }
   };
 
-  useEffect(() => {
-    axios
-      .get("https://provinces.open-api.vn/api/p/")
-      .then((res) => setProvinces(res.data || []))
-      .catch(() => toast.error("Lỗi tải danh sách tỉnh"));
-  }, []);
-  const handleProvinceChange = async (code: string) => {
-    const p = provinces.find((x) => String(x.code) === code);
+useEffect(() => {
+  fetch("/data/vietnam_locations.json")
+    .then((res) => {
+      if (!res.ok) throw new Error("Không load được file location offline");
+      return res.json();
+    })
+    .then((data) => {
+      setProvinces(data || []);
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error("Lỗi tải dữ liệu tỉnh/thành (offline)");
+    });
+}, []);
 
-    setSelectedProvince(p);
-    setSelectedDistrict(null);
-    setSelectedWard(null);
-    setDistricts([]);
-    setWards([]);
+const handleProvinceChange = (code: string) => {
+  const p = provinces.find((x) => String(x.code) === code);
 
-    setFormData((prev) => ({
-      ...prev,
-      province: p?.name || "",
-      district: "",
-      ward: "",
-    }));
+  setSelectedProvince(p || null);
+  setSelectedDistrict(null);
+  setSelectedWard(null);
 
-    if (!code) return;
+  setDistricts(p?.districts || []);
+  setWards([]);
 
-    const res = await axios.get(
-      `https://provinces.open-api.vn/api/p/${code}?depth=2`
-    );
-    setDistricts(res.data?.districts || []);
-  };
+  setFormData((prev) => ({
+    ...prev,
+    province: p?.name || "",
+    district: "",
+    ward: "",
+  }));
+};
 
-  const handleDistrictChange = async (code: string) => {
-    const d = districts.find((x) => String(x.code) === code);
-    setSelectedDistrict(d);
-    setSelectedWard(null);
-    setWards([]);
 
-    setFormData((prev) => ({
-      ...prev,
-      district: d?.name || "",
-      ward: "",
-    }));
+const handleDistrictChange = (code: string) => {
+  const d = districts.find((x) => String(x.code) === code);
 
-    const res = await axios.get(
-      `https://provinces.open-api.vn/api/d/${code}?depth=2`
-    );
-    setWards(res.data?.wards || []);
-  };
+  setSelectedDistrict(d || null);
+  setSelectedWard(null);
+  setWards(d?.wards || []);
+
+  setFormData((prev) => ({
+    ...prev,
+    district: d?.name || "",
+    ward: "",
+  }));
+};
+
   const handleWardChange = (code: string) => {
     const w = wards.find((x) => String(x.code) === code);
     setSelectedWard(w);
@@ -310,32 +311,24 @@ export default function DevicesPage() {
       return;
     }
 
-    // ===== SET LOCATION DROPDOWN =====
-    const p = provinces.find((x) => x.name === dev.province);
-    if (p) {
-      setSelectedProvince(p);
+// ===== SET LOCATION DROPDOWN (OFFLINE – FIX LỖI EDIT) =====
+const p = provinces.find((x) => x.name === dev.province);
+if (p) {
+  setSelectedProvince(p);
+  setDistricts(p.districts || []);
 
-      axios
-        .get(`https://provinces.open-api.vn/api/p/${p.code}?depth=2`)
-        .then((res) => {
-          setDistricts(res.data.districts || []);
+  const d = p.districts?.find((x: any) => x.name === dev.district);
+  if (d) {
+    setSelectedDistrict(d);
+    setWards(d.wards || []);
 
-          const d = res.data.districts.find(
-            (x: any) => x.name === dev.district
-          );
-          if (d) {
-            setSelectedDistrict(d);
-
-            axios
-              .get(`https://provinces.open-api.vn/api/d/${d.code}?depth=2`)
-              .then((r2) => {
-                setWards(r2.data.wards || []);
-                const w = r2.data.wards.find((x: any) => x.name === dev.ward);
-                if (w) setSelectedWard(w);
-              });
-          }
-        });
+    const w = d.wards?.find((x: any) => x.name === dev.ward);
+    if (w) {
+      setSelectedWard(w);
     }
+  }
+}
+
 
     setIsEditOpen(true);
   };
