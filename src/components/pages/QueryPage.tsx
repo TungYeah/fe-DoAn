@@ -192,7 +192,8 @@ export default function QueryPage2() {
       }
 
       const row = groupedMap.get(key)!;
-      row[item.propertyName] = item.value;
+      const unitStr = item.unit ? ` ${item.unit}` : "";
+      row[item.propertyName] = `${item.value}${unitStr}`;
       foundProperties.add(item.propertyName);
     });
 
