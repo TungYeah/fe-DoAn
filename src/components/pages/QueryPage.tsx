@@ -55,6 +55,9 @@ export default function QueryPage2() {
   // --- EXPORT META ---
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFileName, setExportFileName] = useState("");
+  // --- PAGINATION STATE ---
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
 
   // --- STATE METADATA ---
   const [deviceTypes, setDeviceTypes] = useState([]);
@@ -62,6 +65,13 @@ export default function QueryPage2() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState<Province | null>(
+    null
+  );
+  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(
+    null
+  );
+  const [selectedWard, setSelectedWard] = useState<Ward | null>(null);
 
   // --- STATE FILTER ---/
   const [selectedDeviceTypeId, setSelectedDeviceTypeId] = useState<string>("");
@@ -75,6 +85,50 @@ export default function QueryPage2() {
     ward: "",
     specific: "",
   });
+
+  const handleProvinceChange = (code: string) => {
+    const p = provinces.find((x) => String(x.code) === code) || null;
+
+    setSelectedProvince(p);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+
+    setDistricts(p?.districts || []);
+    setWards([]);
+
+    setLocationState((prev) => ({
+      ...prev,
+      province: p?.name || "",
+      district: "",
+      ward: "",
+    }));
+  };
+
+  const handleDistrictChange = (code: string) => {
+    const d = districts.find((x) => String(x.code) === code) || null;
+
+    setSelectedDistrict(d);
+    setSelectedWard(null);
+
+    setWards(d?.wards || []);
+
+    setLocationState((prev) => ({
+      ...prev,
+      district: d?.name || "",
+      ward: "",
+    }));
+  };
+
+  const handleWardChange = (code: string) => {
+    const w = wards.find((x) => String(x.code) === code) || null;
+
+    setSelectedWard(w);
+
+    setLocationState((prev) => ({
+      ...prev,
+      ward: w?.name || "",
+    }));
+  };
 
   // --- STATE RESULT ---
   const [rawResults, setRawResults] = useState<any[]>([]);
@@ -99,39 +153,22 @@ export default function QueryPage2() {
 
   // Load provinces với depth=3
   useEffect(() => {
-    fetch("https://provinces.open-api.vn/api/?depth=3")
-      .then((res) => res.json())
+    fetch("/data/vietnam_locations.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("Không load được file location offline");
+        return res.json();
+      })
       .then((data) => setProvinces(data || []))
-      .catch(() => setProvinces([]));
+      .catch((err) => {
+        console.error(err);
+        toast.error("Lỗi tải dữ liệu tỉnh/thành (offline)");
+        setProvinces([]);
+      });
   }, []);
 
   // Khi chọn Province -> fill District
-  useEffect(() => {
-    if (!locationState.province) {
-      setDistricts([]);
-      setWards([]);
-      setLocationState((prev) => ({ ...prev, district: "", ward: "" }));
-      return;
-    }
-
-    const p = provinces.find((p) => p.name === locationState.province);
-    setDistricts(p?.districts || []);
-    setWards([]);
-    setLocationState((prev) => ({ ...prev, district: "", ward: "" }));
-  }, [locationState.province, provinces]);
 
   // Khi chọn District -> fill Ward
-  useEffect(() => {
-    if (!locationState.district) {
-      setWards([]);
-      setLocationState((prev) => ({ ...prev, ward: "" }));
-      return;
-    }
-
-    const d = districts.find((d) => d.name === locationState.district);
-    setWards(d?.wards || []);
-    setLocationState((prev) => ({ ...prev, ward: "" }));
-  }, [locationState.district, districts]);
 
   // 1. Fetch Metadata & History khi load trang
   useEffect(() => {
@@ -244,6 +281,7 @@ export default function QueryPage2() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setRawResults(res.data);
+      setPage(1); // ✅ reset về trang 1
       setShowResults(true);
     } catch (err) {
       console.error(err);
@@ -342,6 +380,54 @@ export default function QueryPage2() {
         ward: payload.ward || "",
         specific: payload.specificLocation || "",
       });
+
+      // ===== RESTORE LOCATION (OFFLINE - SAFE & FULL) =====
+
+      // Nếu dữ liệu địa chỉ chưa load xong
+      if (!provinces.length) {
+        toast.warning("Đang tải dữ liệu địa chỉ, vui lòng thử lại");
+        return;
+      }
+
+      // CASE 1: Lịch sử query = "Tất cả tỉnh" (province null / "")
+      if (!payload.province) {
+        setSelectedProvince(null);
+        setSelectedDistrict(null);
+        setSelectedWard(null);
+        setDistricts([]);
+        setWards([]);
+      } else {
+        const p = provinces.find((x) => x.name === payload.province) || null;
+
+        if (p) {
+          setSelectedProvince(p);
+          setDistricts(p.districts || []);
+
+          const d =
+            p.districts?.find((x) => x.name === payload.district) || null;
+
+          if (d) {
+            setSelectedDistrict(d);
+            setWards(d.wards || []);
+
+            const w = d.wards?.find((x) => x.name === payload.ward) || null;
+
+            setSelectedWard(w);
+          } else {
+            setSelectedDistrict(null);
+            setWards([]);
+            setSelectedWard(null);
+          }
+        } else {
+          // Province trong history không khớp dữ liệu offline
+          setSelectedProvince(null);
+          setSelectedDistrict(null);
+          setSelectedWard(null);
+          setDistricts([]);
+          setWards([]);
+        }
+      }
+
       setSelectedDeviceTypeId(payload.deviceTypeId || "");
       setSelectedProperties(payload.propertyIds || []);
 
@@ -367,7 +453,15 @@ export default function QueryPage2() {
     setSelectedProperties([]);
     setDates({ from: "", to: "" });
     setTimes({ from: "00:00", to: "23:59" });
+
     setLocationState({ province: "", district: "", ward: "", specific: "" });
+
+    setSelectedProvince(null);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+    setDistricts([]);
+    setWards([]);
+
     setShowResults(false);
   };
 
@@ -391,6 +485,20 @@ export default function QueryPage2() {
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     timeRangeLabel = `${diffDays} ngày`;
   }
+  // ============================
+  // PAGINATION LOGIC (RESULT TABLE)
+  // ============================
+
+  const totalRecordsResult = pivotedData.length;
+  const totalPagesResult =
+    totalRecordsResult === 0 ? 1 : Math.ceil(totalRecordsResult / perPage);
+
+  const startIndexResult = (page - 1) * perPage;
+
+  const currentResultData = pivotedData.slice(
+    startIndexResult,
+    startIndexResult + perPage
+  );
 
   return (
     <div className="space-y-6">
@@ -514,15 +622,15 @@ export default function QueryPage2() {
               Tỉnh/Thành phố
             </label>
             <select
-              value={locationState.province}
-              onChange={(e) =>
-                setLocationState({ ...locationState, province: e.target.value })
+              value={
+                selectedProvince?.code ? String(selectedProvince.code) : ""
               }
+              onChange={(e) => handleProvinceChange(e.target.value)}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors bg-white"
             >
               <option value="">-- Tất cả tỉnh --</option>
               {provinces.map((p) => (
-                <option key={p.code} value={p.name}>
+                <option key={p.code} value={p.code}>
                   {p.name}
                 </option>
               ))}
@@ -533,16 +641,16 @@ export default function QueryPage2() {
           <div>
             <label className="block text-gray-700 mb-2">Quận/Huyện</label>
             <select
-              value={locationState.district}
-              onChange={(e) =>
-                setLocationState({ ...locationState, district: e.target.value })
+              value={
+                selectedDistrict?.code ? String(selectedDistrict.code) : ""
               }
-              disabled={!locationState.province}
+              onChange={(e) => handleDistrictChange(e.target.value)}
+              disabled={!selectedProvince || loading}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">-- Tất cả quận --</option>
               {districts.map((d) => (
-                <option key={d.code} value={d.name}>
+                <option key={d.code} value={d.code}>
                   {d.name}
                 </option>
               ))}
@@ -553,16 +661,14 @@ export default function QueryPage2() {
           <div>
             <label className="block text-gray-700 mb-2">Xã/Phường</label>
             <select
-              value={locationState.ward}
-              onChange={(e) =>
-                setLocationState({ ...locationState, ward: e.target.value })
-              }
-              disabled={!locationState.district}
+              value={selectedWard?.code ? String(selectedWard.code) : ""}
+              onChange={(e) => handleWardChange(e.target.value)}
+              disabled={!selectedDistrict || loading}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">-- Tất cả xã --</option>
               {wards.map((w) => (
-                <option key={w.code} value={w.name}>
+                <option key={w.code} value={w.code}>
                   {w.name}
                 </option>
               ))}
@@ -734,6 +840,33 @@ export default function QueryPage2() {
             className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
           >
             <div className="overflow-x-auto">
+              <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 text-sm text-gray-700">
+  <div className="flex items-center gap-2">
+    <span>Hiển thị mỗi trang:</span>
+    <select
+      value={perPage}
+      onChange={(e) => {
+        setPerPage(Number(e.target.value));
+        setPage(1);
+      }}
+      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+    >
+      <option value={10}>10</option>
+      <option value={20}>20</option>
+      <option value={50}>50</option>
+      <option value={100}>100</option>
+    </select>
+  </div>
+
+  <p>
+    Tổng{" "}
+    <span className="font-semibold text-gray-900">
+      {totalRecordsResult.toLocaleString()}
+    </span>{" "}
+    bản ghi
+  </p>
+</div>
+
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -770,7 +903,7 @@ export default function QueryPage2() {
                       </td>
                     </tr>
                   ) : (
-                    pivotedData.map((row) => (
+currentResultData.map((row) => (
                       <tr
                         key={row.uniqueKey}
                         className="hover:bg-gray-50 transition-colors"
@@ -809,6 +942,90 @@ export default function QueryPage2() {
                   )}
                 </tbody>
               </table>
+              {totalRecordsResult > 0 && (
+  <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-700">
+    <p>
+      Trang {page} / {totalPagesResult} — Hiển thị{" "}
+      {startIndexResult + 1}–
+      {Math.min(startIndexResult + perPage, totalRecordsResult)} /{" "}
+      {totalRecordsResult} bản ghi
+    </p>
+
+    <div className="flex items-center gap-1">
+      {/* Previous */}
+      <button
+        onClick={() => setPage((p) => Math.max(1, p - 1))}
+        disabled={page === 1}
+        className={`px-3 py-1 rounded-md border ${
+          page === 1
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-white hover:bg-gray-50"
+        }`}
+      >
+        Trước
+      </button>
+
+      {/* Page numbers */}
+      {(() => {
+        const arr: (number | string)[] = [];
+        const maxButtons = 5;
+
+        if (totalPagesResult <= maxButtons) {
+          for (let i = 1; i <= totalPagesResult; i++) arr.push(i);
+        } else {
+          arr.push(1);
+
+          if (page > 3) arr.push("...");
+
+          const middle = [page - 1, page, page + 1].filter(
+            (p) => p > 1 && p < totalPagesResult
+          );
+          arr.push(...middle);
+
+          if (page < totalPagesResult - 2) arr.push("...");
+
+          arr.push(totalPagesResult);
+        }
+
+        return arr.map((num, i) =>
+          num === "..." ? (
+            <span key={i} className="px-2 text-gray-400">
+              ...
+            </span>
+          ) : (
+            <button
+              key={i}
+              onClick={() => setPage(num as number)}
+              className={`px-3 py-1 rounded-md border ${
+                num === page
+                  ? "bg-red-600 text-white border-red-600"
+                  : "bg-white hover:bg-gray-50"
+              }`}
+            >
+              {num}
+            </button>
+          )
+        );
+      })()}
+
+      {/* Next */}
+      <button
+        onClick={() =>
+          setPage((p) => Math.min(totalPagesResult, p + 1))
+        }
+        disabled={page === totalPagesResult}
+        className={`px-3 py-1 rounded-md border ${
+          page === totalPagesResult
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-white hover:bg-gray-50"
+        }`}
+      >
+        Sau
+      </button>
+    </div>
+  </div>
+)}
+
             </div>
 
             {/* Pagination */}
@@ -859,6 +1076,7 @@ export default function QueryPage2() {
 
           {/* Table */}
           <div className="overflow-x-auto">
+
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -913,10 +1131,10 @@ export default function QueryPage2() {
                           </div>
                         </motion.button>
                       </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {new Date(item.createAt).toLocaleString("vi-VN")}
                       </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {item.description}
                       </td>
                       <td className="px-6 py-4">
@@ -933,8 +1151,7 @@ export default function QueryPage2() {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleRestoreHistory(item)}
                             className="p-2 rounded-lg border border-purple-600 text-purple-600 hover:bg-purple-50"
-                              title="Xem lại truy vấn"
-
+                            title="Xem lại truy vấn"
                           >
                             <Eye className="w-4 h-4" />
                           </motion.button>
@@ -943,8 +1160,7 @@ export default function QueryPage2() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                              title="Tải lại truy vấn"
-
+                            title="Tải lại truy vấn"
                             className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
                           >
                             <Download className="w-4 h-4" />
