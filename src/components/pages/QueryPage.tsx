@@ -24,6 +24,7 @@ import {
   HardDrive,
   TrendingUp,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 
 const API_BASE = "http://localhost:8080/api/v1";
@@ -85,6 +86,11 @@ export default function QueryPage2() {
     ward: "",
     specific: "",
   });
+
+  // --- DELETE MODAL STATE ---
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleProvinceChange = (code: string) => {
     const p = provinces.find((x) => String(x.code) === code) || null;
@@ -448,6 +454,143 @@ export default function QueryPage2() {
     }
   };
 
+  // --- HÀM XỬ LÝ XÓA ---
+  const handleDeleteClick = (id: number) => {
+    setSelectedDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteHistory = async () => {
+    if (!selectedDeleteId) return;
+
+    try {
+      setIsDeleting(true);
+      const token = localStorage.getItem("token");
+
+      await axios.delete(
+        `${API_BASE}/data-query/history/${selectedDeleteId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Cập nhật lại danh sách trên giao diện (xóa nóng)
+      setHistoryList((prev) =>
+        prev.filter((item) => item.id !== selectedDeleteId)
+      );
+
+      toast.success("Đã xóa lịch sử truy vấn.");
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error("Lỗi khi xóa:", error);
+      toast.error("Không thể xóa lịch sử này.");
+    } finally {
+      setIsDeleting(false);
+      setSelectedDeleteId(null);
+    }
+  };
+
+  // --- 6. Tải lại nhanh từ lịch sử (Quick Export) ---
+  const handleQuickExport = async (item: HistoryItem) => {
+    const toastId = toast.loading("Đang tái tạo dữ liệu và xuất file...");
+
+    try {
+      // 1. Parse Payload từ lịch sử
+      const payload = JSON.parse(item.filterJson);
+
+      // 2. Gọi API lấy dữ liệu thô
+      const res = await axios.post(`${API_BASE}/data-query/lake`, payload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      const rawData = res.data;
+
+      if (!rawData || rawData.length === 0) {
+        toast.dismiss(toastId);
+        toast.warning("Truy vấn này hiện không còn trả về dữ liệu nào.");
+        return;
+      }
+
+      // 3. Xử lý Pivot dữ liệu (Logic giống hệt useEffect nhưng chạy cục bộ)
+      const groupedMap = new Map<string, any>();
+      const foundProperties = new Set<string>();
+
+      rawData.forEach((d: any) => {
+        const key = `${d.deviceId}_${d.timestamp}`;
+
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            timestamp: d.timestamp,
+            deviceName: d.deviceName,
+            location: d.location || "Chưa cập nhật vị trí",
+            label: d.label,
+          });
+        }
+
+        const row = groupedMap.get(key);
+        const unitStr = d.unit ? ` ${d.unit}` : "";
+        row[d.propertyName] = `${d.value}${unitStr}`;
+
+        foundProperties.add(d.propertyName);
+      });
+
+      // Sắp xếp cột và dòng
+      const dynamicCols = Array.from(foundProperties).sort();
+      const rows = Array.from(groupedMap.values()).sort(
+        (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      // 4. Tạo nội dung CSV
+      const headers = [
+        "Thời gian",
+        "Thiết bị",
+        "Vị trí chi tiết",
+        ...dynamicCols,
+        "Nhãn cảnh báo",
+      ];
+
+      const csvRows = rows.map((row) => {
+        const time = new Date(row.timestamp).toLocaleString("vi-VN").replace(",", "");
+        const escape = (txt: string) => `"${String(txt || "").replace(/"/g, '""')}"`;
+
+        const dynamicValues = dynamicCols.map((col) => escape(row[col] || ""));
+
+        return [
+          escape(time),
+          escape(row.deviceName),
+          escape(row.location),
+          ...dynamicValues,
+          escape(row.label),
+        ].join(",");
+      });
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...csvRows].join("\n");
+
+      // 5. Tải xuống
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Dùng tên file đã lưu trong lịch sử, nếu không có đuôi .csv thì thêm vào
+      let fileName = item.filterName || `Quick_Export_${Date.now()}`;
+      if (!fileName.toLowerCase().endsWith(".csv")) fileName += ".csv";
+
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.dismiss(toastId);
+      toast.success("Tải xuống thành công!");
+
+    } catch (e) {
+      console.error(e);
+      toast.dismiss(toastId);
+      toast.error("Lỗi khi tải lại dữ liệu.");
+    }
+  };
+
   const handleReset = () => {
     setSelectedDeviceTypeId("");
     setSelectedProperties([]);
@@ -676,38 +819,6 @@ export default function QueryPage2() {
           </div>
         </div>
 
-        {/* ===== ROW 4: LOẠI CẢM BIẾN (PROPERTIES) bảng chứa tooneg hợp
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-gray-500" />
-            Loại cảm biến (Properties)
-          </label>
-          <div className="border-2 border-gray-200 rounded-xl p-3 bg-gray-50 max-h-40 overflow-y-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {properties.map((p: any) => (
-                <label
-                  key={p.id}
-                  className="flex items-center gap-2 text-sm bg-white px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-red-50 hover:border-red-300 transition-all"
-                >
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
-                    checked={selectedProperties.includes(p.id)}
-                    onChange={(e) => {
-                      if (e.target.checked)
-                        setSelectedProperties([...selectedProperties, p.id]);
-                      else
-                        setSelectedProperties(
-                          selectedProperties.filter((id) => id !== p.id)
-                        );
-                    }}
-                  />
-                  <span className="text-gray-700">{p.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div> ===== */}
         {/* ===== ROW 4: LOẠI CẢM BIẾN (DROPDOWN) ===== */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="mb-6">
@@ -787,7 +898,9 @@ export default function QueryPage2() {
                 <Filter className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-sm text-gray-600">Bộ lọc</p>
-                  <p className="text-2xl text-gray-900">{activeFiltersCount}</p>
+                  <p className="text-2xl text-gray-900">
+                    {activeFiltersCount}
+                  </p>
                 </div>
               </div>
             </div>
@@ -841,31 +954,31 @@ export default function QueryPage2() {
           >
             <div className="overflow-x-auto">
               <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 text-sm text-gray-700">
-  <div className="flex items-center gap-2">
-    <span>Hiển thị mỗi trang:</span>
-    <select
-      value={perPage}
-      onChange={(e) => {
-        setPerPage(Number(e.target.value));
-        setPage(1);
-      }}
-      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
-    >
-      <option value={10}>10</option>
-      <option value={20}>20</option>
-      <option value={50}>50</option>
-      <option value={100}>100</option>
-    </select>
-  </div>
+                <div className="flex items-center gap-2">
+                  <span>Hiển thị mỗi trang:</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => {
+                      setPerPage(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
 
-  <p>
-    Tổng{" "}
-    <span className="font-semibold text-gray-900">
-      {totalRecordsResult.toLocaleString()}
-    </span>{" "}
-    bản ghi
-  </p>
-</div>
+                <p>
+                  Tổng{" "}
+                  <span className="font-semibold text-gray-900">
+                    {totalRecordsResult.toLocaleString()}
+                  </span>{" "}
+                  bản ghi
+                </p>
+              </div>
 
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -903,7 +1016,7 @@ export default function QueryPage2() {
                       </td>
                     </tr>
                   ) : (
-currentResultData.map((row) => (
+                    currentResultData.map((row) => (
                       <tr
                         key={row.uniqueKey}
                         className="hover:bg-gray-50 transition-colors"
@@ -943,89 +1056,88 @@ currentResultData.map((row) => (
                 </tbody>
               </table>
               {totalRecordsResult > 0 && (
-  <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-700">
-    <p>
-      Trang {page} / {totalPagesResult} — Hiển thị{" "}
-      {startIndexResult + 1}–
-      {Math.min(startIndexResult + perPage, totalRecordsResult)} /{" "}
-      {totalRecordsResult} bản ghi
-    </p>
+                <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-700">
+                  <p>
+                    Trang {page} / {totalPagesResult} — Hiển thị{" "}
+                    {startIndexResult + 1}–
+                    {Math.min(startIndexResult + perPage, totalRecordsResult)} /{" "}
+                    {totalRecordsResult} bản ghi
+                  </p>
 
-    <div className="flex items-center gap-1">
-      {/* Previous */}
-      <button
-        onClick={() => setPage((p) => Math.max(1, p - 1))}
-        disabled={page === 1}
-        className={`px-3 py-1 rounded-md border ${
-          page === 1
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-white hover:bg-gray-50"
-        }`}
-      >
-        Trước
-      </button>
+                  <div className="flex items-center gap-1">
+                    {/* Previous */}
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className={`px-3 py-1 rounded-md border ${
+                        page === 1
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      Trước
+                    </button>
 
-      {/* Page numbers */}
-      {(() => {
-        const arr: (number | string)[] = [];
-        const maxButtons = 5;
+                    {/* Page numbers */}
+                    {(() => {
+                      const arr: (number | string)[] = [];
+                      const maxButtons = 5;
 
-        if (totalPagesResult <= maxButtons) {
-          for (let i = 1; i <= totalPagesResult; i++) arr.push(i);
-        } else {
-          arr.push(1);
+                      if (totalPagesResult <= maxButtons) {
+                        for (let i = 1; i <= totalPagesResult; i++) arr.push(i);
+                      } else {
+                        arr.push(1);
 
-          if (page > 3) arr.push("...");
+                        if (page > 3) arr.push("...");
 
-          const middle = [page - 1, page, page + 1].filter(
-            (p) => p > 1 && p < totalPagesResult
-          );
-          arr.push(...middle);
+                        const middle = [page - 1, page, page + 1].filter(
+                          (p) => p > 1 && p < totalPagesResult
+                        );
+                        arr.push(...middle);
 
-          if (page < totalPagesResult - 2) arr.push("...");
+                        if (page < totalPagesResult - 2) arr.push("...");
 
-          arr.push(totalPagesResult);
-        }
+                        arr.push(totalPagesResult);
+                      }
 
-        return arr.map((num, i) =>
-          num === "..." ? (
-            <span key={i} className="px-2 text-gray-400">
-              ...
-            </span>
-          ) : (
-            <button
-              key={i}
-              onClick={() => setPage(num as number)}
-              className={`px-3 py-1 rounded-md border ${
-                num === page
-                  ? "bg-red-600 text-white border-red-600"
-                  : "bg-white hover:bg-gray-50"
-              }`}
-            >
-              {num}
-            </button>
-          )
-        );
-      })()}
+                      return arr.map((num, i) =>
+                        num === "..." ? (
+                          <span key={i} className="px-2 text-gray-400">
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={i}
+                            onClick={() => setPage(num as number)}
+                            className={`px-3 py-1 rounded-md border ${
+                              num === page
+                                ? "bg-red-600 text-white border-red-600"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            {num}
+                          </button>
+                        )
+                      );
+                    })()}
 
-      {/* Next */}
-      <button
-        onClick={() =>
-          setPage((p) => Math.min(totalPagesResult, p + 1))
-        }
-        disabled={page === totalPagesResult}
-        className={`px-3 py-1 rounded-md border ${
-          page === totalPagesResult
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-white hover:bg-gray-50"
-        }`}
-      >
-        Sau
-      </button>
-    </div>
-  </div>
-)}
-
+                    {/* Next */}
+                    <button
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPagesResult, p + 1))
+                      }
+                      disabled={page === totalPagesResult}
+                      className={`px-3 py-1 rounded-md border ${
+                        page === totalPagesResult
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Pagination */}
@@ -1076,7 +1188,6 @@ currentResultData.map((row) => (
 
           {/* Table */}
           <div className="overflow-x-auto">
-
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -1156,12 +1267,13 @@ currentResultData.map((row) => (
                             <Eye className="w-4 h-4" />
                           </motion.button>
 
-                          {/* TẢI */}
+                          {/* TẢI LẠI NHANH */}
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            title="Tải lại truy vấn"
-                            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => handleQuickExport(item)} // <--- GỌI HÀM VỪA TẠO
+                            title="Tải nhanh file CSV này"
+                            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                           >
                             <Download className="w-4 h-4" />
                           </motion.button>
@@ -1170,6 +1282,7 @@ currentResultData.map((row) => (
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeleteClick(item.id)}
                             title="Xóa truy vấn"
                             className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50"
                           >
@@ -1253,6 +1366,38 @@ currentResultData.map((row) => (
             Nếu không nhập tên file, hệ thống sẽ tự động tạo tên dựa trên khoảng
             thời gian truy vấn.
           </p>
+        </div>
+      </Modal>
+
+      {/* --- DELETE MODAL --- */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Xóa lịch sử"
+        subtitle="Hành động này không thể hoàn tác"
+        icon={<AlertTriangle className="w-5 h-5 text-white" />}       
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              onClick={confirmDeleteHistory}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all text-sm flex items-center gap-2 shadow-md"
+            >
+              {isDeleting ? "Đang xóa..." : "Xóa ngay"}
+            </button>
+          </div>
+        }
+      >
+        <div className="text-gray-600 text-sm">
+          Bạn có chắc chắn muốn xóa bản ghi lịch sử này không? Dữ liệu file đã
+          xuất sẽ không bị ảnh hưởng, nhưng bạn sẽ không thể khôi phục lại bộ
+          lọc tìm kiếm này.
         </div>
       </Modal>
     </div>
