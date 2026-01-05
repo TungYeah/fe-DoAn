@@ -1,6 +1,6 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://20.249.208.207:8080';
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://20.249.208.207:5000';
 
 // API Endpoints
 export const API_ENDPOINTS = {

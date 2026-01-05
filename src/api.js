@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Với proxy, chỉ dùng đường dẫn tương đối:
 const api = axios.create({
-  baseURL: import.meta.env.VITE_SERVER_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_SERVER_URL || 'http://20.249.208.207:5000',
   timeout: 30000
 });
 

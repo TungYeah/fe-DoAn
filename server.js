@@ -8,7 +8,7 @@ const Minio = require('minio');
 
 // Kết nối tới MinIO từ biến môi trường
 const minioClient = new Minio.Client({
-  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+  endPoint: process.env.MINIO_ENDPOINT || '20.249.208.207',
   port: parseInt(process.env.MINIO_PORT) || 9000,
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'admin',
@@ -36,7 +36,7 @@ app.use(express.json());
 
 // ========================== KẾT NỐI MYSQL ==========================
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '20.249.208.207',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '24082002',
   database: process.env.DB_NAME || 'testtinasoft'
@@ -631,7 +631,7 @@ app.get('/api/export_filters/:id/dataset', async (req, res) => {
       if (ward && ward !== 'all') params.set('ward', ward);
     }
 
-    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/dataset?${params.toString()}`;
+    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://20.249.208.207:5000'}/api/dataset?${params.toString()}`;
 
     try {
       const response = await fetch(datasetUrl);
@@ -673,7 +673,7 @@ app.get('/api/export_filters/:id/export_csv', async (req, res) => {
       if (ward && ward !== 'all') params.set('ward', ward);
     }
 
-    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/dataset?${params.toString()}`;
+    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://20.249.208.207:5000'}/api/dataset?${params.toString()}`;
 
     try {
       const response = await fetch(datasetUrl);
@@ -918,4 +918,4 @@ app.delete('/api/devices/:unique_identifier', (req, res) => {
 
 // Khởi động server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server chạy tại http://20.249.208.207:${PORT}`));
