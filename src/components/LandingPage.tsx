@@ -82,7 +82,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 >
                   PTIT
                 </div>
-                <div className="text-red-100 text-xs mt-1">IoT Platform</div>
+                <div className="text-red-100 text-xs mt-1"> Data IoT Platform</div>
               </div>
             </div>
 
@@ -125,9 +125,9 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </div>
               <div>
                 <h1 className="bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
-                  PTIT IoT Platform
+                  Data IoT Platform
                 </h1>
-                <p className="text-xs text-gray-600">Học viện CNBCVT</p>
+                <p className="text-xs text-gray-600">Data As A Service</p>
               </div>
             </motion.div>
 
@@ -310,10 +310,11 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-lg text-gray-600"
             >
-              Data Lake dành cho IoT giúp thu thập – lưu trữ – xử lý – chia sẻ
-              dữ liệu phục vụ huấn luyện mô hình AI trực tiếp trên thiết bị cảm
-              biến (AI on Sensor). Hỗ trợ nghiên cứu, giảng dạy và triển khai
-              các bài lab IoT tại PTIT.
+              Data IoT platform là giải pháp giúp thu thập, lưu trữ, xử lý, chia
+              sẻ, đào tạo dữ liệu thô từ hệ thống IoT lên hồ dữ liệu. Giải pháp
+              hỗ trợ xử lý dữ liệu thời gian thực, đa dạng các loại cấu trúc dữ
+              liệu, tích hợp các tính năng bảo mật dữ liệu và cung cấp Data như
+              một dịch vụ hỗ trợ thực hành và nghiên cứu chuyên sâu tại Lab IoT.
             </motion.p>
 
             <motion.div
@@ -340,7 +341,6 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </motion.button>
               <motion.button
                 onClick={() => onNavigate("faq")}
-
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 border-2 border-red-600 text-red-600 rounded-xl hover:bg-red-50 transition-all"
@@ -369,10 +369,10 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 whileHover={{ scale: 1.1 }}
                 className="cursor-pointer"
               >
-<p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
-  50+
-</p>
-<p className="text-sm text-gray-600">Loại cảm biến</p>
+                <p className="text-3xl bg-gradient-to-r from-red-700 to-red-600 bg-clip-text text-transparent">
+                  50+
+                </p>
+                <p className="text-sm text-gray-600">Loại cảm biến</p>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.1 }}
@@ -469,8 +469,8 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </motion.div>
               <h3 className="text-xl text-gray-900 mb-3">Lưu trữ an toàn</h3>
               <p className="text-gray-600">
-                Hệ thống Data Lake thu thập và lưu trữ dữ liệu cảm biến phục vụ nghiên cứu IoT & AI.
-
+                Hệ thống Data Lake thu thập và lưu trữ dữ liệu cảm biến phục vụ
+                nghiên cứu IoT & AI.
               </p>
             </motion.div>
 
@@ -496,8 +496,8 @@ export default function LandingPage({ onNavigate }: LandingProps) {
                 Phân tích dữ liệu thực
               </h3>
               <p className="text-gray-600">
-                Theo dõi dữ liệu real-time và hỗ trợ pipeline xử lý cho huấn luyện mô hình AI on Sensor.
-
+                Theo dõi dữ liệu real-time và hỗ trợ pipeline xử lý cho huấn
+                luyện mô hình AI on Sensor.
               </p>
             </motion.div>
 
@@ -545,7 +545,8 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </motion.div>
               <h3 className="text-xl text-gray-900 mb-3">Bảo mật tối ưu</h3>
               <p className="text-gray-600">
-                Bảo mật API, phân quyền dataset và kiểm soát truy cập theo vai trò.
+                Bảo mật API, phân quyền dataset và kiểm soát truy cập theo vai
+                trò.
               </p>
             </motion.div>
 
@@ -569,7 +570,8 @@ export default function LandingPage({ onNavigate }: LandingProps) {
               </motion.div>
               <h3 className="text-xl text-gray-900 mb-3">Cộng tác nhóm</h3>
               <p className="text-gray-600">
-                Chia sẻ dataset giữa các nhóm nghiên cứu, lớp học hoặc đề tài khoa học.
+                Chia sẻ dataset giữa các nhóm nghiên cứu, lớp học hoặc đề tài
+                khoa học.
               </p>
             </motion.div>
 
@@ -800,7 +802,7 @@ export default function LandingPage({ onNavigate }: LandingProps) {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} PTIT IoT Platform — Học viện Công
+              © {new Date().getFullYear()} Data IoT Platform — Học viện Công
               nghệ Bưu chính Viễn thông
             </p>
             <div className="flex gap-6">
