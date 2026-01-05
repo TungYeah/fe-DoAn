@@ -5,6 +5,7 @@ import {
   translateHistoryDescription,
 } from "@/utils/historyMaps";
 import { countDataLake } from "@/utils/dataLake";
+import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -84,31 +85,31 @@ export default function DashboardPage() {
       specificLocation: null,
     };
   };
-const fetchQueryCount = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const fetchQueryCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const res = await fetch(
-      "http://localhost:8080/api/v1/data-query/history",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+      const res = await fetch(
+        API_ENDPOINTS.DATA_QUERY_HISTORY,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (!res.ok) throw new Error("Fetch query history failed");
+      if (!res.ok) throw new Error("Fetch query history failed");
 
-    const list = await res.json();
+      const list = await res.json();
 
-    // ✅ API trả về history của user → đếm thẳng
-    setQueryCount(Array.isArray(list) ? list.length : 0);
-  } catch (err) {
-    console.error("❌ Fetch query count error:", err);
-    setQueryCount(0);
-  }
-};
+      // ✅ API trả về history của user → đếm thẳng
+      setQueryCount(Array.isArray(list) ? list.length : 0);
+    } catch (err) {
+      console.error("❌ Fetch query count error:", err);
+      setQueryCount(0);
+    }
+  };
 
 
   // =========================
@@ -216,7 +217,7 @@ const fetchQueryCount = async () => {
       specificLocation: null,
     };
 
-    const res = await fetch("http://localhost:8080/api/v1/data-query/lake", {
+    const res = await fetch(API_ENDPOINTS.DATA_QUERY_LAKE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -249,9 +250,9 @@ const fetchQueryCount = async () => {
       }))
       .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
   }
-useEffect(() => {
-  fetchQueryCount();
-}, []);
+  useEffect(() => {
+    fetchQueryCount();
+  }, []);
 
   useEffect(() => {
     const fetchDataLakeCount = async () => {
@@ -316,8 +317,8 @@ useEffect(() => {
         if (!token) return;
 
         const url = isAdmin
-          ? "http://localhost:8080/api/v1/iot/devices/all?page=0&size=1000"
-          : "http://localhost:8080/api/v1/iot/devices?page=0&size=1000";
+          ? `${API_ENDPOINTS.DEVICES_ALL}?page=0&size=1000`
+          : `${API_ENDPOINTS.DEVICES}?page=0&size=1000`;
 
         const res = await fetch(url, {
           headers: {
@@ -356,7 +357,7 @@ useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        const res = await fetch(API_ENDPOINTS.AUTH_CURRENT, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -378,7 +379,7 @@ useEffect(() => {
   useEffect(() => {
     if (!token || !email) return;
 
-    fetch("http://localhost:8080/api/admin/history?page=0&size=100", {
+    fetch(`${API_ENDPOINTS.ADMIN_HISTORY}?page=0&size=100`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -471,11 +472,10 @@ useEffect(() => {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <span
-                  className={`px-2 py-1 rounded-lg text-xs ${
-                    stat.trend === "warning"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
+                  className={`px-2 py-1 rounded-lg text-xs ${stat.trend === "warning"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-green-100 text-green-700"
+                    }`}
                 >
                   {stat.change}
                 </span>
@@ -514,22 +514,20 @@ useEffect(() => {
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedMetric("temp")}
-              className={`px-4 py-2 rounded-xl transition ${
-                selectedMetric === "temp"
-                  ? "bg-red-100 text-red-700 border border-red-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-xl transition ${selectedMetric === "temp"
+                ? "bg-red-100 text-red-700 border border-red-300"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
             >
               <Thermometer className="w-4 h-4 inline" /> Nhiệt độ
             </button>
 
             <button
               onClick={() => setSelectedMetric("humidity")}
-              className={`px-4 py-2 rounded-xl transition ${
-                selectedMetric === "humidity"
-                  ? "bg-blue-100 text-blue-700 border border-blue-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-xl transition ${selectedMetric === "humidity"
+                ? "bg-blue-100 text-blue-700 border border-blue-300"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
             >
               <Droplets className="w-4 h-4 inline" /> Độ ẩm
             </button>
@@ -620,9 +618,8 @@ useEffect(() => {
                     {/* LEFT */}
                     <div className="flex gap-4 items-center">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          isOnline ? "bg-green-100" : "bg-gray-200"
-                        }`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOnline ? "bg-green-100" : "bg-gray-200"
+                          }`}
                       >
                         {isOnline ? (
                           <Wifi className="w-5 h-5 text-green-600" />

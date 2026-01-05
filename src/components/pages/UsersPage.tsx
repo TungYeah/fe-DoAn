@@ -66,7 +66,8 @@ type UserStats = {
   newUsersToday: number;
 };
 
-const API_BASE_URL = "http://localhost:8080"; // chỉnh nếu BE dùng port khác
+import { API_BASE_URL } from "../../config/api";
+
 const UNIT_OPTIONS = [
   { value: "CNTT", label: "Công nghệ thông tin" },
   { value: "DTVT", label: "Điện tử viễn thông" },
@@ -321,9 +322,9 @@ export default function UsersPage() {
         prev.map((u) =>
           u.id === data.id
             ? {
-                ...u,
-                role: mainRole,
-              }
+              ...u,
+              role: mainRole,
+            }
             : u
         )
       );
@@ -410,12 +411,12 @@ export default function UsersPage() {
         prev.map((u) =>
           u.id === data.id
             ? {
-                ...u,
-                status: newStatus,
-                statusLabel: newStatusLabel,
-                locked,
-                deactivated,
-              }
+              ...u,
+              status: newStatus,
+              statusLabel: newStatusLabel,
+              locked,
+              deactivated,
+            }
             : u
         )
       );
@@ -424,12 +425,12 @@ export default function UsersPage() {
       setSelectedUser((prev) =>
         prev && prev.id === data.id
           ? {
-              ...prev,
-              status: newStatus,
-              statusLabel: newStatusLabel,
-              locked,
-              deactivated,
-            }
+            ...prev,
+            status: newStatus,
+            statusLabel: newStatusLabel,
+            locked,
+            deactivated,
+          }
           : prev
       );
 
@@ -445,8 +446,7 @@ export default function UsersPage() {
       } else {
         // Trường hợp chỉ deactivated = true
         toast.info(
-          `Tài khoản hiện không hoạt động: ${newStatusLabel} (${
-            data.fullName || selectedUser.name
+          `Tài khoản hiện không hoạt động: ${newStatusLabel} (${data.fullName || selectedUser.name
           })`
         );
       }
@@ -506,10 +506,10 @@ export default function UsersPage() {
         prev.map((u) =>
           u.id === data.id
             ? {
-                ...u,
-                name: data.fullName ?? u.name,
-                unit: data.unit ?? u.unit,
-              }
+              ...u,
+              name: data.fullName ?? u.name,
+              unit: data.unit ?? u.unit,
+            }
             : u
         )
       );
@@ -917,11 +917,10 @@ export default function UsersPage() {
                   {/* Vai trò */}
                   <td className="px-6 py-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs ${
-                        user.role === "ROLE_ADMIN"
+                      className={`px-3 py-1 rounded-full text-xs ${user.role === "ROLE_ADMIN"
                           ? "bg-purple-100 text-purple-700"
                           : "bg-gray-100 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {user.role}
                     </span>
@@ -1013,11 +1012,10 @@ export default function UsersPage() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleToggleStatus(user)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          user.status === "active"
+                        className={`p-2 rounded-lg transition-colors ${user.status === "active"
                             ? "hover:bg-red-50 text-red-600"
                             : "hover:bg-green-50 text-green-600"
-                        }`}
+                          }`}
                         title={user.status === "active" ? "Chặn" : "Kích hoạt"}
                       >
                         {user.status === "active" ? (
@@ -1082,11 +1080,10 @@ export default function UsersPage() {
                     <button
                       key={i}
                       onClick={() => setPage(p as number)}
-                      className={`px-3 py-1 rounded-md border ${
-                        p === page
+                      className={`px-3 py-1 rounded-md border ${p === page
                           ? "bg-red-600 text-white border-red-600"
                           : "bg-white hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {(p as number) + 1}
                     </button>
@@ -1150,11 +1147,10 @@ export default function UsersPage() {
                     <p className="text-[11px] text-gray-500">Vai trò</p>
                   </div>
                   <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs ${
-                      selectedUser.role === "ROLE_ADMIN"
+                    className={`inline-block px-3 py-1 rounded-full text-xs ${selectedUser.role === "ROLE_ADMIN"
                         ? "bg-purple-100 text-purple-700"
                         : "bg-gray-100 text-gray-700"
-                    }`}
+                      }`}
                   >
                     {selectedUser.role}
                   </span>
@@ -1229,11 +1225,10 @@ export default function UsersPage() {
               </div>
               {/* Status */}
               <div
-                className={`p-3 rounded-lg border ${
-                  selectedUser.status === "active"
+                className={`p-3 rounded-lg border ${selectedUser.status === "active"
                     ? "bg-green-50 border-green-200"
                     : "bg-red-50 border-red-200"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   {selectedUser.status === "active" ? (
@@ -1521,11 +1516,10 @@ export default function UsersPage() {
                 {ROLE_OPTIONS.map((opt) => (
                   <label
                     key={opt.value}
-                    className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                      targetRole === opt.value
+                    className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${targetRole === opt.value
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 hover:border-gray-300"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -1583,9 +1577,8 @@ export default function UsersPage() {
         {selectedUser && (
           <div className="space-y-4 text-center">
             <div
-              className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
-                selectedUser.status === "active" ? "bg-red-100" : "bg-green-100"
-              }`}
+              className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${selectedUser.status === "active" ? "bg-red-100" : "bg-green-100"
+                }`}
             >
               {selectedUser.status === "active" ? (
                 <Ban className="w-8 h-8 text-red-600" />
@@ -1604,18 +1597,16 @@ export default function UsersPage() {
             </div>
 
             <div
-              className={`p-3 rounded-lg border ${
-                selectedUser.status === "active"
+              className={`p-3 rounded-lg border ${selectedUser.status === "active"
                   ? "bg-yellow-50 border-yellow-200"
                   : "bg-blue-50 border-blue-200"
-              }`}
+                }`}
             >
               <p
-                className={`text-xs ${
-                  selectedUser.status === "active"
+                className={`text-xs ${selectedUser.status === "active"
                     ? "text-yellow-800"
                     : "text-blue-800"
-                }`}
+                  }`}
               >
                 {selectedUser.status === "active"
                   ? "⚠️ Người dùng sẽ không thể đăng nhập và truy cập hệ thống"
@@ -1633,11 +1624,10 @@ export default function UsersPage() {
               <button
                 onClick={handleConfirmToggleStatus}
                 disabled={togglingStatus}
-                className={`px-4 py-2 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
-                  selectedUser.status === "active"
+                className={`px-4 py-2 text-white rounded-lg hover:shadow-lg transition-all text-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${selectedUser.status === "active"
                     ? "bg-gradient-to-r from-red-700 to-red-600"
                     : "bg-gradient-to-r from-green-600 to-green-700"
-                }`}
+                  }`}
               >
                 {selectedUser.status === "active" ? (
                   <>

@@ -1,22 +1,21 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');
 const mysql = require('mysql2');
-const md5 = require('md5'); // thêm ở đầu file
 const crypto = require('crypto');
 const Minio = require('minio');
 
-// Kết nối tới MinIO (container đang chạy ở localhost:9000) (LẤY Ở SERVER_MINIO)
+// Kết nối tới MinIO từ biến môi trường
 const minioClient = new Minio.Client({
-  endPoint: 'localhost',
-  port: 9000,
-  useSSL: false,
-  accessKey: 'admin',
-  secretKey: '24082002'
+  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+  port: parseInt(process.env.MINIO_PORT) || 9000,
+  useSSL: process.env.MINIO_USE_SSL === 'true',
+  accessKey: process.env.MINIO_ACCESS_KEY || 'admin',
+  secretKey: process.env.MINIO_SECRET_KEY || '24082002'
 });
 
-const bucketName = 'thingsboard-data';
+const bucketName = process.env.MINIO_BUCKET_NAME || 'thingsboard-data';
 
 // Đảm bảo bucket tồn tại
 minioClient.bucketExists(bucketName, (err, exists) => {
@@ -37,10 +36,10 @@ app.use(express.json());
 
 // ========================== KẾT NỐI MYSQL ==========================
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '24082002',
-  database: 'testtinasoft'
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '24082002',
+  database: process.env.DB_NAME || 'testtinasoft'
 });
 
 
@@ -353,7 +352,7 @@ app.get("/api/filter", async (req, res) => {
 
   try {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
-    const endDate   = end   ? new Date(end)   : new Date("2100-01-01");
+    const endDate = end ? new Date(end) : new Date("2100-01-01");
 
     const result = {
       total: 0,
@@ -495,7 +494,7 @@ app.get("/api/dataset", async (req, res) => {
 
   try {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
-    const endDate   = end   ? new Date(end)   : new Date("2100-01-01");
+    const endDate = end ? new Date(end) : new Date("2100-01-01");
 
     let dataset = {
       total: 0,
@@ -632,7 +631,7 @@ app.get('/api/export_filters/:id/dataset', async (req, res) => {
       if (ward && ward !== 'all') params.set('ward', ward);
     }
 
-    const datasetUrl = `http://localhost:5000/api/dataset?${params.toString()}`;
+    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/dataset?${params.toString()}`;
 
     try {
       const response = await fetch(datasetUrl);
@@ -674,7 +673,7 @@ app.get('/api/export_filters/:id/export_csv', async (req, res) => {
       if (ward && ward !== 'all') params.set('ward', ward);
     }
 
-    const datasetUrl = `http://localhost:5000/api/dataset?${params.toString()}`;
+    const datasetUrl = `${process.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/dataset?${params.toString()}`;
 
     try {
       const response = await fetch(datasetUrl);
@@ -737,7 +736,7 @@ app.get('/api/merge', async (req, res) => {
 
     // Parse thời gian
     const startTime = start ? new Date(start) : new Date("1970-01-01");
-    const endTime   = end   ? new Date(end)   : new Date("2100-01-01");
+    const endTime = end ? new Date(end) : new Date("2100-01-01");
 
     // prefix cho MinIO
     let prefix = "";
@@ -918,4 +917,5 @@ app.delete('/api/devices/:unique_identifier', (req, res) => {
 
 
 // Khởi động server
-app.listen(5000, () => console.log('🚀 Server chạy tại http://localhost:5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

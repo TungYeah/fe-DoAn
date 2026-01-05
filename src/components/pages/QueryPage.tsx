@@ -27,7 +27,9 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:8080/api/v1";
+import { API_BASE_URL } from "../../config/api";
+
+const API_BASE = `${API_BASE_URL}/api/v1`;
 
 // Định nghĩa kiểu dữ liệu cho dòng hiển thị
 interface PivotedRow {
@@ -1039,13 +1041,12 @@ export default function QueryPage2() {
                         ))}
                         <td className="px-6 py-4 text-sm text-gray-900">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs ${
-                              row.label === "CRITICAL"
+                            className={`px-3 py-1 rounded-full text-xs ${row.label === "CRITICAL"
                                 ? "bg-red-100 text-red-700"
                                 : row.label === "WARNING"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                            }`}
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-700"
+                              }`}
                           >
                             {row.label}
                           </span>
@@ -1069,11 +1070,10 @@ export default function QueryPage2() {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className={`px-3 py-1 rounded-md border ${
-                        page === 1
+                      className={`px-3 py-1 rounded-md border ${page === 1
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "bg-white hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       Trước
                     </button>
@@ -1109,11 +1109,10 @@ export default function QueryPage2() {
                           <button
                             key={i}
                             onClick={() => setPage(num as number)}
-                            className={`px-3 py-1 rounded-md border ${
-                              num === page
+                            className={`px-3 py-1 rounded-md border ${num === page
                                 ? "bg-red-600 text-white border-red-600"
                                 : "bg-white hover:bg-gray-50"
-                            }`}
+                              }`}
                           >
                             {num}
                           </button>
@@ -1127,11 +1126,10 @@ export default function QueryPage2() {
                         setPage((p) => Math.min(totalPagesResult, p + 1))
                       }
                       disabled={page === totalPagesResult}
-                      className={`px-3 py-1 rounded-md border ${
-                        page === totalPagesResult
+                      className={`px-3 py-1 rounded-md border ${page === totalPagesResult
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "bg-white hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       Sau
                     </button>
@@ -1375,7 +1373,7 @@ export default function QueryPage2() {
         onClose={() => setShowDeleteModal(false)}
         title="Xóa lịch sử"
         subtitle="Hành động này không thể hoàn tác"
-        icon={<AlertTriangle className="w-5 h-5 text-white" />}       
+        icon={<AlertTriangle className="w-5 h-5 text-white" />}
         footer={
           <div className="flex justify-end gap-2">
             <button

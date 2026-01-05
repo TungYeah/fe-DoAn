@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { API_ENDPOINTS } from "../../config/api";
 
 type ChatMessage = {
     role: "user" | "bot";
@@ -28,7 +29,7 @@ export default function AIPage() {
         setInput("");
 
         try {
-            const res = await fetch(`http://localhost:8080/api/v1/chat`, {
+            const res = await fetch(API_ENDPOINTS.CHAT, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -69,8 +70,8 @@ export default function AIPage() {
                     >
                         <div
                             className={`px-4 py-3 rounded-2xl shadow max-w-[80%] ${msg.role === "user"
-                                    ? "bg-red-600 text-white"
-                                    : "bg-white border border-gray-200"
+                                ? "bg-red-600 text-white"
+                                : "bg-white border border-gray-200"
                                 }`}
                             style={{ whiteSpace: "pre-wrap" }}
                         >

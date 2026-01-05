@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Toast from "../Toast";
 import ModalDeleteAccount from "../ui/ModalDeleteAccount";
+import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
 
 export default function SettingsPage() {
   const [toastMessage, setToastMessage] = useState("");
@@ -58,7 +59,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://localhost:8080/api/v1/auth/current", {
+    fetch(API_ENDPOINTS.AUTH_CURRENT, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -69,7 +70,7 @@ export default function SettingsPage() {
           email: user.email,
           avatar:
             user.avatar && user.avatar.trim() !== ""
-              ? `http://localhost:8080${user.avatar}`
+              ? `${API_BASE_URL}${user.avatar}`
               : "/847969.png",
         });
       });
@@ -86,59 +87,56 @@ export default function SettingsPage() {
         [
           JSON.stringify({
             fullName: profileData.name,
-            unitEnum: profileData.unit,
+            unit: profileData.unit,
           }),
         ],
         { type: "application/json" }
       )
     );
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/update", {
+    const res = await fetch(API_ENDPOINTS.AUTH_UPDATE, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
 
     if (res.ok) {
-toast.success("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
       setTimeout(() => window.location.reload(), 2500);
     } else {
-toast.error("Cập nhật thất bại!");
+      toast.error("Cập nhật thất bại!");
     }
   };
 
   // =========================== CHANGE PASSWORD
   const handleChangePassword = async () => {
     if (passwordData.new !== passwordData.confirm) {
-toast.warning("Mật khẩu xác nhận không khớp!");
+      toast.warning("Mật khẩu xác nhận không khớp!");
       return;
     }
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      "http://localhost:8080/api/v1/auth/change-password",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.current,
-          newPassword: passwordData.new,
-          confirmationPassword: passwordData.confirm,
-        }),
-      }
-    );
+    const res = await fetch(API_ENDPOINTS.AUTH_CHANGE_PASSWORD, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword: passwordData.current,
+        newPassword: passwordData.new,
+        confirmationPassword: passwordData.confirm,
+      }),
+    });
 
     if (res.ok) {
-toast.success("Đổi mật khẩu thành công!");
+      toast.success("Đổi mật khẩu thành công!");
       setPasswordData({ current: "", new: "", confirm: "" });
       setTimeout(() => window.location.reload(), 2500);
     } else {
       const err = await res.json();
-toast.error("Lỗi: " + err.message);
+      toast.error("Lỗi: " + err.message);
     }
   };
 
@@ -156,7 +154,7 @@ toast.error("Lỗi: " + err.message);
         [
           JSON.stringify({
             fullName: profileData.name,
-            unitEnum: profileData.unit,
+            unit: profileData.unit,
           }),
         ],
         { type: "application/json" }
@@ -164,7 +162,7 @@ toast.error("Lỗi: " + err.message);
     );
     formData.append("avatar", file);
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/update", {
+    const res = await fetch(API_ENDPOINTS.AUTH_UPDATE, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -177,48 +175,48 @@ toast.error("Lỗi: " + err.message);
         ...profileData,
         avatar:
           updated.avatar && updated.avatar.trim() !== ""
-            ? `http://localhost:8080${updated.avatar}`
+            ? `${API_BASE_URL}${updated.avatar}`
             : "/847969.png",
       });
 
-toast.success("Ảnh đại diện đã thay đổi!");
+      toast.success("Ảnh đại diện đã thay đổi!");
       setTimeout(() => window.location.reload(), 2500);
     }
   };
 
-// =========================== KHÓA ACCOUNT 
-const handleDeleteAccount = async (password) => {
-  if (!password || !password.trim()) {
-toast.warning("Vui lòng nhập mật khẩu!");
-    return;
-  }
+  // =========================== KHÓA ACCOUNT 
+  const handleDeleteAccount = async (password) => {
+    if (!password || !password.trim()) {
+      toast.warning("Vui lòng nhập mật khẩu!");
+      return;
+    }
 
-  setDeleteLoading(true);
-  const token = localStorage.getItem("token");
+    setDeleteLoading(true);
+    const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:8080/api/v1/user/deactivate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ password }),
-  });
+    const res = await fetch(API_ENDPOINTS.USER_DEACTIVATE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ password }),
+    });
 
-  setDeleteLoading(false);
+    setDeleteLoading(false);
 
-  if (res.ok) {
-toast.warning("Tài khoản đã bị vô hiệu hóa!");
-    localStorage.removeItem("token");
+    if (res.ok) {
+      toast.warning("Tài khoản đã bị vô hiệu hóa!");
+      localStorage.removeItem("token");
 
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 2500);
-  } else {
-    const err = await res.json();
-toast.error(err.message || "Có lỗi xảy ra");
-  }
-};
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2500);
+    } else {
+      const err = await res.json();
+      toast.error(err.message || "Có lỗi xảy ra");
+    }
+  };
 
 
   // ============================================================== UI ==============================================================
@@ -544,7 +542,7 @@ toast.error(err.message || "Có lỗi xảy ra");
             </p>
 
             <div className="space-y-3">
-                       {/* 
+              {/* 
  <button className="w-full px-6 py-3 bg-white border-2 border-red-300 text-red-600 rounded-xl hover:bg-red-50 flex items-center justify-center gap-2">
                 <Database className="w-5 h-5" />
                 Xóa tất cả dữ liệu
@@ -564,11 +562,11 @@ toast.error(err.message || "Có lỗi xảy ra");
       </div>
 
 
-            <ModalDeleteAccount
+      <ModalDeleteAccount
         isOpen={deletePopupOpen}
         onClose={() => setDeletePopupOpen(false)}
         onConfirm={(password) => {
-          handleDeleteAccount(password); 
+          handleDeleteAccount(password);
         }}
       />
 

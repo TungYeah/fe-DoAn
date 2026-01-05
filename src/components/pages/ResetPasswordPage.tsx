@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Lock } from "lucide-react";
+import { API_ENDPOINTS } from "../../config/api";
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -29,7 +30,7 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+      const res = await fetch(API_ENDPOINTS.AUTH_RESET_PASSWORD, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

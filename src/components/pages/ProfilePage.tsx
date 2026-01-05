@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { User, Mail, Building, Calendar, Edit, Save, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
 
 // =====================
 // Avatar Helpers
@@ -9,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 const getAvatarUI = (avatar?: string | null) => {
   const src =
     avatar && avatar.trim() !== ""
-      ? `http://localhost:8080${avatar}`
+      ? `${API_BASE_URL}${avatar}`
       : "/847969.png"; // Ảnh mặc định trong public/
 
   return (
@@ -25,7 +26,7 @@ const getAvatarUI = (avatar?: string | null) => {
 };
 
 export default function ProfilePage() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -45,7 +46,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        const res = await fetch(API_ENDPOINTS.AUTH_CURRENT, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -92,7 +93,7 @@ export default function ProfilePage() {
           onClick={() => navigate("/dashboard/settings")}
           className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
-           <Edit className="w-5 h-5" />Chỉnh sửa        </motion.button>
+          <Edit className="w-5 h-5" />Chỉnh sửa        </motion.button>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">

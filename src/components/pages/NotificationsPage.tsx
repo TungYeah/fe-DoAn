@@ -1,7 +1,7 @@
 import {
   HISTORY_TYPE_MAP,
   ACTION_MAP,
-  HISTORY_DESCRIPTION_MAP,  translateHistoryDescription,
+  HISTORY_DESCRIPTION_MAP, translateHistoryDescription,
 
 } from "@/utils/historyMaps";
 
@@ -26,7 +26,9 @@ import {
   Calendar,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:8080";
+import { API_BASE_URL } from "../../config/api";
+
+const API_BASE_URL_CONST = API_BASE_URL;
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -147,8 +149,8 @@ export default function NotificationsPage() {
     action === "CREATE"
       ? "border-green-300 bg-green-50"
       : action === "UPDATE"
-      ? "border-blue-300 bg-blue-50"
-      : "border-red-300 bg-red-50";
+        ? "border-blue-300 bg-blue-50"
+        : "border-red-300 bg-red-50";
   const getNotificationIcon = (
     type: "success" | "error" | "warning" | "info"
   ) => {
@@ -234,109 +236,109 @@ export default function NotificationsPage() {
       {/* =========================
           STATS BOXES
       ========================= */}
-<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-  {/* Tổng thông báo */}
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
-  >
-    <div className="p-3 bg-gray-100 rounded-lg">
-      <Bell className="w-5 h-5 text-gray-600" />
-    </div>
-    <div>
-      <p className="text-sm text-gray-600">Tổng thông báo</p>
-      <p className="text-xl font-semibold text-gray-900">
-        {loading ? "…" : filtered.length.toLocaleString("vi-VN")}
-      </p>
-    </div>
-  </motion.div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Tổng thông báo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="p-3 bg-gray-100 rounded-lg">
+            <Bell className="w-5 h-5 text-gray-600" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Tổng thông báo</p>
+            <p className="text-xl font-semibold text-gray-900">
+              {loading ? "…" : filtered.length.toLocaleString("vi-VN")}
+            </p>
+          </div>
+        </motion.div>
 
-  {/* Thông báo hôm nay */}
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
-  >
-    <div className="p-3 bg-blue-50 rounded-lg">
-      <Calendar className="w-5 h-5 text-blue-600" />
-    </div>
-    <div>
-      <p className="text-sm text-blue-600">Hôm nay</p>
-      <p className="text-xl font-semibold text-blue-600">
-        {loading ? "…" : today.toLocaleString("vi-VN")}
-      </p>
-    </div>
-  </motion.div>
+        {/* Thông báo hôm nay */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <Calendar className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <p className="text-sm text-blue-600">Hôm nay</p>
+            <p className="text-xl font-semibold text-blue-600">
+              {loading ? "…" : today.toLocaleString("vi-VN")}
+            </p>
+          </div>
+        </motion.div>
 
-  {/* Tạo mới */}
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
-  >
-    <div className="p-3 bg-green-50 rounded-lg">
-      <PlusCircle className="w-5 h-5 text-green-600" />
-    </div>
-    <div>
-      <p className="text-sm text-green-600">Tạo mới</p>
-      <p className="text-xl font-semibold text-green-600">
-        {loading
-          ? "…"
-          : notifications
-              .filter((n) => n.action === "CREATE")
-              .length.toLocaleString("vi-VN")}
-      </p>
-    </div>
-  </motion.div>
+        {/* Tạo mới */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="p-3 bg-green-50 rounded-lg">
+            <PlusCircle className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <p className="text-sm text-green-600">Tạo mới</p>
+            <p className="text-xl font-semibold text-green-600">
+              {loading
+                ? "…"
+                : notifications
+                  .filter((n) => n.action === "CREATE")
+                  .length.toLocaleString("vi-VN")}
+            </p>
+          </div>
+        </motion.div>
 
-  {/* Cập nhật */}
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
-  >
-    <div className="p-3 bg-gray-50 rounded-lg">
-      <RefreshCcw className="w-5 h-5 text-orange-600" />
-    </div>
-    <div>
-      <p className="text-sm text-orange-600">Cập nhật</p>
-      <p className="text-xl font-semibold text-orange-600">
-        {loading
-          ? "…"
-          : notifications
-              .filter((n) => n.action === "UPDATE")
-              .length.toLocaleString("vi-VN")}
-      </p>
-    </div>
-  </motion.div>
+        {/* Cập nhật */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <RefreshCcw className="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <p className="text-sm text-orange-600">Cập nhật</p>
+            <p className="text-xl font-semibold text-orange-600">
+              {loading
+                ? "…"
+                : notifications
+                  .filter((n) => n.action === "UPDATE")
+                  .length.toLocaleString("vi-VN")}
+            </p>
+          </div>
+        </motion.div>
 
-  {/* Đã xóa */}
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.1 }}
-    className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
-  >
-    <div className="p-3 bg-red-50 rounded-lg">
-      <Trash2 className="w-5 h-5 text-red-600" />
-    </div>
-    <div>
-      <p className="text-sm text-red-600">Đã xóa</p>
-      <p className="text-xl font-semibold text-red-600">
-        {loading
-          ? "…"
-          : notifications
-              .filter((n) => n.action === "DELETE")
-              .length.toLocaleString("vi-VN")}
-      </p>
-    </div>
-  </motion.div>
-</div>
+        {/* Đã xóa */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex items-center gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="p-3 bg-red-50 rounded-lg">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <p className="text-sm text-red-600">Đã xóa</p>
+            <p className="text-xl font-semibold text-red-600">
+              {loading
+                ? "…"
+                : notifications
+                  .filter((n) => n.action === "DELETE")
+                  .length.toLocaleString("vi-VN")}
+            </p>
+          </div>
+        </motion.div>
+      </div>
 
 
       {/* FILTER BAR */}
@@ -345,44 +347,40 @@ export default function NotificationsPage() {
 
         <button
           onClick={() => setActionFilter("all")}
-          className={`px-4 py-2 rounded-lg border ${
-            actionFilter === "all"
+          className={`px-4 py-2 rounded-lg border ${actionFilter === "all"
               ? "bg-red-600 text-white border-red-600"
               : "bg-gray-100 hover:bg-gray-200"
-          }`}
+            }`}
         >
           Tất cả
         </button>
 
         <button
           onClick={() => setActionFilter("CREATE")}
-          className={`px-4 py-2 rounded-lg border ${
-            actionFilter === "CREATE"
+          className={`px-4 py-2 rounded-lg border ${actionFilter === "CREATE"
               ? "bg-green-600 text-white border-green-600"
               : "bg-gray-100 hover:bg-gray-200"
-          }`}
+            }`}
         >
           Tạo mới
         </button>
 
         <button
           onClick={() => setActionFilter("UPDATE")}
-          className={`px-4 py-2 rounded-lg border ${
-            actionFilter === "UPDATE"
+          className={`px-4 py-2 rounded-lg border ${actionFilter === "UPDATE"
               ? "bg-blue-600 text-white border-blue-600"
               : "bg-gray-100 hover:bg-gray-200"
-          }`}
+            }`}
         >
           Cập nhật
         </button>
 
         <button
           onClick={() => setActionFilter("DELETE")}
-          className={`px-4 py-2 rounded-lg border ${
-            actionFilter === "DELETE"
+          className={`px-4 py-2 rounded-lg border ${actionFilter === "DELETE"
               ? "bg-red-600 text-white border-red-600"
               : "bg-gray-100 hover:bg-gray-200"
-          }`}
+            }`}
         >
           Xóa
         </button>
@@ -410,15 +408,14 @@ export default function NotificationsPage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03 }}
-                className={`relative flex gap-4 p-4 rounded-xl bg-white border hover:shadow-md ${
-                  type === "success"
+                className={`relative flex gap-4 p-4 rounded-xl bg-white border hover:shadow-md ${type === "success"
                     ? "border-green-200"
                     : type === "warning"
-                    ? "border-yellow-200"
-                    : type === "error"
-                    ? "border-red-200"
-                    : "border-blue-200"
-                }`}
+                      ? "border-yellow-200"
+                      : type === "error"
+                        ? "border-red-200"
+                        : "border-blue-200"
+                  }`}
               >
                 {/* TIME AGO – góc phải */}
                 <div className="absolute right-4 top-3 text-sm text-gray-500 flex gap-2 items-center">
@@ -428,15 +425,14 @@ export default function NotificationsPage() {
 
                 {/* ICON – có màu */}
                 <div
-                  className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${
-                    type === "success"
+                  className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${type === "success"
                       ? "bg-green-100 text-green-600"
                       : type === "warning"
-                      ? "bg-yellow-100 text-yellow-600"
-                      : type === "error"
-                      ? "bg-red-100 text-red-600"
-                      : "bg-blue-100 text-blue-600"
-                  }`}
+                        ? "bg-yellow-100 text-yellow-600"
+                        : type === "error"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-blue-100 text-blue-600"
+                    }`}
                 >
                   {getNotificationIcon(type)}
                 </div>

@@ -5,6 +5,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
+import { API_ENDPOINTS } from "../config/api";
 
 type User = {
   fullName: string;
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Hàm gọi API /current, dùng lại nhiều chỗ
   const fetchCurrentUser = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+      const res = await fetch(API_ENDPOINTS.AUTH_CURRENT, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

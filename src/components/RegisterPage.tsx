@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Lock, Mail, Eye, EyeOff, User, Building } from "lucide-react";
 import { showToast } from "@/utils/toast";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "../config/api";
 
 type RegisterProps = {
   onNavigate: (view: string) => void;
@@ -66,7 +67,7 @@ export default function RegisterPage({ onNavigate }: RegisterProps) {
     }
     try {
       const response = await fetch(
-        "http://localhost:8080/api/v1/auth/register",
+        API_ENDPOINTS.AUTH_REGISTER,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

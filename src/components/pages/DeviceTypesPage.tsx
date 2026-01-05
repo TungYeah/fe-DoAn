@@ -19,10 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
+
+import { API_ENDPOINTS } from "../../config/api";
 
 // Đổi URL trỏ về Spring Boot
-const API_URL = "http://localhost:8080/api/v1/iot/device-types";
+const API_URL = API_ENDPOINTS.DEVICE_TYPES;
 
 // Hàm helper để lấy header chứa token
 const getAuthHeaders = () => {
@@ -57,28 +59,28 @@ export default function DeviceTypesPage() {
   const [perPage, setPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-const validateDeviceType = (data: {
-  name: string;
-  manufacturer: string;
-  category: string;
-}) => {
-  if (!data.name.trim()) {
-    toast.warning("Vui lòng nhập tên loại thiết bị");
-    return false;
-  }
+  const validateDeviceType = (data: {
+    name: string;
+    manufacturer: string;
+    category: string;
+  }) => {
+    if (!data.name.trim()) {
+      toast.warning("Vui lòng nhập tên loại thiết bị");
+      return false;
+    }
 
-  if (!data.manufacturer.trim()) {
-    toast.warning("Vui lòng nhập hãng sản xuất");
-    return false;
-  }
+    if (!data.manufacturer.trim()) {
+      toast.warning("Vui lòng nhập hãng sản xuất");
+      return false;
+    }
 
-  if (!data.category.trim()) {
-    toast.warning("Vui lòng nhập danh mục thiết bị");
-    return false;
-  }
+    if (!data.category.trim()) {
+      toast.warning("Vui lòng nhập danh mục thiết bị");
+      return false;
+    }
 
-  return true;
-};
+    return true;
+  };
 
   // ================= FETCH ==================
   const loadDeviceTypes = async () => {
@@ -86,13 +88,13 @@ const validateDeviceType = (data: {
       // Spring Boot Pageable params: page, size, sort
       const res = await axios.get(API_URL, {
         params: {
-            page: page,
-            size: perPage,
-            // sort: "createdAt,desc" // Nếu muốn sắp xếp
+          page: page,
+          size: perPage,
+          // sort: "createdAt,desc" // Nếu muốn sắp xếp
         },
         ...getAuthHeaders()
       });
-      
+
       // Cấu trúc trả về từ Spring Boot Page<T>: { content: [], totalPages: int, ... }
       setDeviceTypes(res.data.content || []);
       setTotalPages(res.data.totalPages);
@@ -107,53 +109,53 @@ const validateDeviceType = (data: {
   useEffect(() => {
     loadDeviceTypes();
     // eslint-disable-next-line
-  }, [page, perPage]); 
+  }, [page, perPage]);
 
   // ============== ADD (SỬ DỤNG SPRING BOOT) =================
-const handleAddType = async () => {
-  if (!validateDeviceType(newType)) return;
+  const handleAddType = async () => {
+    if (!validateDeviceType(newType)) return;
 
-  try {
-    await axios.post(API_URL, newType, getAuthHeaders());
+    try {
+      await axios.post(API_URL, newType, getAuthHeaders());
 
-    toast.success("Thêm loại thiết bị thành công!");
-    setIsAddOpen(false);
-    setNewType({
-      name: "",
-      manufacturer: "",
-      description: "",
-      category: "",
-    });
-    loadDeviceTypes();
-  } catch (err: any) {
-    const message =
-      err.response?.data?.message || "Lỗi thêm loại thiết bị!";
-    toast.error(message);
-  }
-};
+      toast.success("Thêm loại thiết bị thành công!");
+      setIsAddOpen(false);
+      setNewType({
+        name: "",
+        manufacturer: "",
+        description: "",
+        category: "",
+      });
+      loadDeviceTypes();
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || "Lỗi thêm loại thiết bị!";
+      toast.error(message);
+    }
+  };
 
 
   // ============== EDIT =================
-const handleEditType = async () => {
-  if (!selectedType) return;
+  const handleEditType = async () => {
+    if (!selectedType) return;
 
-  if (!validateDeviceType(selectedType)) return;
+    if (!validateDeviceType(selectedType)) return;
 
-  try {
-    await axios.put(
-      `${API_URL}/${selectedType.id}`,
-      selectedType,
-      getAuthHeaders()
-    );
-    toast.success("Cập nhật loại thiết bị thành công!");
-    setIsEditOpen(false);
-    loadDeviceTypes();
-  } catch (err: any) {
-    const message =
-      err.response?.data?.message || "Lỗi cập nhật!";
-    toast.error(message);
-  }
-};
+    try {
+      await axios.put(
+        `${API_URL}/${selectedType.id}`,
+        selectedType,
+        getAuthHeaders()
+      );
+      toast.success("Cập nhật loại thiết bị thành công!");
+      setIsEditOpen(false);
+      loadDeviceTypes();
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || "Lỗi cập nhật!";
+      toast.error(message);
+    }
+  };
 
 
   // ============== DELETE ==============
@@ -164,13 +166,13 @@ const handleEditType = async () => {
       setIsDeleteOpen(false);
       loadDeviceTypes();
     } catch (err: any) {
-        const message = err.response?.data?.message || "Xóa thất bại!";
-        toast.error(message);
+      const message = err.response?.data?.message || "Xóa thất bại!";
+      toast.error(message);
     }
   };
 
   // ============== RENDER UI ==============
-  
+
   // Filter client-side cho search (hoặc bạn có thể gọi API search riêng)
   // Lưu ý: Nếu dữ liệu lớn, nên làm Search ở Backend. Ở đây làm tạm client-side trên trang hiện tại
   const displayList = deviceTypes.filter((t) =>
@@ -209,7 +211,7 @@ const handleEditType = async () => {
           <input
             type="text"
             value={searchTerm}
-placeholder="Tìm kiếm loại thiết bị..."
+            placeholder="Tìm kiếm loại thiết bị..."
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-12 pl-12 pr-4 border rounded-xl bg-gray-50 focus:bg-white"
           />
@@ -280,7 +282,7 @@ placeholder="Tìm kiếm loại thiết bị..."
                   </motion.button>
 
                   <motion.button
-whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="p-2 rounded-lg hover:bg-blue-50 text-blue-600"
                     onClick={() => {
@@ -325,45 +327,42 @@ whileHover={{ scale: 1.1 }}
             <button
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className={`px-3 py-1 rounded-md border ${
-                page === 0
+              className={`px-3 py-1 rounded-md border ${page === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               Trước
             </button>
 
             {/* Hiển thị số trang đơn giản */}
-             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                 // Logic hiển thị trang thông minh hơn có thể thêm ở đây
-                 let pNum = i; 
-                 if (page > 2) pNum = page - 2 + i;
-                 if (pNum >= totalPages) return null;
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // Logic hiển thị trang thông minh hơn có thể thêm ở đây
+              let pNum = i;
+              if (page > 2) pNum = page - 2 + i;
+              if (pNum >= totalPages) return null;
 
-                 return (
-                  <button
-                    key={pNum}
-                    onClick={() => setPage(pNum)}
-                    className={`px-3 py-1 rounded-md border ${
-                      page === pNum
-                        ? "bg-red-600 text-white border-red-600"
-                        : "bg-white hover:bg-gray-50"
+              return (
+                <button
+                  key={pNum}
+                  onClick={() => setPage(pNum)}
+                  className={`px-3 py-1 rounded-md border ${page === pNum
+                      ? "bg-red-600 text-white border-red-600"
+                      : "bg-white hover:bg-gray-50"
                     }`}
-                  >
-                    {pNum + 1}
-                  </button>
-                 )
-             })}
+                >
+                  {pNum + 1}
+                </button>
+              )
+            })}
 
             <button
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              className={`px-3 py-1 rounded-md border ${
-                page >= totalPages - 1
-? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              className={`px-3 py-1 rounded-md border ${page >= totalPages - 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               Sau
             </button>
@@ -410,9 +409,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-<label className="text-sm font-medium text-gray-700">
-  Hãng sản xuất <span className="text-red-500">*</span>
-</label>
+            <label className="text-sm font-medium text-gray-700">
+              Hãng sản xuất <span className="text-red-500">*</span>
+            </label>
             <input
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.manufacturer}
@@ -424,9 +423,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-<label className="text-sm font-medium text-gray-700">
-  Danh mục <span className="text-red-500">*</span>
-</label>
+            <label className="text-sm font-medium text-gray-700">
+              Danh mục <span className="text-red-500">*</span>
+            </label>
             <input
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.category}
@@ -438,9 +437,9 @@ whileHover={{ scale: 1.1 }}
           </div>
 
           <div>
-<label className="text-sm font-medium text-gray-700">
-  Mô tả <span className="text-red-500">*</span>
-</label>
+            <label className="text-sm font-medium text-gray-700">
+              Mô tả <span className="text-red-500">*</span>
+            </label>
             <textarea
               className="w-full border rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-red-200 outline-none"
               value={newType.description}
@@ -452,9 +451,9 @@ whileHover={{ scale: 1.1 }}
           </div>
         </div>
       </Modal>
-{/* Các Modal VIEW, EDIT, DELETE giữ nguyên structure nhưng dùng hàm xử lý mới */}
+      {/* Các Modal VIEW, EDIT, DELETE giữ nguyên structure nhưng dùng hàm xử lý mới */}
       {/* ... (Phần code Modal View, Edit, Delete cũ của bạn ở đây là ổn, chỉ cần đảm bảo gọi đúng hàm handle mới) */}
-       <Modal
+      <Modal
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
         title="Chi tiết loại thiết bị"
@@ -542,7 +541,7 @@ whileHover={{ scale: 1.1 }}
 
             <div>
               <label className="text-sm">Mô tả</label>
-<textarea
+              <textarea
                 className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={selectedType.description}
                 onChange={(e) =>

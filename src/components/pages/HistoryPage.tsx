@@ -1,7 +1,7 @@
 import {
   HISTORY_TYPE_MAP,
   ACTION_MAP,
-  HISTORY_DESCRIPTION_MAP,  translateHistoryDescription,
+  HISTORY_DESCRIPTION_MAP, translateHistoryDescription,
 
 } from "@/utils/historyMaps";
 import React, { useEffect, useState } from "react";
@@ -39,7 +39,9 @@ import { Modal } from "../ui/modal";
 import { Description } from "@radix-ui/react-dialog";
 import { toast } from "sonner";
 
-const API_BASE_URL = "http://localhost:8080";
+import { API_BASE_URL } from "../../config/api";
+
+const API_BASE_URL_CONST = API_BASE_URL;
 
 type HistoryItem = {
   id: string;
@@ -107,10 +109,10 @@ export default function HistoryPage() {
     a === "CREATE"
       ? "bg-green-100 text-green-700"
       : a === "UPDATE"
-      ? "bg-blue-100 text-blue-700"
-      : a === "DELETE"
-      ? "bg-red-100 text-red-700"
-      : "bg-gray-100 text-gray-700";
+        ? "bg-blue-100 text-blue-700"
+        : a === "DELETE"
+          ? "bg-red-100 text-red-700"
+          : "bg-gray-100 text-gray-700";
 
   const getActionIcon = (a: string) =>
     a === "CREATE" ? (
@@ -123,30 +125,30 @@ export default function HistoryPage() {
       <Activity className="w-3 h-3" />
     );
 
-const getTypeColor = (t: string) => {
-  switch (t) {
-    case "USER_MANAGEMENT":
-      return "bg-purple-100 text-purple-700";
+  const getTypeColor = (t: string) => {
+    switch (t) {
+      case "USER_MANAGEMENT":
+        return "bg-purple-100 text-purple-700";
 
-    case "DEVICE_MANAGEMENT":
-      return "bg-blue-100 text-blue-700";
+      case "DEVICE_MANAGEMENT":
+        return "bg-blue-100 text-blue-700";
 
-    case "PROPERTY_MANAGEMENT":
-      return "bg-gray-100 text-gray-700";
+      case "PROPERTY_MANAGEMENT":
+        return "bg-gray-100 text-gray-700";
 
-    case "DEVICE_TYPE_MANAGEMENT":
-      return "bg-red-100 text-red-700";
+      case "DEVICE_TYPE_MANAGEMENT":
+        return "bg-red-100 text-red-700";
 
-    case "AUTH":
-      return "bg-indigo-100 text-indigo-700";
+      case "AUTH":
+        return "bg-indigo-100 text-indigo-700";
 
-    case "SYSTEM":
-      return "bg-slate-100 text-slate-700";
+      case "SYSTEM":
+        return "bg-slate-100 text-slate-700";
 
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-};
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
 
 
@@ -660,9 +662,8 @@ const getTypeColor = (t: string) => {
                         duration: 0.2,
                         delay: Math.min(0.02 * idx, 0.2),
                       }}
-                      className={`hover:bg-gray-50 transition-all ${
-                        item.isDeleted ? "bg-red-50/40" : ""
-                      }`}
+                      className={`hover:bg-gray-50 transition-all ${item.isDeleted ? "bg-red-50/40" : ""
+                        }`}
                     >
                       {/* time */}
                       <td className="px-4 py-3">
@@ -810,11 +811,10 @@ const getTypeColor = (t: string) => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className={`px-3 py-1 rounded-md border ${
-                  page === 1
+                className={`px-3 py-1 rounded-md border ${page === 1
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-white hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 Trước
               </button>
@@ -843,11 +843,10 @@ const getTypeColor = (t: string) => {
                     <button
                       key={i}
                       onClick={() => setPage(num as number)}
-                      className={`px-3 py-1 rounded-md border ${
-                        num === page
+                      className={`px-3 py-1 rounded-md border ${num === page
                           ? "bg-red-600 text-white border-red-600"
                           : "bg-white hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {num}
                     </button>
@@ -858,11 +857,10 @@ const getTypeColor = (t: string) => {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className={`px-3 py-1 rounded-md border ${
-                  page === totalPages
+                className={`px-3 py-1 rounded-md border ${page === totalPages
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-white hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 Sau
               </button>
@@ -996,13 +994,12 @@ const getTypeColor = (t: string) => {
 
             {/* ===================== Trạng thái ===================== */}
             <div
-              className={`p-4 rounded-xl border ${
-                selectedHistory.isDeleted
+              className={`p-4 rounded-xl border ${selectedHistory.isDeleted
                   ? "bg-red-50 border-red-200"
                   : selectedHistory.flagStatus === 1
-                  ? "bg-green-50 border-green-200"
-                  : "bg-yellow-50 border-yellow-200"
-              }`}
+                    ? "bg-green-50 border-green-200"
+                    : "bg-yellow-50 border-yellow-200"
+                }`}
             >
               <div className="flex items-center gap-2">
                 {selectedHistory.isDeleted ? (

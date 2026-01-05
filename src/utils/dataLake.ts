@@ -1,9 +1,9 @@
 import axios from "axios";
-
+import { API_ENDPOINTS } from "../config/api";
 
 export async function countDataLake(payload: any): Promise<number> {
   const res = await axios.post(
-    "http://localhost:8080/api/v1/data-query/lake",
+    API_ENDPOINTS.DATA_QUERY_LAKE,
     payload,
     {
       headers: {

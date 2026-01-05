@@ -19,8 +19,9 @@ import {
   ChartBar,
   Percent,
 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = API_BASE_URL;
 
 // Độ thụt lề bằng phần trăm theo yêu cầu (30%)
 const INDENT_PERCENTAGE = "6%";
@@ -274,9 +275,8 @@ function ReplyBox({
               whileTap={{ scale: 0.98 }}
               onClick={onSend}
               disabled={disabled}
-              className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg flex items-center gap-2 transition-all ${
-                disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-lg"
-              }`}
+              className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg flex items-center gap-2 transition-all ${disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-lg"
+                }`}
               type="button"
             >
               <Send className="w-4 h-4" />
@@ -300,11 +300,11 @@ function CommentItemRecursive({
   comment: Comment;
   isTopLevel: boolean;
 } & ReplyProps) {
-const displayName =
-  comment.userEmail ||
-  comment.userFullName ||
-  comment.createdBy ||
-  "Người dùng không xác định";
+  const displayName =
+    comment.userEmail ||
+    comment.userFullName ||
+    comment.createdBy ||
+    "Người dùng không xác định";
 
   const authorEmail = comment.userEmail || comment.createdBy;
 
@@ -422,11 +422,10 @@ const displayName =
         <div className="flex-1 min-w-0">
           {/* Comment Bubble */}
           <div
-            className={`px-4 py-3 rounded-2xl shadow-sm border transition-shadow ${
-              comment.hidden
+            className={`px-4 py-3 rounded-2xl shadow-sm border transition-shadow ${comment.hidden
                 ? "bg-red-50 border-red-300"
                 : "bg-gradient-to-br from-gray-50 to-white border-gray-200 hover:shadow-md"
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-gray-900">{displayName}</span>
@@ -438,15 +437,15 @@ const displayName =
               )}
             </div>
             {/* COMMENT CONTENT */}
-{comment.hidden ? (
-  <p className="italic text-gray-400">
-    Bình luận đã bị ẩn bởi quản trị viên
-  </p>
-) : (
-  <p className="text-gray-700 break-words whitespace-pre-wrap">
-    {comment.content}
-  </p>
-)}
+            {comment.hidden ? (
+              <p className="italic text-gray-400">
+                Bình luận đã bị ẩn bởi quản trị viên
+              </p>
+            ) : (
+              <p className="text-gray-700 break-words whitespace-pre-wrap">
+                {comment.content}
+              </p>
+            )}
 
           </div>
 
@@ -476,11 +475,10 @@ const displayName =
                     !props.lockedUsers?.[authorEmail]
                   )
                 }
-                className={`text-sm px-2 py-1 rounded-lg ${
-                  props.lockedUsers?.[authorEmail]
+                className={`text-sm px-2 py-1 rounded-lg ${props.lockedUsers?.[authorEmail]
                     ? "text-green-600 hover:bg-green-50"
                     : "text-orange-600 hover:bg-orange-50"
-                }`}
+                  }`}
                 type="button"
               >
                 {props.lockedUsers?.[authorEmail]
@@ -495,11 +493,10 @@ const displayName =
                 onClick={() =>
                   props.onToggleHideComment(comment.id, !comment.hidden)
                 }
-                className={`text-sm px-2 py-1 rounded-lg flex items-center gap-1.5 ${
-                  comment.hidden
+                className={`text-sm px-2 py-1 rounded-lg flex items-center gap-1.5 ${comment.hidden
                     ? "text-green-600 hover:bg-green-50"
                     : "text-red-600 hover:bg-red-50"
-                }`}
+                  }`}
                 type="button"
               >
                 {comment.hidden ? (
@@ -534,8 +531,8 @@ const displayName =
                 {isLoading
                   ? "Đang tải..."
                   : isExpanded
-                  ? "Thu gọn"
-                  : `${comment.replyCount} phản hồi`}
+                    ? "Thu gọn"
+                    : `${comment.replyCount} phản hồi`}
               </motion.button>
             )}
           </div>
@@ -588,30 +585,30 @@ const displayName =
 
 export default function CommentsPage() {
   const LOCKED_CACHE_KEY = "lockedUsersCache";
-const HIDDEN_COMMENT_KEY = "hiddenComments";
+  const HIDDEN_COMMENT_KEY = "hiddenComments";
 
-const saveHiddenId = (id: string) => {
-  const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
-  const list: string[] = raw ? JSON.parse(raw) : [];
-  if (!list.includes(id)) {
-    list.push(id);
-    localStorage.setItem(HIDDEN_COMMENT_KEY, JSON.stringify(list));
-  }
-};
+  const saveHiddenId = (id: string) => {
+    const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(HIDDEN_COMMENT_KEY, JSON.stringify(list));
+    }
+  };
 
-const removeHiddenId = (id: string) => {
-  const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
-  const list: string[] = raw ? JSON.parse(raw) : [];
-  localStorage.setItem(
-    HIDDEN_COMMENT_KEY,
-    JSON.stringify(list.filter((x) => x !== id))
-  );
-};
-
-
+  const removeHiddenId = (id: string) => {
+    const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    localStorage.setItem(
+      HIDDEN_COMMENT_KEY,
+      JSON.stringify(list.filter((x) => x !== id))
+    );
+  };
 
 
-// khi render
+
+
+  // khi render
 
 
   const setLockedUsersAndCache = (
@@ -696,25 +693,25 @@ const removeHiddenId = (id: string) => {
         const list: Comment[] = data.content ?? [];
 
 
-// 👉 FE-only placeholder cho hidden comment
-const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
-const hiddenIds: string[] = raw ? JSON.parse(raw) : [];
+        // 👉 FE-only placeholder cho hidden comment
+        const raw = localStorage.getItem(HIDDEN_COMMENT_KEY);
+        const hiddenIds: string[] = raw ? JSON.parse(raw) : [];
 
-const placeholders: Comment[] = hiddenIds
-  .filter((id) => !list.some((c) => c.id === id))
-  .map((id) => ({
-    id,
-    content: "",
-    hidden: true,
-    parentId: null,
-    replyCount: 0,
-  }));
+        const placeholders: Comment[] = hiddenIds
+          .filter((id) => !list.some((c) => c.id === id))
+          .map((id) => ({
+            id,
+            content: "",
+            hidden: true,
+            parentId: null,
+            replyCount: 0,
+          }));
 
-setTopComments(
-  [...placeholders, ...list].sort((a, b) =>
-    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
-  )
-);
+        setTopComments(
+          [...placeholders, ...list].sort((a, b) =>
+            (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+          )
+        );
         console.log("IS ADMIN:", isAdmin);
         console.log("TOP COMMENTS:", list);
       }
@@ -796,39 +793,39 @@ setTopComments(
       setPosting(false);
     }
   };
-const handleToggleHideComment = async (
-  commentId: string,
-  nextHidden: boolean
-) => {
-  try {
-    const endpoint = nextHidden
-      ? `/api/v1/admin/comments/${commentId}/hide`
-      : `/api/v1/admin/comments/${commentId}/unhide`;
+  const handleToggleHideComment = async (
+    commentId: string,
+    nextHidden: boolean
+  ) => {
+    try {
+      const endpoint = nextHidden
+        ? `/api/v1/admin/comments/${commentId}/hide`
+        : `/api/v1/admin/comments/${commentId}/unhide`;
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: "POST",
-      headers: authHeaders(),
-    });
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
 
-    if (!res.ok) throw new Error("Toggle hide failed");
+      if (!res.ok) throw new Error("Toggle hide failed");
 
-    // ✅ LƯU CACHE
-    if (nextHidden) saveHiddenId(commentId);
-    else removeHiddenId(commentId);
+      // ✅ LƯU CACHE
+      if (nextHidden) saveHiddenId(commentId);
+      else removeHiddenId(commentId);
 
-    // ✅ UPDATE UI NGAY (KHỎI CHỜ RELOAD)
-    setTopComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId ? { ...c, hidden: nextHidden } : c
-      )
-    );
+      // ✅ UPDATE UI NGAY (KHỎI CHỜ RELOAD)
+      setTopComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, hidden: nextHidden } : c
+        )
+      );
 
-    // ✅ QUAN TRỌNG: reload lại list từ BE + cache
-    await loadTopComments();
-  } catch (e) {
-    console.error(e);
-  }
-};
+      // ✅ QUAN TRỌNG: reload lại list từ BE + cache
+      await loadTopComments();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
 
   const handleToggleLockCommenting = async (email: string, lock: boolean) => {
@@ -950,28 +947,28 @@ const handleToggleHideComment = async (
   const totalReplies = topComments.reduce((acc, c) => acc + c.replyCount, 0);
 
   // =============== FILTERED COMMENTS ===============
-const filteredComments = topComments.filter((c) => {
-  const keyword = searchTerm.toLowerCase();
+  const filteredComments = topComments.filter((c) => {
+    const keyword = searchTerm.toLowerCase();
 
-  // ADMIN: luôn thấy, kể cả hidden
-  if (isAdmin) {
+    // ADMIN: luôn thấy, kể cả hidden
+    if (isAdmin) {
+      return (
+        (c.content ?? "").toLowerCase().includes(keyword) ||
+        (c.userFullName ?? "").toLowerCase().includes(keyword) ||
+        (c.userEmail ?? "").toLowerCase().includes(keyword)
+      );
+    }
+
+    // USER thường:
+    // 👉 KHÔNG lọc hidden ở đây
+    // 👉 render sẽ xử lý hidden
     return (
       (c.content ?? "").toLowerCase().includes(keyword) ||
       (c.userFullName ?? "").toLowerCase().includes(keyword) ||
-      (c.userEmail ?? "").toLowerCase().includes(keyword)
+      (c.userEmail ?? "").toLowerCase().includes(keyword) ||
+      c.hidden // ✅ BẮT BUỘC: để placeholder còn render
     );
-  }
-
-  // USER thường:
-  // 👉 KHÔNG lọc hidden ở đây
-  // 👉 render sẽ xử lý hidden
-  return (
-    (c.content ?? "").toLowerCase().includes(keyword) ||
-    (c.userFullName ?? "").toLowerCase().includes(keyword) ||
-    (c.userEmail ?? "").toLowerCase().includes(keyword) ||
-    c.hidden // ✅ BẮT BUỘC: để placeholder còn render
-  );
-});
+  });
 
   const replyRate =
     totalComments > 0 ? (totalReplies / totalComments) * 100 : 0;
@@ -1143,11 +1140,10 @@ const filteredComments = topComments.filter((c) => {
                     whileTap={{ scale: 0.98 }}
                     onClick={handlePostMain}
                     disabled={posting || !mainContent.trim()}
-                    className={`px-6 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl flex items-center gap-2 shadow-md transition-all ${
-                      posting || !mainContent.trim()
+                    className={`px-6 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl flex items-center gap-2 shadow-md transition-all ${posting || !mainContent.trim()
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:shadow-lg"
-                    }`}
+                      }`}
                     type="button"
                   >
                     <Send className="w-4 h-4" />

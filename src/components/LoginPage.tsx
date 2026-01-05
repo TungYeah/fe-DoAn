@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Lock, Mail, Eye, EyeOff, AlertTriangle,Wifi } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, AlertTriangle, Wifi } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { API_ENDPOINTS } from "../config/api";
 
 type LoginProps = {
   onNavigate: (view: string) => void;
@@ -63,7 +64,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     try {
       setForgotLoading(true);
 
-      const res = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+      const res = await fetch(API_ENDPOINTS.AUTH_FORGOT_PASSWORD, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: forgotEmail }),
@@ -96,7 +97,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       return;
     }
 
-    const res = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+    const res = await fetch(API_ENDPOINTS.AUTH_RESET_PASSWORD, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -127,7 +128,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setReactivateMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/authenticate", {
+      const response = await fetch(API_ENDPOINTS.AUTH_LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -164,7 +165,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
 
       localStorage.setItem("token", token);
 
-      const userRes = await fetch("http://localhost:8080/api/v1/auth/current", {
+      const userRes = await fetch(API_ENDPOINTS.AUTH_CURRENT, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -188,7 +189,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
     setReactivateMessage("");
 
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/request-reactivation", {
+      const res = await fetch(API_ENDPOINTS.AUTH_REQUEST_REACTIVATION, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -227,7 +228,7 @@ export default function LoginPage({ onNavigate, onLogin }: LoginProps) {
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
 
         {/* LEFT SIDE */}
-<motion.div
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}

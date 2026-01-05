@@ -28,6 +28,7 @@ import {
   ListTree,
 } from "lucide-react";
 import { Layer } from "recharts";
+import { API_ENDPOINTS, API_BASE_URL } from "../config/api";
 
 type DashboardLayoutProps = {
   currentPage: string;
@@ -42,7 +43,7 @@ type DashboardLayoutProps = {
 const getAvatarUI = (avatar?: string | null) => {
   const src =
     avatar && avatar.trim() !== ""
-      ? `http://localhost:8080${avatar}`
+      ? `${API_BASE_URL}${avatar}`
       : "/847969.png"; // ảnh mặc định trong public/
 
   return (
@@ -66,80 +67,80 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-const [userInfo, setUserInfo] = useState({
-  fullName: "",
-  email: "",
-  avatar: "",
-  role: "USER", // mặc định
-});
+  const [userInfo, setUserInfo] = useState({
+    fullName: "",
+    email: "",
+    avatar: "",
+    role: "USER", // mặc định
+  });
 
 
   // ========================
   // Fetch current user
   // ========================
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  fetch("http://localhost:8080/api/v1/auth/current", {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => res.json())
-    .then((u) => {
-      const highestRole = getHighestRoleFromUser(u);
-
-      console.log("Roles từ backend:", u.roles);
-      console.log("Role cao nhất:", highestRole);
-
-      setUserInfo({
-        fullName: u.fullName || "",
-        email: u.email || "",
-        avatar: u.avatar || "",
-        role: highestRole,
-      });
-
-      localStorage.setItem("role", highestRole);
+    fetch(API_ENDPOINTS.AUTH_CURRENT, {
+      headers: { Authorization: `Bearer ${token}` },
     })
-    .catch((err) => console.error("Get current user error:", err));
-}, []);
+      .then((res) => res.json())
+      .then((u) => {
+        const highestRole = getHighestRoleFromUser(u);
+
+        console.log("Roles từ backend:", u.roles);
+        console.log("Role cao nhất:", highestRole);
+
+        setUserInfo({
+          fullName: u.fullName || "",
+          email: u.email || "",
+          avatar: u.avatar || "",
+          role: highestRole,
+        });
+
+        localStorage.setItem("role", highestRole);
+      })
+      .catch((err) => console.error("Get current user error:", err));
+  }, []);
 
 
-// Lấy role cao nhất từ object user trả về từ backend
-function getHighestRoleFromUser(user: any): "ADMIN" | "USER" {
-  const roles = user.roles || [];
+  // Lấy role cao nhất từ object user trả về từ backend
+  function getHighestRoleFromUser(user: any): "ADMIN" | "USER" {
+    const roles = user.roles || [];
 
-  // Backend trả dạng: ["ROLE_ADMIN"] hoặc ["ROLE_USER"]
-  const normalized = roles.map((r: string) => r.replace("ROLE_", ""));
+    // Backend trả dạng: ["ROLE_ADMIN"] hoặc ["ROLE_USER"]
+    const normalized = roles.map((r: string) => r.replace("ROLE_", ""));
 
-  if (normalized.includes("ADMIN")) return "ADMIN";
-  return "USER";
-}
+    if (normalized.includes("ADMIN")) return "ADMIN";
+    return "USER";
+  }
 
 
   const displayName =
     userInfo.fullName?.trim() !== "" ? userInfo.fullName : userInfo.email;
 
-const menuItems = [
-  { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
+  const menuItems = [
+    { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
 
-  // ADMIN ONLY
-  { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
-  { id: "devices", label: "Quản lý thiết bị", icon: Cpu},
-  { id: "device-types", label: "Quản lý loại thiết bị", icon: Layers2, adminOnly: true },
+    // ADMIN ONLY
+    { id: "users", label: "Quản lý User", icon: Users, adminOnly: true },
+    { id: "devices", label: "Quản lý thiết bị", icon: Cpu },
+    { id: "device-types", label: "Quản lý loại thiết bị", icon: Layers2, adminOnly: true },
     { id: "properties", label: "Quản lý thuộc tính", icon: ListTree, adminOnly: true },
 
-  { id: "revenue", label: "Doanh thu", icon: DollarSign, adminOnly: true },
+    // { id: "revenue", label: "Doanh thu", icon: DollarSign, adminOnly: true },
 
 
-  // USER + ADMIN
-  { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon , adminOnly: true},
-  { id: "query", label: "Truy vấn", icon: Search },
-  { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
-  { id: "notifications", label: "Thông báo", icon: Bell },
+    // USER + ADMIN
+    { id: "import-data", label: "Import dữ liệu", icon: DatabaseIcon, adminOnly: true },
+    { id: "query", label: "Truy vấn", icon: Search },
+    { id: "charts", label: "Biểu đồ thiết bị", icon: BarChart3 },
+    { id: "notifications", label: "Thông báo", icon: Bell },
     { id: "history", label: "Lịch sử", icon: History, adminOnly: true },
-  { id: "chat", label: "Bình luận", icon: MessageCircle },
-  { id: "ai", label: "AI Assistant", icon: Bot },
-];
+    { id: "chat", label: "Bình luận", icon: MessageCircle },
+    { id: "ai", label: "AI Assistant", icon: Bot },
+  ];
 
 
   return (
@@ -242,34 +243,32 @@ const menuItems = [
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${
-          sidebarOpen ? "w-64" : "w-0"
-        } overflow-hidden`}
+        className={`fixed left-0 top-16 bottom-0 bg-white border-r transition-all ${sidebarOpen ? "w-64" : "w-0"
+          } overflow-hidden`}
       >
         <nav className="p-4 space-y-2">
           {menuItems
-  .filter(item => {
-    // Nếu menu này dành riêng Admin → user thì không hiện
-    if (item.adminOnly && userInfo.role !== "ADMIN") return false;
-    return true;
-  })
-  .map((item) => {
-    const Icon = item.icon;
-    return (
-      <button
-        key={item.id}
-        onClick={() => onNavigate(item.id)}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
-          currentPage === item.id
-            ? "bg-red-600 text-white shadow"
-            : "hover:bg-gray-100"
-        }`}
-      >
-        <Icon className="w-5 h-5" />
-        {item.label}
-      </button>
-    );
-  })}
+            .filter(item => {
+              // Nếu menu này dành riêng Admin → user thì không hiện
+              if (item.adminOnly && userInfo.role !== "ADMIN") return false;
+              return true;
+            })
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${currentPage === item.id
+                    ? "bg-red-600 text-white shadow"
+                    : "hover:bg-gray-100"
+                    }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              );
+            })}
 
         </nav>
       </aside>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { API_ENDPOINTS, SERVER_URL } from "../../config/api";
 import {
   Search,
   Filter,
@@ -145,7 +146,7 @@ export default function QueryPage() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("http://localhost:8080/api/v1/auth/current", {
+        const res = await fetch(API_ENDPOINTS.AUTH_CURRENT, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -168,7 +169,7 @@ export default function QueryPage() {
   useEffect(() => {
     const fetchDeviceTypes = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/device-types");
+        const res = await fetch(`${SERVER_URL}/api/device-types`);
         const data = await res.json();
 
         const list = data.device_types || [];
@@ -197,7 +198,7 @@ export default function QueryPage() {
         const role = isAdmin ? "admin" : "user";
 
         const res = await fetch(
-          `http://localhost:5000/api/devices?user_id=${uid}&role=${role}`
+          `${SERVER_URL}/api/devices?user_id=${uid}&role=${role}`
         );
 
         const json = await res.json();
@@ -258,7 +259,7 @@ export default function QueryPage() {
     setIsHistoryLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/export_filters/${CURRENT_USER_ID}`
+        `${SERVER_URL}/api/export_filters/${CURRENT_USER_ID}`
       );
       const json = await res.json();
       setHistory(json || []);
@@ -308,7 +309,7 @@ export default function QueryPage() {
       // (Tuỳ backend có hỗ trợ min/max value hay không, tạm thời không gửi)
 
       const res = await fetch(
-        `http://localhost:5000/api/dataset?${params.toString()}`
+        `${SERVER_URL}/api/dataset?${params.toString()}`
       );
       const json = await res.json();
 
@@ -337,7 +338,7 @@ export default function QueryPage() {
   async function saveFilter(filter: any, fileName: string) {
     if (!CURRENT_USER_ID) return;
 
-    await fetch("http://localhost:5000/api/export_filters", {
+    await fetch(`${SERVER_URL}/api/export_filters`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -358,7 +359,7 @@ export default function QueryPage() {
   // ============ XEM LẠI DATASET TỪ HISTORY ===============
   async function handleViewDataset(id: number) {
     const res = await fetch(
-      `http://localhost:5000/api/export_filters/${id}/dataset`
+      `${SERVER_URL}/api/export_filters/${id}/dataset`
     );
     const json = await res.json();
     setDataset(json);
@@ -379,7 +380,7 @@ export default function QueryPage() {
   // ============ DOWNLOAD CSV TỪ HISTORY ===============
   function handleDownloadHistory(id: number) {
     window.open(
-      `http://localhost:5000/api/export_filters/${id}/export_csv`,
+      `${SERVER_URL}/api/export_filters/${id}/export_csv`,
       "_blank"
     );
   }
@@ -389,7 +390,7 @@ export default function QueryPage() {
     const ok = window.confirm("Bạn có chắc muốn xóa lịch sử này?");
     if (!ok) return;
 
-    await fetch(`http://localhost:5000/api/export_filters/${id}`, {
+    await fetch(`${SERVER_URL}/api/export_filters/${id}`, {
       method: "DELETE",
     });
 
@@ -858,11 +859,10 @@ export default function QueryPage() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className={`px-3 py-1 rounded-md border ${
-                      page === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
+                    className={`px-3 py-1 rounded-md border ${page === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50"
+                      }`}
                   >
                     Trước
                   </button>
@@ -894,11 +894,10 @@ export default function QueryPage() {
                         <button
                           key={i}
                           onClick={() => setPage(num as number)}
-                          className={`px-3 py-1 rounded-md border ${
-                            num === page
-                              ? "bg-red-600 text-white border-red-600"
-                              : "bg-white hover:bg-gray-50"
-                          }`}
+                          className={`px-3 py-1 rounded-md border ${num === page
+                            ? "bg-red-600 text-white border-red-600"
+                            : "bg-white hover:bg-gray-50"
+                            }`}
                         >
                           {num}
                         </button>
@@ -910,11 +909,10 @@ export default function QueryPage() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className={`px-3 py-1 rounded-md border ${
-                      page === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
+                    className={`px-3 py-1 rounded-md border ${page === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50"
+                      }`}
                   >
                     Sau
                   </button>
@@ -1024,22 +1022,22 @@ export default function QueryPage() {
                             const format = item.format
                               ? item.format.toUpperCase()
                               : item.filter_name
-                                  ?.toLowerCase()
-                                  .endsWith(".xlsx")
-                              ? "EXCEL"
-                              : item.filter_name
+                                ?.toLowerCase()
+                                .endsWith(".xlsx")
+                                ? "EXCEL"
+                                : item.filter_name
                                   ?.toLowerCase()
                                   .endsWith(".json")
-                              ? "JSON"
-                              : "CSV";
+                                  ? "JSON"
+                                  : "CSV";
 
                             // Chọn màu theo format
                             const colorClass =
                               format === "CSV"
                                 ? "bg-green-100 text-green-700"
                                 : format === "EXCEL"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-blue-100 text-blue-700"; // JSON
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-blue-100 text-blue-700"; // JSON
 
                             return (
                               <span
@@ -1108,92 +1106,89 @@ export default function QueryPage() {
 
           {/* Footer */}
           {/* Pagination for history */}
-<div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
-  <div className="flex items-center gap-2">
-    <span>Hiển thị mỗi trang:</span>
-    <select
-      value={historyPerPage}
-      onChange={(e) => {
-        setHistoryPerPage(Number(e.target.value));
-        setHistoryPage(1);
-      }}
-      className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
-    >
-      <option value={5}>5</option>
-      <option value={10}>10</option>
-      <option value={20}>20</option>
-    </select>
-  </div>
+          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <span>Hiển thị mỗi trang:</span>
+              <select
+                value={historyPerPage}
+                onChange={(e) => {
+                  setHistoryPerPage(Number(e.target.value));
+                  setHistoryPage(1);
+                }}
+                className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
 
-  <div className="flex items-center gap-1">
-    {/* Prev */}
-    <button
-      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-      disabled={historyPage === 1}
-      className={`px-3 py-1 rounded-md border ${
-        historyPage === 1
-          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "bg-white hover:bg-gray-50"
-      }`}
-    >
-      Trước
-    </button>
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                disabled={historyPage === 1}
+                className={`px-3 py-1 rounded-md border ${historyPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-50"
+                  }`}
+              >
+                Trước
+              </button>
 
-    {/* Number pagination */}
-    {(() => {
-      const arr: (number | string)[] = [];
-      const maxButtons = 5;
+              {/* Number pagination */}
+              {(() => {
+                const arr: (number | string)[] = [];
+                const maxButtons = 5;
 
-      if (historyTotalPages <= maxButtons) {
-        for (let i = 1; i <= historyTotalPages; i++) arr.push(i);
-      } else {
-        arr.push(1);
-        if (historyPage > 3) arr.push("...");
-        const middle = [historyPage - 1, historyPage, historyPage + 1].filter(
-          (p) => p > 1 && p < historyTotalPages
-        );
-        arr.push(...middle);
-        if (historyPage < historyTotalPages - 2) arr.push("...");
-        arr.push(historyTotalPages);
-      }
+                if (historyTotalPages <= maxButtons) {
+                  for (let i = 1; i <= historyTotalPages; i++) arr.push(i);
+                } else {
+                  arr.push(1);
+                  if (historyPage > 3) arr.push("...");
+                  const middle = [historyPage - 1, historyPage, historyPage + 1].filter(
+                    (p) => p > 1 && p < historyTotalPages
+                  );
+                  arr.push(...middle);
+                  if (historyPage < historyTotalPages - 2) arr.push("...");
+                  arr.push(historyTotalPages);
+                }
 
-      return arr.map((num, i) =>
-        num === "..." ? (
-          <span key={i} className="px-2 text-gray-400">
-            ...
-          </span>
-        ) : (
-          <button
-            key={i}
-            onClick={() => setHistoryPage(num as number)}
-            className={`px-3 py-1 rounded-md border ${
-              num === historyPage
-                ? "bg-red-600 text-white border-red-600"
-                : "bg-white hover:bg-gray-50"
-            }`}
-          >
-            {num}
-          </button>
-        )
-      );
-    })()}
+                return arr.map((num, i) =>
+                  num === "..." ? (
+                    <span key={i} className="px-2 text-gray-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => setHistoryPage(num as number)}
+                      className={`px-3 py-1 rounded-md border ${num === historyPage
+                        ? "bg-red-600 text-white border-red-600"
+                        : "bg-white hover:bg-gray-50"
+                        }`}
+                    >
+                      {num}
+                    </button>
+                  )
+                );
+              })()}
 
-    {/* Next */}
-    <button
-      onClick={() =>
-        setHistoryPage((p) => Math.min(historyTotalPages, p + 1))
-      }
-      disabled={historyPage === historyTotalPages}
-      className={`px-3 py-1 rounded-md border ${
-        historyPage === historyTotalPages
-          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "bg-white hover:bg-gray-50"
-      }`}
-    >
-      Sau
-    </button>
-  </div>
-</div>
+              {/* Next */}
+              <button
+                onClick={() =>
+                  setHistoryPage((p) => Math.min(historyTotalPages, p + 1))
+                }
+                disabled={historyPage === historyTotalPages}
+                className={`px-3 py-1 rounded-md border ${historyPage === historyTotalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-50"
+                  }`}
+              >
+                Sau
+              </button>
+            </div>
+          </div>
 
           <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 flex items-center justify-between">
             <p>

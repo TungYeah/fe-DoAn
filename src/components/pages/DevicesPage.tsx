@@ -38,8 +38,10 @@ import {
   TableRow,
 } from "../ui/table";
 
+import { API_BASE_URL } from "../../config/api";
+
 export default function DevicesPage() {
-  const API_BASE = "http://localhost:8080/api/v1/iot";
+  const API_BASE = `${API_BASE_URL}/api/v1/iot`;
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
@@ -180,53 +182,53 @@ export default function DevicesPage() {
     }
   };
 
-useEffect(() => {
-  fetch("/data/vietnam_locations.json")
-    .then((res) => {
-      if (!res.ok) throw new Error("Không load được file location offline");
-      return res.json();
-    })
-    .then((data) => {
-      setProvinces(data || []);
-    })
-    .catch((err) => {
-      console.error(err);
-      toast.error("Lỗi tải dữ liệu tỉnh/thành (offline)");
-    });
-}, []);
+  useEffect(() => {
+    fetch("/data/vietnam_locations.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("Không load được file location offline");
+        return res.json();
+      })
+      .then((data) => {
+        setProvinces(data || []);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Lỗi tải dữ liệu tỉnh/thành (offline)");
+      });
+  }, []);
 
-const handleProvinceChange = (code: string) => {
-  const p = provinces.find((x) => String(x.code) === code);
+  const handleProvinceChange = (code: string) => {
+    const p = provinces.find((x) => String(x.code) === code);
 
-  setSelectedProvince(p || null);
-  setSelectedDistrict(null);
-  setSelectedWard(null);
+    setSelectedProvince(p || null);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
 
-  setDistricts(p?.districts || []);
-  setWards([]);
+    setDistricts(p?.districts || []);
+    setWards([]);
 
-  setFormData((prev) => ({
-    ...prev,
-    province: p?.name || "",
-    district: "",
-    ward: "",
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      province: p?.name || "",
+      district: "",
+      ward: "",
+    }));
+  };
 
 
-const handleDistrictChange = (code: string) => {
-  const d = districts.find((x) => String(x.code) === code);
+  const handleDistrictChange = (code: string) => {
+    const d = districts.find((x) => String(x.code) === code);
 
-  setSelectedDistrict(d || null);
-  setSelectedWard(null);
-  setWards(d?.wards || []);
+    setSelectedDistrict(d || null);
+    setSelectedWard(null);
+    setWards(d?.wards || []);
 
-  setFormData((prev) => ({
-    ...prev,
-    district: d?.name || "",
-    ward: "",
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      district: d?.name || "",
+      ward: "",
+    }));
+  };
 
   const handleWardChange = (code: string) => {
     const w = wards.find((x) => String(x.code) === code);
@@ -311,23 +313,23 @@ const handleDistrictChange = (code: string) => {
       return;
     }
 
-// ===== SET LOCATION DROPDOWN (OFFLINE – FIX LỖI EDIT) =====
-const p = provinces.find((x) => x.name === dev.province);
-if (p) {
-  setSelectedProvince(p);
-  setDistricts(p.districts || []);
+    // ===== SET LOCATION DROPDOWN (OFFLINE – FIX LỖI EDIT) =====
+    const p = provinces.find((x) => x.name === dev.province);
+    if (p) {
+      setSelectedProvince(p);
+      setDistricts(p.districts || []);
 
-  const d = p.districts?.find((x: any) => x.name === dev.district);
-  if (d) {
-    setSelectedDistrict(d);
-    setWards(d.wards || []);
+      const d = p.districts?.find((x: any) => x.name === dev.district);
+      if (d) {
+        setSelectedDistrict(d);
+        setWards(d.wards || []);
 
-    const w = d.wards?.find((x: any) => x.name === dev.ward);
-    if (w) {
-      setSelectedWard(w);
+        const w = d.wards?.find((x: any) => x.name === dev.ward);
+        if (w) {
+          setSelectedWard(w);
+        }
+      }
     }
-  }
-}
 
 
     setIsEditOpen(true);
@@ -511,23 +513,23 @@ if (p) {
   const filteredDevices =
     activeTab === "overview"
       ? allDevices.filter(
-          (d) =>
-            d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        (d) =>
+          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
+      )
       : devices.filter(
-          (d) =>
-            d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        (d) =>
+          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          d.uniqueIdentifier.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   const getStatus = (d: any) =>
     d.status ||
     (d.flagStatus === 1
       ? "ONLINE"
       : d.flagStatus === 0
-      ? "OFFLINE"
-      : "WARNING");
+        ? "OFFLINE"
+        : "WARNING");
 
   return (
     <div className="space-y-8">
@@ -569,22 +571,20 @@ if (p) {
         <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "overview"
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "overview"
                 ? "bg-white shadow-sm text-red-600 font-semibold"
                 : "text-gray-600 hover:bg-white/70"
-            }`}
+              }`}
           >
             <b>Tổng quan</b>
           </button>
 
           <button
             onClick={() => setActiveTab("details")}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "details"
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "details"
                 ? "bg-white shadow-sm text-red-600 font-semibold"
                 : "text-gray-600 hover:bg-white/70"
-            }`}
+              }`}
           >
             <b>Danh sách chi tiết</b>
           </button>
@@ -629,13 +629,12 @@ if (p) {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      device.status === "ONLINE"
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${device.status === "ONLINE"
                         ? "bg-green-100"
                         : device.status === "OFFLINE"
-                        ? "bg-gray-200"
-                        : "bg-yellow-100"
-                    }`}
+                          ? "bg-gray-200"
+                          : "bg-yellow-100"
+                      }`}
                   >
                     {device.status === "ONLINE" ? (
                       <Wifi className="w-6 h-6 text-green-700" />
@@ -690,11 +689,10 @@ if (p) {
                         <motion.span
                           key={s.id}
                           whileHover={{ scale: 1.05 }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border font-medium transition-all ${
-                            isPrimary
+                          className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border font-medium transition-all ${isPrimary
                               ? "bg-red-50 border-red-200 text-red-700 shadow-sm"
                               : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                          }`}
+                            }`}
                         >
                           {s.propertyName || s.property?.name}
                           {isPrimary && (
@@ -786,13 +784,12 @@ if (p) {
               {/* FOOTER */}
               <div className="flex justify-between items-center pt-4 border-t">
                 <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                    device.status === "ONLINE"
+                  className={`text-xs font-semibold px-2 py-1 rounded-full ${device.status === "ONLINE"
                       ? "bg-green-100 text-green-700"
                       : device.status === "OFFLINE"
-                      ? "bg-gray-100 text-gray-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
+                        ? "bg-gray-100 text-gray-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
                 >
                   {device.status}
                 </span>
@@ -912,13 +909,12 @@ if (p) {
                     <TableCell>
                       <strong style={{ fontWeight: 600 }}>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            dev.status === "ONLINE"
+                          className={`px-2 py-1 rounded-full text-xs font-bold ${dev.status === "ONLINE"
                               ? "bg-green-100 text-green-700"
                               : dev.status === "OFFLINE"
-                              ? "bg-gray-100 text-gray-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
+                                ? "bg-gray-100 text-gray-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
                         >
                           {dev.status}
                         </span>
@@ -1083,11 +1079,10 @@ if (p) {
                 <button
                   disabled={page === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className={`px-3 py-1 rounded-md border ${
-                    page === 0
+                  className={`px-3 py-1 rounded-md border ${page === 0
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Trước
                 </button>
@@ -1102,11 +1097,10 @@ if (p) {
                     <button
                       key={pNum}
                       onClick={() => setPage(pNum)}
-                      className={`px-3 py-1 rounded-md border ${
-                        page === pNum
+                      className={`px-3 py-1 rounded-md border ${page === pNum
                           ? "bg-red-600 text-white border-red-600"
                           : "bg-white hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {pNum + 1}
                     </button>
@@ -1119,11 +1113,10 @@ if (p) {
                   onClick={() =>
                     setPage((p) => Math.min(totalPages - 1, p + 1))
                   }
-                  className={`px-3 py-1 rounded-md border ${
-                    page >= totalPages - 1
+                  className={`px-3 py-1 rounded-md border ${page >= totalPages - 1
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Sau
                 </button>
@@ -1485,13 +1478,12 @@ if (p) {
                 {/* TRẠNG THÁI */}
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap
-      ${
-        selectedDevice.status === "ONLINE"
-          ? "bg-green-100 text-green-700"
-          : selectedDevice.status === "OFFLINE"
-          ? "bg-gray-100 text-gray-700"
-          : "bg-yellow-100 text-yellow-700"
-      }`}
+      ${selectedDevice.status === "ONLINE"
+                      ? "bg-green-100 text-green-700"
+                      : selectedDevice.status === "OFFLINE"
+                        ? "bg-gray-100 text-gray-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
                 >
                   {selectedDevice.status}
                 </span>
@@ -1556,8 +1548,8 @@ if (p) {
                   <p className="text-sm text-gray-900">
                     {selectedDevice.createDate
                       ? new Date(selectedDevice.createDate).toLocaleString(
-                          "vi-VN"
-                        )
+                        "vi-VN"
+                      )
                       : "—"}
                   </p>
                 </div>
@@ -1569,8 +1561,8 @@ if (p) {
                   <p className="text-sm text-gray-900">
                     {selectedDevice.lastUpdateDate
                       ? new Date(selectedDevice.lastUpdateDate).toLocaleString(
-                          "vi-VN"
-                        )
+                        "vi-VN"
+                      )
                       : "Chưa cập nhật"}
                   </p>
                 </div>
@@ -1603,11 +1595,10 @@ if (p) {
                     return (
                       <div
                         key={s.id}
-                        className={`p-4 rounded-xl border ${
-                          isPrimary
+                        className={`p-4 rounded-xl border ${isPrimary
                             ? "bg-red-50 border-red-200"
                             : "bg-white border-gray-200"
-                        }`}
+                          }`}
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
@@ -1626,19 +1617,19 @@ if (p) {
 
                         {(s.thresholdWarning != null ||
                           s.thresholdCritical != null) && (
-                          <div className="mt-2 text-xs flex gap-4">
-                            {s.thresholdWarning != null && (
-                              <span className="text-orange-600 flex items-center gap-1">
-                                ⚠ Warning: {s.thresholdWarning}
-                              </span>
-                            )}
-                            {s.thresholdCritical != null && (
-                              <span className="text-red-600 flex items-center gap-1">
-                                ⛔ Critical: {s.thresholdCritical}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                            <div className="mt-2 text-xs flex gap-4">
+                              {s.thresholdWarning != null && (
+                                <span className="text-orange-600 flex items-center gap-1">
+                                  ⚠ Warning: {s.thresholdWarning}
+                                </span>
+                              )}
+                              {s.thresholdCritical != null && (
+                                <span className="text-red-600 flex items-center gap-1">
+                                  ⛔ Critical: {s.thresholdCritical}
+                                </span>
+                              )}
+                            </div>
+                          )}
                       </div>
                     );
                   })}
